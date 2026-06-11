@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <title>Lantern</title>
+  <rect width="120" height="120" rx="27" fill="#1a1714"/>
+  <g transform="translate(0 3)">
+    <!-- Shadow L — orange -->
+    <path d="M30 18 H50 V62 H78 V82 H30 Z" fill="#f59e0b" transform="translate(13 13)"/>
+    <!-- Front L — white -->
+    <path d="M30 18 H50 V62 H78 V82 H30 Z" fill="#ffffff"/>
+  </g>
+</svg>

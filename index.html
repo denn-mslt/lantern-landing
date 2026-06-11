@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lantern — main (working copy)</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="lantern-v3.css" rel="stylesheet" />
+<style>
+/* ===== HERO PHASE 2 ===== */
+
+#hero .hero-stage { transition: transform 0.8s cubic-bezier(.4,0,.2,1); }
+/* phase 2: wider browser slides left so its right edge stays on-screen */
+body.hero-p2 #hero .hero-stage { transform: translateX(-5vw); }
+body.hero-p3 #hero .hero-stage { transform: translateX(calc(-5vw - 2%)); }
+/* P4 keeps the P3 stage position — the window doesn't move, the dock slides
+   in inside it; also keeps the long "talks back" headline clear of the window */
+body.hero-p4 #hero .hero-stage { transform: translateX(calc(-5vw - 2%)); }
+
+#hero .browser {
+  position: relative;                /* tpanel + discuss dock anchor to the browser viewport */
+  transform: perspective(1300px) rotateY(-10.5deg);   /* 3D: right edge leans toward the viewer (softened 30%) */
+  transform-origin: 50% 50%;
+  transition: transform 0.8s cubic-bezier(.4,0,.2,1);
+}
+/* ONE window size for every phase — no width/height morphing between screens.
+   The P4 chat floats over the article as a popup now, so the window only
+   needs the article itself: ~66ch lines, height = title + lead + the
+   simplify paragraph. The 46vw guard keeps the right edge on-screen on
+   narrow desktops. !important beats the base .browser max-width:560 cap
+   and the hero-p2 660px override in lantern-v3.css. */
+#hero .browser,
+body.hero-p2 #hero .browser,
+body.hero-p3 #hero .browser,
+body.hero-p4 #hero .browser {
+  width: min(616px, 41.4vw) !important;   /* −10% width */
+  max-width: none !important;
+  min-height: 490px;
+}
+body.hero-p2 #hero .browser { transform: perspective(1300px) rotateY(0deg) !important; }   /* straighten on scroll into P2+ */
+
+#hero .hero-copy {
+  transition: opacity 0.5s ease, transform 0.65s cubic-bezier(.4,0,.2,1);
+}
+body.hero-p2 #hero .hero-copy {
+  opacity: 0;
+  transform: translateX(-100px);
+  pointer-events: none;
+}
+
+#hero .hw-card { transition: transform 0.45s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; }
+body.hero-p2 #hero .hw-card  { opacity: 0 !important; pointer-events: none; }
+#hero .hw-card .wordcard { transform: rotate(0deg) !important; }  /* straight cards — no tilt */
+/* big word-cards drift gently in the air once they settle (overrides lantern-v3.css, which pinned them static) */
+#hero .hw-card.rested { animation: card-bob var(--cbdur, 4.6s) ease-in-out infinite; animation-delay: var(--cbdel, 0s); }
+/* transitions live on the base selector so the return direction animates too */
+#hero .hw-onboard { transition: opacity 0.3s ease; }
+body.hero-p2 #hero .hw-onboard { opacity: 0; pointer-events: none; }
+/* lang pill lives in the topbar — show only in P3 (translate), hide elsewhere.
+   margin-left:auto pulls it out of the centre and groups it with the install
+   pill on the right (logo alone left, controls clustered right). */
+.topbar .hw-lang { position: static; margin-left: auto; margin-right: clamp(14px, 2vw, 26px); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+body.hero-p3 .topbar .hw-lang { opacity: 1; pointer-events: auto; transition: opacity 0.4s ease 0.5s; }
+.topbar { pointer-events: none; }
+.topbar .brand, .topbar .hw-lang, .topbar .pill { pointer-events: auto; }
+
+#hero .hero-copy   { grid-column: 1; grid-row: 1; }
+#hero .hero-stage  { grid-column: 2; grid-row: 1; position: relative; }
+
+#hero .hero-copy-p2 {
+  grid-column: 1; grid-row: 1;
+  align-self: center; min-width: 0;
+  opacity: 0; transform: translateY(56px); pointer-events: none;
+  transition: opacity 0.6s ease 0.18s, transform 0.72s cubic-bezier(.4,0,.2,1) 0.1s;
+}
+body.hero-p2 #hero .hero-copy-p2 { opacity: 1; transform: none; pointer-events: auto; }
+#hero .hero-copy-p2 .p2-eyebrow,
+#hero .hero-copy-p3 .p2-eyebrow,
+#hero .hero-copy-p4 .p2-eyebrow {
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+  font-size: 12px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--amber-deep, #c96b00); margin-bottom: 22px;
+}
+#hero .hero-copy-p2 h2,
+#hero .hero-copy-p3 h2,
+#hero .hero-copy-p4 h2 {
+  font-weight: 700; letter-spacing: -.035em;
+  font-size: clamp(36px, 4vw, 56px); line-height: 1.04; margin: 0 0 26px;
+}
+#hero .hero-copy-p2 .p2-sub,
+#hero .hero-copy-p3 .p2-sub,
+#hero .hero-copy-p4 .p2-sub {
+  font-size: clamp(15px, 1.5vw, 18px); color: var(--ink-70, rgba(26,23,20,.7));
+  line-height: 1.58; max-width: 36ch; margin: 0;
+}
+
+/* clip-path reveal (overflow:visible lets simp-dot extend left) + animated max-height
+   so the layout height grows with the reveal instead of snapping in one frame */
+.hero-extra {
+  overflow: visible;
+  opacity: 0;
+  max-height: 0;
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 1s cubic-bezier(.4,0,.2,1) 0.12s, opacity 0.65s ease 0.3s, max-height 1s cubic-bezier(.4,0,.2,1) 0.12s;
+}
+body.hero-p2 .hero-extra {
+  clip-path: inset(0 -10px -40px -34px); /* negative left lets dot peek out */
+  max-height: 500px;
+  opacity: 1;
+}
+
+.scroll-cue { transition: opacity 0.3s ease; }
+body.hero-p2 .scroll-cue { opacity: 0; }
+
+/* worddeck: lift at-hero suppression in phase 2 */
+body.hero-p2 #worddeck {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transition: opacity 0.35s ease, transform 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+/* topbar stays transparent through every hero phase — modern floating header,
+   no frosted band, no hairline. The controls (dark logo, gloss selector, dark
+   pill) read fine on the light hero, and the content sits below the header line. */
+body.hero-p2.at-hero .topbar {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+body.hero-p2.at-hero .topbar .nav-links {
+  opacity: 1 !important; pointer-events: auto !important;
+  transition: opacity 0.35s ease 0.2s;
+}
+body.hero-p2.at-hero .pill {
+  opacity: 1 !important; visibility: visible !important;
+  pointer-events: auto !important;
+  transition: opacity 0.35s ease 0.25s, visibility 0s;
+}
+
+/* left nav dots */
+.m-dotnav {
+  position: fixed; left: 28px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 8px; z-index: 200;
+}
+.m-dot-wrap {
+  display: flex; align-items: center; gap: 9px;
+  cursor: pointer; background: none; border: none; padding: 0;
+}
+.m-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(26,23,20,.25); flex-shrink: 0;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+.m-dot-lbl {
+  font-family: var(--mono, monospace); font-size: 10px;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(26,23,20,.35); white-space: nowrap;
+  opacity: 0; transition: color 0.3s ease, opacity 0.2s ease;
+}
+/* active tab — orange icon */
+.m-dot-wrap.on .m-dot { background: var(--amber, #ef8e1c); transform: scale(1.5); }
+.m-dot-wrap.on .m-dot-lbl { color: var(--amber-deep, #c96b00); }
+/* hover (non-active) — darken to black */
+.m-dot-wrap:not(.on):hover .m-dot { background: var(--ink, #1a1714); }
+.m-dot-wrap:not(.on):hover .m-dot-lbl { color: var(--ink, #1a1714); }
+
+/* === magnetic m-dotnav (mirrors index.html dotnav mechanic) === */
+/* cancel the naive full-nav hover; per-dot opacity driven by --m instead */
+.m-dotnav:hover .m-dot-lbl { opacity: 0; }
+/* lean + swell driven by CSS vars set by JS */
+.m-dot-wrap {
+  transform: translateX(calc(var(--near, 0) * 6px + var(--m, 0) * 12px));
+  transition: transform 0.14s ease-out;
+}
+.m-dotnav.peek .m-dot-lbl {
+  opacity: var(--m, 0);
+  transform: none;
+  transition: opacity 0.12s, transform 0.14s;
+}
+
+/* hero simplify dot: fade in after text is visible */
+#hero-simp-dot { opacity: 0; pointer-events: none; transition: opacity 0.35s ease 1s; }
+body.hero-p2 #hero-simp-dot { opacity: 1; pointer-events: auto; }
+/* …but never in P3/P4 (hero-p2 stays on body there): the dot is invisible yet an explicit
+   pointer-events:auto re-enables hit-testing through the page-en's pointer-events:none */
+body.hero-p3 #hero-simp-dot { pointer-events: none !important; }
+/* hover the dot → light amber wash hints "this paragraph will simplify" */
+#hero .sv-para.simp { border-radius: 9px; transition: background 0.25s ease; }
+#hero .sv-para.simp:has(#hero-simp-dot:hover) { background: rgba(239,142,28,0.10); }
+
+/* ===== HERO PHASE 3 — Translate ===== */
+
+/* All three article layers stay position:absolute — simultaneous crossfade, no layout shifts */
+#hero .browser .page { min-height: 320px; }
+
+#hero .page-en {
+  position: absolute; top: 0; left: 0; right: 0;
+  overflow: visible;
+  transition: opacity 0.26s ease;
+}
+body.hero-p3 #hero .page-en { opacity: 0; pointer-events: none; transition: opacity 0.20s ease; }
+
+/* translation page */
+#hero .tr-page {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 26px 32px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.26s ease, padding-right 0.45s cubic-bezier(.34,.1,.64,1);
+}
+body.hero-p3 #hero .tr-page { opacity: 1; pointer-events: auto; transition: opacity 0.34s ease, padding-right 0.45s cubic-bezier(.34,.1,.64,1); }
+
+/* layer-swap must not move text: .hl and .sel carry 3px side padding, pulled
+   back with negative margins so both layers flow exactly like plain text —
+   P2→P3 changes the affordance, never the position */
+#hero .page-en .hl { margin: 0 -3px; }
+#hero .tr-page .sel { margin: -1px -3px; }
+
+/* p2 copy exits */
+body.hero-p3 #hero .hero-copy-p2 { opacity: 0; transform: translateX(-120px); pointer-events: none; }
+
+/* browser stays at p2 position — hero-stage inherits hero-p2 transform */
+
+/* browser nudges left when the translate panel opens, giving it room */
+body.hero-p3 #hero.panel-open .hero-stage { transform: translateX(calc(-5vw - 2% - 36px)); }
+
+/* p3 copy slides in */
+#hero .hero-copy-p3 {
+  grid-column: 1; grid-row: 1;
+  align-self: center; min-width: 0;
+  opacity: 0; transform: translateY(48px); pointer-events: none;
+  transition: opacity 0.6s ease 0.28s, transform 0.72s cubic-bezier(.4,0,.2,1) 0.18s;
+}
+body.hero-p3 #hero .hero-copy-p3 { opacity: 1; transform: none; pointer-events: auto; }
+
+/* tpanel: appears at fixed position, then tilts 4deg right */
+#hero .tpanel {
+  position: fixed; bottom: 22%; right: calc(3% - 60px); left: auto; width: 360px;
+  transform: rotateZ(0deg);
+  transform-origin: center center;
+  opacity: 0;
+  animation: none;
+  transition: opacity 0.26s ease, transform 0.5s cubic-bezier(.34,.1,.64,1) 0.26s;
+}
+#hero .tpanel.show { opacity: 1; transform: rotateZ(4deg); }
+
+/* swap emphasis: original (src) recedes to grey, translation (tgt) is pure black, prominent */
+#hero .tpanel .src { color: var(--ink-70); }
+#hero .tpanel .tgt,
+#hero .tpanel .tgt .tw { color: #000; }
+
+/* ===== HERO PHASE 4 — Discuss (the page talks back) =====
+   The floating tilted chat is retired: a side panel docks INSIDE the browser
+   frame, flush under the toolbar — the exact shape of a real Chrome side
+   panel. The article stays visible on the left as grounding. */
+
+/* p3 copy exits, p4 copy slides in — mirror of the p2->p3 swap */
+body.hero-p4 #hero .hero-copy-p3 { opacity: 0; transform: translateX(-120px); pointer-events: none; }
+#hero .hero-copy-p4 {
+  grid-column: 1; grid-row: 1;
+  align-self: center; min-width: 0;
+  opacity: 0; transform: translateY(44px); pointer-events: none;
+  transition: opacity 0.6s ease 0.28s, transform 0.72s cubic-bezier(.4,0,.2,1) 0.18s;
+}
+body.hero-p4 #hero .hero-copy-p4 { opacity: 1; transform: none; pointer-events: auto; }
+
+/* the translate sentences go quiet — P4 reads the article, doesn't translate it */
+body.hero-p4 #hero .tr-page .sel { pointer-events: none; }
+
+/* this headline runs one word longer than its siblings — a notch smaller
+   keeps "The page talks back." clear of the window's left edge */
+#hero .hero-copy-p4 h2 { font-size: clamp(34px, 3.4vw, 48px); }
+
+/* the vocab deck stays on screen in P4 — the "word used" spark flies to it
+   and its progress ring ticks up */
+
+/* "Discuss the article" pill — bottom-right of the page, like the real extension */
+#hero-disc-fab {
+  opacity: 0; transform: translateY(10px); pointer-events: none; z-index: 6;
+  transition: opacity 0.3s ease, transform 0.38s cubic-bezier(.2,.85,.25,1);
+}
+#hero-disc-fab.show  { opacity: 1; transform: none; pointer-events: auto; }
+#hero-disc-fab.press { transform: scale(.93); transition: transform 0.12s ease; }
+#hero-disc-fab.gone  { opacity: 0; transform: scale(.9); pointer-events: none; transition: opacity 0.22s ease, transform 0.25s ease; }
+
+/* the chat popup sits flush under the toolbar at the right of the browser frame.
+   Height is auto so the dock grows to fit its content without any internal scroll. */
+#hero-dock {
+  position: absolute; top: 56px; right: 12px; width: 308px; z-index: 5;
+  max-height: calc(100% - 66px);
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 26px 48px -20px rgba(26,23,20,.30), 0 8px 18px -10px rgba(26,23,20,.14);
+  display: flex; flex-direction: column; overflow: hidden;
+  opacity: 0; transform: translateY(-8px) scale(.97);
+  transform-origin: top right;
+  transition: opacity 0.25s ease, transform 0.38s cubic-bezier(.2,.85,.25,1);
+  pointer-events: none;
+}
+#hero-dock.show { opacity: 1; transform: none; pointer-events: auto; }
+#hero-dock .cw-body  { flex: 0 0 auto; overflow-y: visible; padding: 14px 16px 10px; }
+#hero-dock .cw-foot  { padding: 9px 12px 12px; border-top: 1px solid var(--line-soft); }
+#hero-dock .cw-bot   { font-size: 14px; line-height: 1.55; }
+#hero-dock .cw-user  { font-size: 13.5px; }
+
+/* "word used" credit: the typed word flashes green in the bubble and a
+   spark flies to its deck card, whose progress ring ticks up */
+#hero-dock .cw-user .cw-saved { box-shadow: inset 0 -2px 0 var(--green, #2f9e5f); }
+.cw-saved.used { animation: usedflash 0.9s ease; }
+@keyframes usedflash { 30% { background: rgba(47,158,95,.22); } }
+.use-spark {
+  position: fixed; z-index: 96; width: 10px; height: 10px; border-radius: 50%;
+  margin: -5px 0 0 -5px; pointer-events: none;
+  background: var(--green, #2f9e5f); box-shadow: 0 0 0 4px rgba(47,158,95,.18);
+  transition: transform 0.55s cubic-bezier(.3,.1,.3,1), opacity 0.2s ease 0.4s;
+}
+
+/* skeleton shimmer while "reading" — brief and honest */
+.dk-skel { display: flex; flex-direction: column; gap: 9px; padding: 4px 0; transition: opacity 0.22s ease; }
+.dk-skel i {
+  height: 11px; border-radius: 6px;
+  background: linear-gradient(100deg, var(--paper-2, #eeedea) 38%, #f8f6f2 50%, var(--paper-2, #eeedea) 62%);
+  background-size: 220% 100%;
+  animation: dkshine 1.1s linear infinite;
+}
+.dk-skel i:nth-child(2) { width: 88%; }
+.dk-skel i:nth-child(3) { width: 72%; }
+@keyframes dkshine { from { background-position: 130% 0; } to { background-position: -90% 0; } }
+.dk-skel.out { opacity: 0; }
+
+/* summary: mono micro-label + three bullets that stream in */
+.dk-label {
+  font-family: var(--mono, monospace); font-size: 10px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--ink-45, #8d877e);
+  margin: 2px 0 9px; opacity: 0; transition: opacity 0.4s ease;
+}
+.dk-label.on { opacity: 1; }
+.dk-label .lvl { color: var(--green, #2f9e5f); }
+.dk-b { display: flex; gap: 9px; font-size: 14px; line-height: 1.5; color: var(--ink, #1a1714); padding: 3px 0; }
+.dk-b .dk-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--amber, #ef8e1c); margin-top: 8px; flex-shrink: 0; opacity: 0; transition: opacity 0.3s ease; }
+.dk-b.live .dk-dot { opacity: 1; }
+
+/* the sentence an answer cites pulses amber in the article — grounding made visible */
+#hero .tr-page .sel.cite { animation: citepulse 1.25s ease 2; border-radius: 4px; }
+@keyframes citepulse { 0%, 100% { background: transparent; } 38% { background: rgba(239,142,28,.2); } }
+
+/* progress ring 3D pop — the ring jumps toward the viewer when a word is used */
+@keyframes ring-pop {
+  0%   { transform: none; }
+  38%  { transform: perspective(72px) translateZ(5px) scale(1.16); }
+  100% { transform: none; }
+}
+.wd-card.ring-pop { animation: ring-pop 0.52s cubic-bezier(.2,.85,.3,1) both; }
+
+/* once the page scrolls past the hero to the CTA, hero chrome bows out */
+.m-dotnav { transition: opacity 0.3s ease; }
+body.at-close .m-dotnav { opacity: 0; pointer-events: none; }
+body.past-hero #worddeck { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.3s ease; }
+
+/* ===== HERO SIMP STATE — departure-board after simplification completes ===== */
+
+@keyframes board-out {
+  from { opacity: 1; transform: rotateX(0deg);   }
+  to   { opacity: 0; transform: rotateX(-55deg); }
+}
+@keyframes board-in {
+  from { opacity: 0; transform: rotateX(55deg); }
+  to   { opacity: 1; transform: rotateX(0deg);  }
+}
+/* "first" spreads into the gap between "We" and "invented" */
+@keyframes first-spread {
+  0%   { max-width: 0;     opacity: 0; }
+  52%  { max-width: 280px; opacity: 0; }
+  100% { max-width: 280px; opacity: 1; }
+}
+
+/* p2 copy: staggered flip-out */
+body.hero-simp #hero .hero-copy-p2 { pointer-events: none; perspective: 600px; }
+body.hero-simp #hero .hero-copy-p2 .p2-eyebrow { animation: board-out 0.2s ease-in 0s     both; transform-origin: top center; }
+body.hero-simp #hero .hero-copy-p2 h2          { animation: board-out 0.2s ease-in 0.07s   both; transform-origin: top center; }
+body.hero-simp #hero .hero-copy-p2 .p2-sub     { animation: board-out 0.2s ease-in 0.13s   both; transform-origin: top center; }
+
+/* simp-done copy */
+#hero .hero-copy-simp {
+  grid-column: 1; grid-row: 1;
+  align-self: center; min-width: 0;
+  opacity: 0; pointer-events: none;
+}
+body.hero-simp #hero .hero-copy-simp { opacity: 1; pointer-events: auto; perspective: 600px; }
+body.hero-simp #hero .hero-copy-simp .sc-pre { animation: board-in 0.26s cubic-bezier(.2,.8,.3,1) 0.14s both; transform-origin: bottom center; }
+body.hero-simp #hero .hero-copy-simp .sc-h   { animation: board-in 0.26s cubic-bezier(.2,.8,.3,1) 0.26s both; transform-origin: bottom center; }
+
+#hero .hero-copy-simp .sc-pre {
+  font-size: clamp(16px, 1.6vw, 22px);
+  color: var(--ink-70, rgba(26,23,20,.7));
+  margin: 0 0 20px; line-height: 1.5;
+}
+#hero .hero-copy-simp .sc-h {
+  font-weight: 700; letter-spacing: -.03em;
+  font-size: clamp(32px, 3.8vw, 52px); line-height: 1.08; margin: 0;
+}
+
+/* "first" — collapses to zero-width initially so "We invented" reads naturally,
+   then the gap spreads open and "first" appears inside it */
+#hero .hero-copy-simp .sc-first {
+  display: inline-block; overflow: hidden;
+  max-width: 0; opacity: 0; vertical-align: baseline;
+  color: var(--amber-deep, #c96b00);
+}
+body.hero-simp #hero .hero-copy-simp .sc-first {
+  animation: first-spread 0.68s cubic-bezier(.3,1,.4,1) 0.55s both;
+}
+
+/* ===== HERO PHASE 5 — In-page exercises ===== */
+
+/* p4 copy exits when P5 arrives (hero-p4 class is removed, so copy-p4 reverts to hidden;
+   hero-copy-p5 enters with the same slide-in pattern as p2/p3/p4) */
+#hero .hero-copy-p5 {
+  grid-column: 1; grid-row: 1;
+  align-self: center; min-width: 0;
+  opacity: 0; transform: translateY(44px); pointer-events: none;
+  transition: opacity 0.6s ease 0.28s, transform 0.72s cubic-bezier(.4,0,.2,1) 0.18s;
+}
+body.hero-p5 #hero .hero-copy-p5 { opacity: 1; transform: none; pointer-events: auto; }
+/* hero-p3 stays on the body in P5 (additive classes), so the P3 copy is still
+   "on" — slide it out, the way P4 does, or it double-exposes under the P5 copy */
+body.hero-p5 #hero .hero-copy-p3 { opacity: 0; transform: translateX(-120px); pointer-events: none; }
+
+/* ex-page: absolutely positioned by default (like .tr-page), shown in P5 */
+#hero .ex-page {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 26px 32px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease, padding-right 0.45s cubic-bezier(.34,.1,.64,1);
+}
+body.hero-p5 #hero .ex-page {
+  opacity: 1; pointer-events: auto;
+  transition: opacity 0.34s ease;
+}
+/* hero-p3 stays active in P5 (browser stays wide), but tr-page must hide */
+body.hero-p5 #hero .tr-page {
+  opacity: 0; pointer-events: none; position: absolute;
+  padding-right: 0; transition: opacity 0.20s ease;
+}
+
+/* HUD (inq-hud reused from lantern-v3.css) — hidden until P5 */
+#hero .hx-hud { display: none; }
+body.hero-p5 #hero .hx-hud { display: block; }
+
+/* menu dropdowns inside the browser — open upward so they don't overflow the frame */
+#hero .ex-page .inqgap .menu {
+  top: auto; bottom: calc(100% + 7px);
+}
+
+/* ===== CTA CHARGE — the six features wire into the install button =====
+   Cards + wires live in .cta-dock, built by lantern-cta-charge.js.
+   z:-1 keeps them under the headline/button but over the page background. */
+.cta-dock { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+/* the six feature cards breathe — each orbits a tiny ellipse (radius --ax/--ay)
+   with its own period (--fd) and a negative --fdelay, so the six never bob in
+   unison. The translate composes the -50%,-50% centring so they stay anchored;
+   the wires re-glue to the live card position every frame (lantern-cta-charge.js). */
+@keyframes dkFloat {
+  0%   { transform: translate(calc(-50% + var(--ax,5px)), calc(-50% + var(--ay,5px))); }
+  25%  { transform: translate(calc(-50% - var(--ay,5px)), calc(-50% + var(--ax,5px))); }
+  50%  { transform: translate(calc(-50% - var(--ax,5px)), calc(-50% - var(--ay,5px))); }
+  75%  { transform: translate(calc(-50% + var(--ay,5px)), calc(-50% - var(--ax,5px))); }
+  100% { transform: translate(calc(-50% + var(--ax,5px)), calc(-50% + var(--ay,5px))); }
+}
+#ev-close .dk-card { animation: dkFloat var(--fd, 8s) ease-in-out var(--fdelay, 0s) infinite; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { #ev-close .dk-card { animation: none; } }
+/* the heat ramp: JS lerps background-color ink → amber in 10 even steps
+   (one per bead arrival); the linear transition blurs the steps into one
+   continuous warming — no binary flip at the end */
+#ev-close .d1-install { transition: transform .2s cubic-bezier(.3,.9,.3,1), box-shadow .2s ease, background-color .65s linear; }
+.d1-install.blazing { box-shadow: 0 22px 48px -18px rgba(239,142,28,.7), 0 3px 9px -4px rgba(26,23,20,.3); }
+/* touches of warmth: each bead that sinks under the rim continues INSIDE the
+   pill as a glowing trace — it keeps the bead's trajectory and fades out,
+   clipped to the pill shape */
+.d1-warm { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 1; }
+.d1-install > span:not(.d1-warm) { position: relative; z-index: 2; }
+.d1-touch { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,186,84,.95), rgba(239,142,28,.4) 50%, transparent 72%);
+  --dx: 0px; --dy: 0px;
+  animation: warm-touch .6s ease-out forwards; }
+@keyframes warm-touch { 0% { opacity: .95; transform: scale(.4) translate(0,0); } 100% { opacity: 0; transform: scale(1.05) translate(var(--dx), var(--dy)); } }
+@media (max-width: 979px) { .cta-dock { display: none; } }
+/* docked entry: when the finale's flip-clones deliver the cards, the real dock
+   cards must appear INSTANTLY where the clones land — no fade/slide */
+.dk-card.snap .dk-in { transition: none; opacity: 1; transform: none; }
+/* ── finale → CTA flip transition: each article card flies to its dock slot and
+   flips to reveal the feature it powers (lantern-everywhere.js builds these) ── */
+.flip-clone { position: fixed; left: 0; top: 0; z-index: 1200; pointer-events: none; perspective: 1300px; will-change: transform; }
+.fc-rot { position: relative; transform-style: preserve-3d; }
+.fc-front, .fc-back { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.fc-back { transform: translate(-50%, -50%) rotateY(180deg); }
+.fc-front .pg { margin: 0; }
+.fc-back .dk-card { position: relative !important; left: auto !important; top: auto !important; transform: none !important; animation: none !important; }
+@media (max-width: 979px) { .flip-clone { display: none; } }
+/* ═══════════ ONE-SCREEN MODEL ═══════════
+   Everywhere + CTA are NOT scroll sections — they are phase overlays of the one
+   pinned hero screen. No scrolling between screens: the browser window morphs
+   through the hero phases → splits into the six pages (ph-ev) → the pages dock
+   into the install button (ph-cta). Driven by the hero phase engine. */
+#finale, #ev-close { position: fixed; inset: 0; z-index: 40; opacity: 0; pointer-events: none; transition: opacity .55s ease; }
+body.ph-ev  #finale   { opacity: 1; pointer-events: auto; }
+body.ph-cta #ev-close { opacity: 1; pointer-events: auto; z-index: 50; }
+body.ph-cta #finale   { opacity: 0; pointer-events: none; }
+/* the hero bows out behind the overlays once we leave its phases.
+   !important: lantern-v3.js's scroll loop writes #hero opacity inline every frame,
+   so a plain rule would lose to it and the hero would never hide. */
+body.ph-ev #hero, body.ph-cta #hero { opacity: 0 !important; pointer-events: none; transition: opacity .55s ease; }
+/* nav dots fade on the CTA phase (replaces the old at-close hook) */
+body.ph-cta .m-dotnav { opacity: 0; pointer-events: none; }
+/* MY VOCAB deck belongs to the hero — on the CTA it just overlaps the dock cards
+   (and a body.at-hero.vocab-on rule keeps forcing it visible since at-hero never
+   flips off here). Glide it off to the right + fade: "your words are collected,
+   now it all lives in one click". Keyed on ph-cta so it auto-restores (slides
+   back) when you leave the CTA. The 4-class selector out-specifies the forced
+   rule (1,3,1 > 1,2,1) so it wins without !important on the transform. */
+body.ph-cta #worddeck,
+body.ph-cta.at-hero.vocab-on #worddeck {
+  opacity: 0 !important;
+  transform: translateX(150%) !important;
+  pointer-events: none !important;
+  transition: transform .55s cubic-bezier(.4,0,.2,1), opacity .45s ease;
+}
+/* the scroll gate nudges the cue when you try to scroll past without acting:
+   a single downward bounce + amber emphasis says "do something here" (the bob
+   keeps breathing underneath via the stacked animation) */
+.ev-cue.nudge { animation: evCueBreathe 2.6s ease-in-out infinite, cueNudge .52s cubic-bezier(.3,.9,.3,1); color: var(--amber-deep); }
+@keyframes cueNudge { 0%,100% { transform: translateY(0); } 35% { transform: translateY(5px); } 70% { transform: translateY(0); } }
+/* the streak as the button's echo: days 2..10 moved out of .d1-track
+   (lantern-cta-charge.js) into a compact centred row under the button,
+   so the button itself sits dead-centre as the heart of the charge scene */
+#ev-close .d1-echo { display: flex; align-items: center; justify-content: center; gap: 8px; max-width: 100%; padding: 0 16px; margin-top: 20px; }
+#ev-close .d1-echo .d1-daycell { width: 34px; height: 34px; border-radius: 10px; font-size: 12px; }
+/* days 2..10 ride in their own wrapper so the promise collapses in one move
+   once it has played; day 1 + label stay */
+#ev-close .d1-futures { display: inline-flex; align-items: center; gap: 8px; overflow: hidden; max-width: 640px; opacity: 1; transition: max-width .6s cubic-bezier(.4,0,.2,1), opacity .45s ease, margin-left .6s cubic-bezier(.4,0,.2,1); }
+#ev-close .d1-echo.faded .d1-futures { max-width: 0; opacity: 0; margin-left: -8px; }
+/* the streak names itself: a quiet label + day 1 as the row's anchor —
+   faint amber before ignition, fully lit (and staying lit) after */
+#ev-close .d1-echo-lab { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: rgba(26,23,20,.35); margin-right: 8px; }
+#ev-close .d1-echo .d1-daycell.day1 { background: rgba(239,142,28,.12); border-color: rgba(239,142,28,.38); color: var(--amber-deep, #c96b00); }
+#ev-close .d1-echo .d1-daycell.day1.lit { background: var(--amber); border-color: var(--amber); color: #fff; }
+/* shorter label ("Add to Chrome", set by lantern-cta-charge.js) buys a bigger button */
+#ev-close .d1-install { font-size: 21px; padding: 19px 30px 19px 23px; gap: 14px; }
+#ev-close .d1-install .d1-chrome { width: 30px; height: 30px; }
+/* hero CTA → full pill, matching the topbar pill and the final install button
+   (base .btn-install is a 14px rounded-rect; main.html only, index stays as-is) */
+#hero .btn-install { border-radius: 999px; }
+/* the persistent browser window is cropped 20% shorter in EVERY phase (consistent
+   size — it never grows back). A flat 90° cut reads as broken, so the clip keeps
+   ROUNDED corners (round 16px). clip-path eats the (downward) box shadow, so it's
+   re-cast as a drop-shadow on .floatwrap (which now wraps only the browser — the
+   Discuss chat was lifted out to .float), hugging the rounded cut silhouette.
+   The chat + translate panels float OUTSIDE the window, so the crop never touches
+   their buttons. #hero scope keeps the morph clones (in body) full + unclipped. */
+#hero .browser { clip-path: inset(0 0 20% round 16px); box-shadow: none !important; }
+#hero .floatwrap { filter: drop-shadow(0 36px 50px rgba(58,36,2,.20)) drop-shadow(0 10px 22px rgba(26,23,20,.12)); }
+</style>
+<script>
+(function () {
+  var d = document.documentElement;
+  d.classList.add('fonts-loading');
+  var done = false, cbs = [];
+  function ready() {
+    if (done) return; done = true;
+    d.classList.remove('fonts-loading'); d.classList.add('fonts-ready');
+    cbs.forEach(function (f) { try { f(); } catch (e) {} }); cbs = null;
+  }
+  window.whenFontsReady = function (cb) { done ? cb() : cbs.push(cb); };
+  try {
+    if (document.fonts && document.fonts.load) {
+      Promise.all([
+        document.fonts.load('700 1em "General Sans"'),
+        document.fonts.load('500 1em "General Sans"'),
+        document.fonts.load('400 1em "General Sans"'),
+        document.fonts.load('500 1em "JetBrains Mono"')
+      ]).then(ready).catch(ready);
+      document.fonts.ready.then(ready);
+    } else { ready(); }
+  } catch (e) { ready(); }
+  setTimeout(ready, 2000);
+})();
+</script>
+</head>
+<body class="at-hero">
+<div id="bg"></div>
+<div id="grain"></div>
+
+<!-- NAV -->
+<div class="topbar" id="topbar">
+  <div class="brand"><span class="lmark"></span><span class="wm">Lant<span class="en">e</span>rn</span></div>
+  <button class="pill"><span class="g-ico"></span>Add to Chrome</button>
+</div>
+
+<!-- NAV DOTS -->
+<nav class="m-dotnav" aria-label="Hero screens">
+  <button class="m-dot-wrap on" id="m-dot-1" aria-label="Home">
+    <span class="m-dot"></span><span class="m-dot-lbl">Home</span>
+  </button>
+  <button class="m-dot-wrap" id="m-dot-2" aria-label="Simplify">
+    <span class="m-dot"></span><span class="m-dot-lbl">Simplify</span>
+  </button>
+  <button class="m-dot-wrap" id="m-dot-3" aria-label="Translate">
+    <span class="m-dot"></span><span class="m-dot-lbl">Translate</span>
+  </button>
+  <button class="m-dot-wrap" id="m-dot-4" aria-label="Discuss">
+    <span class="m-dot"></span><span class="m-dot-lbl">Discuss</span>
+  </button>
+  <button class="m-dot-wrap" id="m-dot-5" aria-label="Practice">
+    <span class="m-dot"></span><span class="m-dot-lbl">Practice</span>
+  </button>
+  <button class="m-dot-wrap" id="m-dot-ev" aria-label="Everywhere">
+    <span class="m-dot"></span><span class="m-dot-lbl">Everywhere</span>
+  </button>
+  <button class="m-dot-wrap" id="m-dot-6" aria-label="Get Lantern">
+    <span class="m-dot"></span><span class="m-dot-lbl">Install</span>
+  </button>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="hero" data-sect data-tx="rise" data-screen-label="Hero">
+  <div class="hero-inner wrap">
+
+    <!-- COLUMN 1 — phase 1 copy -->
+    <div class="hero-copy">
+      <div class="hero-eyebrow">The living dictionary</div>
+      <h1 class="disp reveal-lines">Every word<br />you actually use</h1>
+      <p class="hsub">Save words as you read. Lantern weaves them back into the next thing you read — until they stick.</p>
+      <div class="hcta">
+        <button class="btn-install">
+          <span class="g-ico"></span>
+          <span class="il"><span class="t1">Add to Chrome</span><span class="t2">Free to start · no account needed</span></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- COLUMN 2 — browser (stays through both phases) -->
+    <div class="hero-stage">
+      <div class="float" data-speed="-0.08" style="top:8%;left:-1%;z-index:1">
+        <div class="floatwrap" style="--dur:8s;--del:0s">
+          <div class="browser" style="box-shadow:0 72px 124px -46px rgba(58,36,2,.22),0 18px 38px -20px rgba(26,23,20,.16)">
+            <div class="bbar"><div class="bdots"><i></i><i></i><i></i></div><div class="url">nationalgeographic.com</div></div>
+            <div class="page" style="font-size:16.5px;line-height:1.72;position:relative">
+              <!-- English content — Phase 1 & 2 -->
+              <div class="page-en" style="padding:26px 32px">
+                <p style="font-family:'General Sans',sans-serif;font-weight:700;font-size:21px;margin:0 0 4px">The Atlantic Road</p>
+                <p style="font-size:12px;color:var(--ink-45);margin:0 0 16px">National Geographic · Travel · 6 min</p>
+                <p style="margin:0">The coastal <span class="hl" data-w="route" data-ph="/ruːt/" data-cls="blue" data-cefr="B1" data-tr="маршрут" data-tr-uk="маршрут" data-tr-es="ruta" data-tr-fr="itinéraire" data-tr-de="Route" data-tr-pt="rota" data-tr-en="path">route</span> threads along an exposed stretch of Norwegian <span class="hl" data-w="coast" data-ph="/kəʊst/" data-cls="green" data-cefr="B1" data-tr="узбережжя" data-tr-uk="узбережжя" data-tr-es="costa" data-tr-fr="côte" data-tr-de="Küste" data-tr-pt="costa" data-tr-en="shore">coast</span>, where <span class="hl" data-w="rugged" data-ph="/ˈrʌɡ.ɪd/" data-cls="red" data-cefr="B2" data-tr="скелястий" data-tr-uk="скелястий" data-tr-es="escarpado" data-tr-fr="escarpé" data-tr-de="zerklüftet" data-tr-pt="escarpado" data-tr-en="rocky">rugged</span> cliffs meet the open sea and low bridges leap from one <span class="hl" data-w="remote" data-ph="/rɪˈməʊt/" data-cls="violet" data-cefr="B1" data-tr="віддалений" data-tr-uk="віддалений" data-tr-es="remoto" data-tr-fr="éloigné" data-tr-de="abgelegen" data-tr-pt="remoto" data-tr-en="far-off">remote</span> island to the next.</p>
+                <!-- revealed in phase 2 — the dense paragraph that simplifies -->
+                <div class="hero-extra">
+                  <p class="sv-para simp" id="hero-simp-para" style="margin:18px 0 0">
+                    <button class="simp-dot" id="hero-simp-dot" aria-label="Simplify this paragraph"><span class="sd-core"></span></button>
+                    <span class="simp-body" id="hero-simp-body">Before construction, engineers conducted an exhaustive survey of this treacherous, far-flung archipelago, contending with ceaseless storms that halted progress at every turn.</span>
+                  </p>
+                </div>
+              </div>
+              <!-- English content — Phase 3 (sentences clickable for translation) -->
+              <div class="tr-page">
+                <p style="font-family:'General Sans',sans-serif;font-weight:700;font-size:21px;margin:0 0 4px">The Atlantic Road</p>
+                <p style="font-size:12px;color:var(--ink-45);margin:0 0 16px">National Geographic · Travel · 6 min</p>
+                <!-- same text as page-en, sentence-wrapped — the P2→P3 swap changes
+                     the affordance (words → sentences), never the text position -->
+                <p style="margin:0"><span class="sel" data-tr="s1" tabindex="0" role="button">The coastal route threads along an exposed stretch of Norwegian coast, where rugged cliffs meet the open sea and low bridges leap from one remote island to the next.</span></p>
+                <p style="margin:18px 0 0"><span class="sel" data-tr="s4" tabindex="0" role="button">Before construction, engineers conducted an exhaustive survey of this treacherous, far-flung archipelago, contending with ceaseless storms that halted progress at every turn.</span></p>
+              </div>
+              <!-- Phase 5 — same text, exercise gaps instead of sentence-selects -->
+              <div class="ex-page" style="padding:26px 32px">
+                <p style="font-family:'General Sans',sans-serif;font-weight:700;font-size:21px;margin:0 0 4px">The Atlantic Road</p>
+                <p style="font-size:12px;color:var(--ink-45);margin:0 0 16px">National Geographic · Travel · 6 min</p>
+                <p style="margin:0">The coastal <span class="exw" data-a="route" data-o="route|storm|path">route</span> threads along an exposed stretch of Norwegian <span class="exw" data-a="coast" data-o="coast|cliff|sea">coast</span>, where <span class="exw" data-a="rugged" data-o="rugged|gentle|steep">rugged</span> cliffs meet the open sea and low bridges leap from one <span class="exw" data-a="remote" data-o="remote|distant|local">remote</span> island to the next.</p>
+                <p style="margin:14px 0 0">Every autumn, storms drive waves across the roadway — sometimes shutting the road for days.</p>
+              </div>
+            </div>
+
+            <!-- Phase 5 — HUD with "Turn into exercises" button -->
+            <div class="inq-hud hx-hud" id="hx-hud">
+              <div class="hud-activate">
+                <span class="ha-text"><span class="ha-dot"></span>4 saved words hidden in this page</span>
+                <button class="ha-go" id="hx-toggle" type="button"><span class="lmark"></span>Turn into exercises</button>
+              </div>
+              <div class="hud-track">
+                <div class="hud-main"><span class="hud-cue" id="hx-cue">Tap a gap and choose the right word</span><span class="hud-count" id="hx-count"><b>0</b> / 4</span></div>
+                <div class="hud-prog" id="hx-prog"></div>
+              </div>
+            </div>
+
+            <!-- Phase 4 — "Discuss the article" pill + side panel docked inside the
+                 browser frame, the way the real extension opens -->
+            <button class="disc-fab" id="hero-disc-fab" type="button" aria-hidden="true" tabindex="-1"><span class="lmark"></span>Discuss the article</button>
+          </div>
+        </div>
+      </div>
+      <!-- Discuss chat — lifted OUT of the browser so the cropped window + its
+           overflow:hidden never slice the chat's composer/send buttons; it floats
+           over the window like the translate panel, free to grow past the frame -->
+      <aside id="hero-dock" aria-hidden="true" aria-label="Discuss the article">
+        <div class="cw-head">
+          <span class="dc-ava"><span class="lmark"></span></span>
+          <div class="dc-id">
+            <span class="dc-name">Discuss the article</span>
+            <span class="dc-src">nationalgeographic.com · The Atlantic Road</span>
+          </div>
+        </div>
+        <div class="cw-body" id="dock-body"></div>
+        <div class="cw-foot">
+          <div class="cw-composer">
+            <input placeholder="Ask about this article…" readonly tabindex="-1" aria-hidden="true" />
+            <div class="cw-row">
+              <button class="cw-send" type="button" aria-label="Send" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <!-- Translation panel — positioned in hero-stage so it floats right of browser -->
+      <div class="tpanel" id="hero-tpanel">
+        <div class="th"><span class="t">Translate</span><button class="close" id="hero-tp-close" aria-label="close">✕</button></div>
+        <div class="tb">
+          <div class="trow"><div class="src" id="hero-tp-src"></div></div>
+          <div class="trow"><div class="tgt" id="hero-tp-tgt"></div></div>
+        </div>
+        <div class="tf">
+          <span class="langpill on">EN</span>
+          <button id="hero-tp-swap" style="margin:0 8px;background:none;border:none;cursor:pointer;color:var(--ink-45);font-size:15px;padding:2px 4px;border-radius:5px;transition:color .15s,background .15s" title="Swap languages">⇄</button>
+          <span class="langpill on" id="hero-tp-lang">UK</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PHASE 2 COPY — slides into col 1 -->
+    <div class="hero-copy-p2">
+      <div class="p2-eyebrow">Save &amp; Simplify</div>
+      <h2>Tap a word.<br>Keep it for good.</h2>
+      <p class="p2-sub">Every word is tappable — save it to your shelf. Hit the orange dot and watch a dense paragraph simplify to your level, weaving your saved words back in.</p>
+    </div>
+
+    <!-- PHASE 3 COPY — Translate -->
+    <div class="hero-copy-p3">
+      <div class="p2-eyebrow">Translate</div>
+      <h2>Click a sentence.<br>Read it in yours.</h2>
+      <p class="p2-sub">Lantern translates in context — whole thoughts, not word by word. Your language, right in the page.</p>
+    </div>
+
+    <!-- PHASE 4 COPY — Discuss -->
+    <div class="hero-copy-p4">
+      <div class="p2-eyebrow">Discuss</div>
+      <h2>Click Discuss.<br>The page talks back.</h2>
+      <p class="p2-sub">One click and Lantern has read the whole article. You get a short summary at your level — then ask about any fact on the page, with your saved words woven back in.</p>
+    </div>
+
+    <!-- PHASE 5 COPY — Practice -->
+    <div class="hero-copy-p5">
+      <div class="p2-eyebrow" style="font-family:var(--mono,'JetBrains Mono',monospace);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber-deep,#c96b00);margin-bottom:22px">Practice</div>
+      <h2 style="font-weight:700;letter-spacing:-.035em;font-size:clamp(36px,4vw,56px);line-height:1.04;margin:0 0 26px">Your words,<br>hidden in the page.</h2>
+      <p class="p2-sub">Flip a switch and your saved words fly into the text as gaps — practice woven into the reading. Tap a gap and choose the right word.</p>
+    </div>
+
+    <!-- SIMP DONE COPY — departure-board reveal after word stream finishes -->
+    <div class="hero-copy-simp">
+      <p class="sc-pre">Your words come back.</p>
+      <p class="sc-h">We<span class="sc-first"> first</span> invented<br>the living dictionary.</p>
+    </div>
+
+  </div>
+
+  <div class="scroll-cue"><span>Scroll</span><span class="ln"></span></div>
+</header>
+
+<!-- ============ ACT III — EVERYWHERE ============ -->
+<section class="ev" id="finale" data-screen-label="Everywhere">
+
+  <div class="ev-eye"><span class="idx">Part III</span><span class="bar"></span>Everywhere</div>
+  <h2 class="ev-title">You can read<br />anything now.</h2>
+  <p class="ev-sub">A news article, a forum thread, a long read, a research paper &#8212; a lasagna recipe.</p>
+
+  <div class="ev-wall" id="ev-wall">
+
+    <div class="pg-float" style="--dur:7.2s;--del:0s">
+      <article class="pg">
+        <div class="pg-bar"><span class="pg-fav" style="background:#bb1919">B</span><span class="pg-url">bbc.com/travel</span><span class="pg-kind">News</span></div>
+        <div class="pg-body">
+          <div class="pg-head">Norway&#8217;s Atlantic Road: a drive at the edge of the sea</div>
+          <div class="pg-stack">
+            <p class="t-hard">The coastal route threads past treacherous cliffs to the very brink where the surf is most unforgiving.</p>
+            <p class="t-easy" data-text="The road runs along steep cliffs, right out at the edge where the waves come in the very hardest."></p>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="pg-float" style="--dur:8.4s;--del:.6s">
+      <article class="pg">
+        <div class="pg-bar"><span class="pg-fav" style="background:#ff4500">R</span><span class="pg-url">reddit.com/r/todayilearned</span><span class="pg-kind">Thread</span></div>
+        <div class="pg-body">
+          <div class="pg-head">TIL Norway built a road across the open sea</div>
+          <div class="pg-stack">
+            <p class="t-hard">Storm swell periodically engulfs the causeway, yet the traffic persists across it largely unabated.</p>
+            <p class="t-easy" data-text="In big storms the sea washes right over the road, and yet people just keep on driving across it."></p>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="pg-float" style="--dur:6.6s;--del:1.1s">
+      <article class="pg">
+        <div class="pg-bar"><span class="pg-fav" style="background:#1b1b1b">W</span><span class="pg-url">en.wikipedia.org</span><span class="pg-kind">Reference</span></div>
+        <div class="pg-body">
+          <div class="pg-head">Atlantic Ocean Road</div>
+          <div class="pg-stack">
+            <p class="t-hard">Constructed upon an archipelago of low-lying skerries, the route is linked by eight cantilever bridges.</p>
+            <p class="t-easy" data-text="Built across a long chain of small rocky islands, the road is joined together by a set of eight bridges."></p>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="pg-float" style="--dur:8.8s;--del:.3s">
+      <article class="pg">
+        <div class="pg-bar"><span class="pg-fav" style="background:#b31b1b">X</span><span class="pg-url">arxiv.org/abs/2406.01155</span><span class="pg-kind">Paper</span></div>
+        <div class="pg-body">
+          <div class="pg-head">On the aerodynamics of low coastal bridges</div>
+          <div class="pg-stack">
+            <p class="t-hard">We characterise spans subjected to relentless hydrodynamic loading and sustained crosswind excitation.</p>
+            <p class="t-easy" data-text="We look at how the bridge holds up under the constant pounding of waves and strong winds from the side."></p>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="pg-float" style="--dur:7.8s;--del:1.4s">
+      <article class="pg">
+        <div class="pg-bar"><span class="pg-fav" style="background:#1a1a1a">A</span><span class="pg-url">theatlantic.com</span><span class="pg-kind">Essay</span></div>
+        <div class="pg-body">
+          <div class="pg-head">The road that fought the sea &#8212; and won</div>
+          <div class="pg-stack">
+            <p class="t-hard">For seven years the endeavour proved indomitable against the relentlessly encroaching Atlantic tide.</p>
+            <p class="t-easy" data-text="For seven long years the rising sea kept winning the fight against the crews &#8212; until, at last, it didn&#8217;t."></p>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="pg-float" style="--dur:7.0s;--del:.9s">
+      <article class="pg">
+        <div class="pg-bar"><span class="pg-fav" style="background:#ff0000">&#9658;</span><span class="pg-url">youtube.com/watch</span><span class="pg-kind">Video</span></div>
+        <div class="pg-body">
+          <div class="pg-head">Driving the Atlantic Road in a full storm &#8212; 4K</div>
+          <div class="pg-stack">
+            <p class="t-hard">The dashcam captures the instant the swell breaches the parapet and inundates the carriageway.</p>
+            <p class="t-easy" data-text="You can see the exact moment a wave breaks over the wall and floods the road."></p>
+          </div>
+        </div>
+      </article>
+    </div>
+
+  </div>
+
+  <div class="ev-cue" id="ev-cue">click anywhere &#8212; <b>and you&#8217;re in &#8595;</b></div>
+
+</section>
+
+<!-- ============ CTA — compact closer (ported from index.html) ============ -->
+<section id="ev-close" data-screen-label="Read the world" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:var(--nav)">
+  <div class="close-wrap d1-wrap" data-cascade style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;padding:0 var(--gut)">
+    <div class="d1-kick">every word you save makes the next page easier</div>
+    <h2 class="disp d1-headline reveal-lines">Day one is one&nbsp;click away.</h2>
+    <div class="d1-track">
+      <button class="d1-install" id="close-cta" data-cta type="button" aria-label="Add Lantern to Chrome — free to start, no account needed."></button>
+    </div>
+    <div class="d1-fine">Free to start · no account needed</div>
+  </div>
+  <footer style="width:100%;flex-shrink:0">
+    <div class="fb"><span class="lmark"></span>Lantern</div>
+    <div class="fm">Read the world · 2026</div>
+  </footer>
+</section>
+
+<div id="flame"></div>
+<script src="lantern-v3.js"></script>
+<script src="lantern-v3-act1.js"></script>
+<script src="lantern-v3-act1b.js"></script>
+<script src="lantern-v3-act2.js"></script>
+<script src="lantern-everywhere.js"></script>
+<script src="lantern-morph.js"></script>
+<script src="lantern-hero-words.js"></script>
+<script src="lantern-v3-close.js"></script>
+<script src="lantern-cta-charge.js"></script>
+<script>
+/* ============================================================
+   Deck progress — every saved word starts barely lit (10%) and
+   earns a little progress each time it's woven back into a
+   scene or the reader uses it
+   ============================================================ */
+(function () {
+  if (!window.Shelf) return;
+  var CIRC = 62.83;        /* 2π·r — matches the r=10 ring drawn in lantern-v3.js */
+  var START = 0.10, STEP = 0.12, MAX = 0.96;
+  function ringOf(card) { var c = card && card.querySelectorAll('.wd-prog circle'); return c && c[1]; }
+  function setProg(card, p, instant) {
+    var ring = ringOf(card); if (!ring) return;
+    card.dataset.prog = p;
+    ring.style.transition = instant ? 'none' : 'stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)';
+    ring.style.strokeDashoffset = (CIRC * (1 - p)).toFixed(2);
+    if (!instant) {
+      card.classList.remove('ring-pop');
+      void card.offsetWidth;
+      card.classList.add('ring-pop');
+    }
+  }
+  var origAdd = window.Shelf.add;
+  window.Shelf.add = function (lemma, opts) {
+    var fresh = !window.Shelf.has(lemma);
+    var card = origAdd(lemma, opts);
+    if (fresh && card) setProg(card, START, true);
+    return card;
+  };
+  window.shelfProgress = function (lemma, step) {
+    var card = window.Shelf.cardEl(lemma); if (!card) return;
+    setProg(card, Math.min(MAX, (parseFloat(card.dataset.prog) || START) + (step || STEP)));
+  };
+  /* a card flying out into a scene = the word getting used — credit it */
+  var origFly = window.flyShelfCardTo;
+  if (origFly) window.flyShelfCardTo = function (lemma, rect, opts) {
+    var p = origFly(lemma, rect, opts);
+    Promise.resolve(p).then(function () { window.shelfProgress(lemma); });
+    return p;
+  };
+})();
+
+/* ============================================================
+   Phase controller — P1=Hero  P2=Simplify  P3=Translate
+   ============================================================ */
+(function () {
+  var HERO_WORDS = ['route', 'coast', 'rugged', 'remote'];
+  var phase = 0;
+  var wheelLock = false;
+  var RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var dot1        = document.getElementById('m-dot-1');
+  var dot2        = document.getElementById('m-dot-2');
+  var dot3        = document.getElementById('m-dot-3');
+  var dot4        = document.getElementById('m-dot-4');
+  var dot5        = document.getElementById('m-dot-5');
+  var dot6        = document.getElementById('m-dot-6');
+  var dotEv       = document.getElementById('m-dot-ev');
+  var navHome     = document.getElementById('nav-home');
+  var navSimplify = document.getElementById('nav-simplify');
+
+  /* the scroll engine's right-side dotnav is permanently hidden on this page —
+     drop it so its pointermove magnet exits before any layout reads */
+  var engineNav = document.querySelector('.dotnav');
+  if (engineNav && engineNav.parentNode) engineNav.parentNode.removeChild(engineNav);
+
+  /* ---- discuss dock (phase 4) ---- */
+  var dock      = document.getElementById('hero-dock');
+  var dockBody  = document.getElementById('dock-body');
+  var discFab   = document.getElementById('hero-disc-fab');
+  var dockGen   = 0;      /* bumped on every enter/leave — stale async steps bail */
+  var dockBusy  = false;
+
+  /* ---- translation panel ---- */
+  var heroTpanel  = document.getElementById('hero-tpanel');
+  var heroTpSrc   = document.getElementById('hero-tp-src');
+  var heroTpTgt   = document.getElementById('hero-tp-tgt');
+  var heroTpClose = document.getElementById('hero-tp-close');
+  var activeSel   = null;
+
+  /* reads user's chosen gloss language; falls back to 'uk' when 'en' or unset */
+  function userLang() {
+    try { var l = localStorage.getItem('lantern.gloss'); return (l && l !== 'en') ? l : 'uk'; }
+    catch (e) { return 'uk'; }
+  }
+
+  var TR = {
+    s1: {
+      en: "The coastal route threads along an exposed stretch of Norwegian coast, where rugged cliffs meet the open sea and low bridges leap from one remote island to the next.",
+      uk: "Прибережний маршрут в'ється відкритою ділянкою норвезького узбережжя, де скелясті кручі зустрічаються з відкритим морем, а низькі мости перестрибують з одного віддаленого острова на інший.",
+      es: "La ruta costera serpentea por un tramo expuesto de la costa noruega, donde acantilados escarpados se encuentran con el mar abierto y puentes bajos saltan de una isla remota a otra.",
+      fr: "La route côtière serpente le long d'un tronçon exposé de la côte norvégienne, où des falaises escarpées rencontrent le large et des ponts bas sautent d'une île isolée à l'autre.",
+      de: "Die Küstenroute schlängelt sich über einen exponierten Abschnitt der norwegischen Küste, wo schroffe Klippen auf das offene Meer treffen und niedrige Brücken von einer abgelegenen Insel zur nächsten springen.",
+      pt: "A rota costeira serpenteia por um trecho exposto da costa norueguesa, onde falésias escarpadas encontram o mar aberto e pontes baixas saltam de uma ilha remota para a outra."
+    },
+    s2: {
+      en: "Every autumn, storms drive waves across the roadway — sometimes shutting the road for days.",
+      uk: "Щовосені шторми заганяють хвилі на дорогу — іноді перекриваючи рух на кілька днів.",
+      es: "Cada otoño, las tormentas impulsan las olas sobre la calzada, a veces cerrando la carretera por días.",
+      fr: "Chaque automne, les tempêtes projettent les vagues sur la chaussée, parfois fermant la route plusieurs jours.",
+      de: "Jeden Herbst treiben Stürme Wellen über die Fahrbahn — manchmal tagelang gesperrt.",
+      pt: "Todo outono, tempestades empurram ondas sobre a pista — às vezes fechando a estrada por dias."
+    },
+    s3: {
+      en: "Engineers spent seven years building this remote crossing, fighting the open sea at every stage.",
+      uk: "Інженери витратили сім років на будівництво цього переходу, воюючи з морем на кожному етапі.",
+      es: "Los ingenieros tardaron siete años en construir este cruce remoto, luchando contra el mar en cada etapa.",
+      fr: "Les ingénieurs ont mis sept ans à construire ce passage, luttant contre la mer à chaque étape.",
+      de: "Die Ingenieure brauchten sieben Jahre für diesen Übergang und kämpften an jedem Abschnitt gegen das Meer.",
+      pt: "Os engenheiros levaram sete anos para construir esta travessia, lutando contra o mar em cada etapa."
+    },
+    s4: {
+      en: "Before construction, engineers conducted an exhaustive survey of this treacherous, far-flung archipelago, contending with ceaseless storms that halted progress at every turn.",
+      uk: "Перед будівництвом інженери провели вичерпне обстеження цього підступного, віддаленого архіпелагу, змагаючись із безперервними штормами, які раз у раз зупиняли роботу.",
+      es: "Antes de la construcción, los ingenieros realizaron un estudio exhaustivo de este archipiélago traicionero y remoto, lidiando con tormentas incesantes que detenían el avance a cada paso.",
+      fr: "Avant la construction, les ingénieurs ont mené une étude exhaustive de cet archipel traître et isolé, affrontant des tempêtes incessantes qui interrompaient les travaux à chaque étape.",
+      de: "Vor dem Bau führten die Ingenieure eine erschöpfende Vermessung dieses tückischen, abgelegenen Archipels durch und kämpften mit unablässigen Stürmen, die die Arbeiten immer wieder zum Stillstand brachten.",
+      pt: "Antes da construção, os engenheiros realizaram um levantamento exaustivo deste arquipélago traiçoeiro e remoto, enfrentando tempestades incessantes que paravam o avanço a cada passo."
+    }
+  };
+
+  function closeTPanel() {
+    if (activeSel) activeSel.classList.remove('on');
+    activeSel = null;
+    if (heroTpanel) {
+      heroTpanel.classList.remove('show');
+      document.getElementById('hero').classList.remove('panel-open');
+    }
+  }
+
+  function openTPanel(sel) {
+    var key  = sel.dataset.tr;
+    var data = TR[key];
+    if (!data || !heroTpanel) return;
+    var lang     = userLang();
+    var tgtText  = data[lang] || data.uk;
+    /* update footer lang pill */
+    var langPill = document.getElementById('hero-tp-lang');
+    if (langPill) langPill.textContent = lang.toUpperCase();
+    if (activeSel) activeSel.classList.remove('on');
+    activeSel = sel;
+    sel.classList.add('on');
+    document.querySelectorAll('#hero .tr-page .sel').forEach(function (s) { s.classList.remove('cand-pulse'); });
+    heroTpSrc.textContent = data.en;
+    heroTpTgt.innerHTML = '';
+    swapped = false;
+    heroTpanel.classList.remove('show');
+    void heroTpanel.offsetWidth;
+    heroTpanel.classList.add('show');
+    document.getElementById('hero').classList.add('panel-open');
+    tgtText.split(' ').forEach(function (w, i) {
+      if (i > 0) heroTpTgt.appendChild(document.createTextNode(' '));
+      var span = document.createElement('span');
+      span.className = 'tw';
+      span.style.animationDelay = (i * 55) + 'ms';
+      span.textContent = w;
+      heroTpTgt.appendChild(span);
+    });
+  }
+
+  if (heroTpClose) heroTpClose.addEventListener('click', closeTPanel);
+  document.querySelectorAll('#hero .tr-page .sel').forEach(function (sel) {
+    sel.addEventListener('click', function () { if (phase === 2) openTPanel(sel); });
+  });
+
+  /* ---- dots ---- */
+  function setDots(p) {
+    if (dot1)  dot1.classList.toggle('on', p === 0);
+    if (dot2)  dot2.classList.toggle('on', p === 1);
+    if (dot3)  dot3.classList.toggle('on', p === 2);
+    if (dot4)  dot4.classList.toggle('on', p === 3);
+    if (dot5)  dot5.classList.toggle('on', p === 4);
+    if (dotEv) dotEv.classList.toggle('on', p === 5);   /* Everywhere */
+    if (dot6)  dot6.classList.toggle('on', p === 6);    /* Install / CTA */
+  }
+
+  /* ── ONE-SCREEN phases 5 (Everywhere) & 6 (CTA): no scroll, no screen swap —
+        the browser window splits into the six pages, then the pages dock into the
+        install button, all as phase morphs of this same pinned screen. ── */
+  var LE = function () { return window.LanternEverywhere || null; };
+
+  /* leaving phases 5/6 back to a hero phase: drop the overlays, restore the wall */
+  function exitOverlays() {
+    var le = LE(); if (le && le.backToWall) le.backToWall();   /* removes ph-cta + un-hides wall */
+    document.body.classList.remove('ph-ev', 'ph-cta');
+  }
+
+  function toEverywhere() {            /* phase 5 */
+    if (phase === 5) return;
+    var fromCTA = (phase === 6);
+    phase = 5;
+    closeTPanel(); leaveDiscuss();
+    var le = LE(); if (le && le.backToWall) le.backToWall();   /* clears ph-cta + restores wall visibility */
+    document.body.classList.add('ph-ev');
+    setDots(5);
+    if (!fromCTA && le && le.morphFromWindow) le.morphFromWindow(document.querySelector('#hero .browser'));
+  }
+
+  function toCTA() {                   /* phase 6 */
+    if (phase === 6) return;
+    phase = 6;
+    document.body.classList.add('ph-cta');
+    setDots(6);
+    var le = LE(); if (le && le.toCTA) le.toCTA();
+  }
+
+  function backToHero() {              /* phase 5 → 4: the six articles fly home and
+                                          flip back into the window — it reassembles */
+    if (phase !== 5) return;
+    var le = LE(), win = document.querySelector('#hero .browser');
+    if (le && le.morphToWindow) {
+      le.morphToWindow(win, function () {
+        document.body.classList.remove('ph-ev', 'ph-cta');
+        toP5();                        /* restores the hero Practice state, sets phase=4 + dots */
+      });
+    } else {
+      document.body.classList.remove('ph-ev', 'ph-cta');
+      toP5();
+    }
+  }
+
+  /* ---- hw-cards ---- */
+  function cardsIn() {
+    setTimeout(function () {
+      document.querySelectorAll('#hero .hw-card').forEach(function (card) { card.style.transform = ''; });
+    }, 500);
+  }
+
+  function populateShelf() {
+    if (!window.Shelf) return;
+    window.Shelf.reveal();
+    HERO_WORDS.forEach(function (w) { window.Shelf.add(w); });
+  }
+
+  /* ---- transitions ---- */
+  function toP1() {
+    if (phase === 0) return;
+    phase = 0;
+    exitOverlays();
+    cardsIn();
+    closeTPanel();
+    leaveDiscuss();
+    if (window._heroSimpReset) window._heroSimpReset();
+    document.querySelectorAll('#hero .sel').forEach(function (s) { s.classList.remove('on', 'cand-pulse'); });
+    document.body.classList.remove('hero-p2', 'hero-p3', 'hero-p4', 'hero-p5', 'hero-simp');
+    setDots(0);
+  }
+
+  function toP2() {
+    if (phase === 1) return;
+    var wasAbove = (phase >= 2);
+    phase = 1;
+    exitOverlays();
+    document.body.classList.add('hero-p2');
+    document.body.classList.remove('hero-p3', 'hero-p4', 'hero-p5');
+    leaveDiscuss();
+    if (wasAbove) {
+      closeTPanel();
+      document.querySelectorAll('#hero .sel').forEach(function (s) { s.classList.remove('on', 'cand-pulse'); });
+    }
+    /* any entry into P2 guarantees the four words — a dot1→dot3 jump used to
+       skip this and silently degrade the simplify demo to plain text */
+    if (!window.Shelf || !window.Shelf.has('coast')) setTimeout(populateShelf, 400);
+    setDots(1);
+  }
+
+  function toP3() {
+    if (phase === 2) return;
+    phase = 2;
+    exitOverlays();
+    document.body.classList.add('hero-p2', 'hero-p3');
+    document.body.classList.remove('hero-p4', 'hero-p5', 'hero-simp');
+    closeTPanel();
+    leaveDiscuss();
+    if (window._heroSimpReset) window._heroSimpReset();
+    setDots(2);
+    setTimeout(function () {
+      var first = document.querySelector('#hero .tr-page .sel');
+      if (phase === 2 && first && !first.classList.contains('on')) first.classList.add('cand-pulse');
+    }, 700);
+  }
+
+  function toP4() {
+    if (phase === 3) return;
+    phase = 3;
+    exitOverlays();
+    document.body.classList.add('hero-p2', 'hero-p3', 'hero-p4');
+    document.body.classList.remove('hero-p5', 'hero-simp');
+    closeTPanel();
+    if (window._heroSimpReset) window._heroSimpReset();
+    document.querySelectorAll('#hero .sel').forEach(function (s) { s.classList.remove('on', 'cand-pulse'); });
+    setDots(3);
+    runDiscuss();
+  }
+
+  function toP5() {
+    if (phase === 4) return;
+    phase = 4;
+    exitOverlays();
+    document.body.classList.add('hero-p2', 'hero-p3', 'hero-p5');
+    document.body.classList.remove('hero-p4', 'hero-simp');
+    closeTPanel();
+    leaveDiscuss();
+    if (window.Shelf && !window.Shelf.has('coast')) setTimeout(populateShelf, 400);
+    setDots(4);
+    if (window._heroExOnEnter) window._heroExOnEnter();
+  }
+
+  /* ============================================================
+     Discuss — the real extension flow, scripted:
+     "Discuss the article" click → dock slides in → reading… →
+     summary at your level → suggested questions → grounded answers
+     ============================================================ */
+  var SUMMARY = [
+    'A coastal road in Norway that jumps from island to island on low bridges.',
+    'Autumn storms push waves right over the road — it can close for days.',
+    'Engineers fought the sea for seven years to build it.'
+  ];
+  /* no canned reply chips: the visitor "types" a question that reuses a
+     saved word — using your own word is the point, and the deck credits it */
+  var ASK = {
+    text:  'So the [[rugged]] coast is why it took so long to build?',
+    plain: 'So the rugged coast is why it took so long to build?',
+    lemma: 'rugged', cite: 's4',
+    a: 'Exactly — the [[coast]] gave the crews no shelter, so every stage was a fight with the open sea.'
+  };
+
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, RM ? 0 : ms); }); }
+  /* a step is stale once the user left P4 or re-entered it (new generation) */
+  function aliveD(gen) { return gen === dockGen && document.body.classList.contains('hero-p4'); }
+  function pinDock() { if (dockBody) dockBody.scrollTop = dockBody.scrollHeight; }
+  function leaveDiscuss() {
+    dockGen++; dockBusy = false;
+    if (dock) { dock.classList.remove('show'); dock.setAttribute('aria-hidden', 'true'); }
+    if (discFab) discFab.classList.remove('show', 'beckon', 'press', 'gone');
+    document.querySelectorAll('#hero .tr-page .sel').forEach(function (s) { s.classList.remove('cite'); });
+  }
+
+  /* tokenize: [[lemma]] -> tappable saved word, else plain .cw-w word */
+  function buildWords(container, text) {
+    var queue = [];
+    text.split(' ').forEach(function (w, i) {
+      if (i > 0) container.appendChild(document.createTextNode(' '));
+      var m = w.match(/^\[\[(.+?)\]\]([.,!?;:—…]*)$/);
+      if (m) {
+        var sv = document.createElement('span');
+        sv.className = 'cw-saved'; sv.dataset.w = m[1]; sv.textContent = m[1];
+        container.appendChild(sv);
+        if (m[2]) container.appendChild(document.createTextNode(m[2]));
+        queue.push({ el: sv, saved: true, lemma: m[1] });
+      } else {
+        var pw = document.createElement('span');
+        pw.className = 'cw-w'; pw.textContent = w;
+        container.appendChild(pw);
+        queue.push({ el: pw, saved: false });
+      }
+    });
+    return queue;
+  }
+
+  /* word-by-word reveal; saved words wait for their shelf card to fly over first */
+  function revealWords(queue, gen) {
+    return new Promise(function (done) {
+      (function step(i) {
+        if (!aliveD(gen) || i >= queue.length) return done();
+        var s = queue[i];
+        if (s.saved && !RM && window.flyShelfCardTo && window.Shelf && window.Shelf.has(s.lemma)) {
+          window.flyShelfCardTo(s.lemma, s.el.getBoundingClientRect(), { scale: 0.5, settle: 0 }).then(function () {
+            if (!aliveD(gen)) return done();
+            s.el.classList.add('on');
+            setTimeout(function () { step(i + 1); }, RM ? 0 : 150);
+          });
+        } else {
+          s.el.classList.add('on');
+          setTimeout(function () { step(i + 1); }, RM ? 0 : 46);
+        }
+      })(0);
+    });
+  }
+
+  /* the sentence an answer cites pulses amber in the article — grounding, visibly */
+  function citePulse(key) {
+    var sel = document.querySelector('#hero .tr-page .sel[data-tr="' + key + '"]');
+    if (!sel) return;
+    sel.classList.remove('cite');
+    void sel.offsetWidth;
+    sel.classList.add('cite');
+    sel.addEventListener('animationend', function h() { sel.classList.remove('cite'); sel.removeEventListener('animationend', h); });
+  }
+
+  async function streamSummary(gen) {
+    var label = document.createElement('div');
+    label.className = 'dk-label';
+    label.innerHTML = 'What it says · <span class="lvl">B1</span>';
+    dockBody.appendChild(label);
+    requestAnimationFrame(function () { label.classList.add('on'); });
+    var rows = SUMMARY.map(function (t) {
+      var b = document.createElement('div'); b.className = 'dk-b';
+      var d = document.createElement('span'); d.className = 'dk-dot';
+      var w = document.createElement('span'); w.className = 'dk-t';
+      b.appendChild(d); b.appendChild(w);
+      dockBody.appendChild(b);
+      return { row: b, queue: buildWords(w, t) };   /* built hidden — height reserved, no jitter */
+    });
+    pinDock();
+    for (var i = 0; i < rows.length; i++) {
+      if (!aliveD(gen)) return;
+      rows[i].row.classList.add('live');
+      await revealWords(rows[i].queue, gen);
+      await wait(140);
+    }
+  }
+
+  /* the typed word is credited: green flash in the bubble, a spark flies to
+     its deck card, and the card's progress ring ticks up — used = learned */
+  function creditWord(lemma, wordEl) {
+    wordEl.classList.remove('used'); void wordEl.offsetWidth;
+    wordEl.classList.add('used');
+    var card = window.Shelf && window.Shelf.cardEl(lemma);
+    if (!card || RM) { if (window.shelfProgress) window.shelfProgress(lemma); return; }
+    var fr = wordEl.getBoundingClientRect(), to = card.getBoundingClientRect();
+    var spark = document.createElement('span');
+    spark.className = 'use-spark';
+    spark.style.left = (fr.left + fr.width / 2) + 'px';
+    spark.style.top  = (fr.top + fr.height / 2) + 'px';
+    document.body.appendChild(spark);
+    void spark.offsetWidth;
+    spark.style.transform = 'translate(' + (to.left + to.width / 2 - fr.left - fr.width / 2).toFixed(1) + 'px,' +
+                                           (to.top + to.height / 2 - fr.top - fr.height / 2).toFixed(1) + 'px) scale(.55)';
+    spark.style.opacity = '0';
+    setTimeout(function () {
+      if (spark.parentNode) spark.parentNode.removeChild(spark);
+      if (window.shelfProgress) window.shelfProgress(lemma);
+      if (window.Shelf && window.Shelf.bump) window.Shelf.bump();
+    }, 560);
+  }
+
+  /* the visitor "types" a question that reuses a saved word, sends it,
+     the word is credited, then a grounded answer streams back */
+  async function typeAsk(gen) {
+    if (dockBusy || !aliveD(gen)) return;
+    dockBusy = true;
+    var input = dock.querySelector('.cw-composer input');
+    var send  = dock.querySelector('.cw-send');
+    if (input && !RM) {
+      if (send) send.classList.add('on');
+      for (var i = 1; i <= ASK.plain.length; i++) {
+        if (!aliveD(gen)) { input.value = ''; dockBusy = false; return; }
+        input.value = ASK.plain.slice(0, i);
+        await wait(24 + (i % 3) * 12);
+      }
+      await wait(300); if (!aliveD(gen)) { input.value = ''; dockBusy = false; return; }
+      if (send) { send.classList.add('press'); setTimeout(function () { send.classList.remove('press', 'on'); }, 180); }
+      input.value = '';
+    }
+    var u = document.createElement('div');
+    u.className = 'cw-user';
+    buildWords(u, ASK.text).forEach(function (s) { s.el.classList.add('on'); });
+    dockBody.appendChild(u); pinDock();
+    await wait(430); if (!aliveD(gen)) { dockBusy = false; return; }
+    var usedEl = u.querySelector('.cw-saved');
+    if (usedEl) creditWord(ASK.lemma, usedEl);
+    await wait(760); if (!aliveD(gen)) { dockBusy = false; return; }
+    var bot = document.createElement('div');
+    bot.className = 'cw-bot';
+    bot.innerHTML = '<span class="cw-typing"><i></i><i></i><i></i></span>';
+    dockBody.appendChild(bot); pinDock();
+    await wait(560); if (!aliveD(gen)) { dockBusy = false; return; }
+    bot.innerHTML = '';
+    var queue = buildWords(bot, ASK.a);
+    pinDock();
+    citePulse(ASK.cite);
+    await revealWords(queue, gen);
+    dockBusy = false;
+  }
+
+  /* everything after the "Discuss the article" press */
+  async function openDockFlow(gen) {
+    dock.classList.add('show');
+    await wait(500); if (!aliveD(gen)) return;
+    var skel = document.createElement('div');
+    skel.className = 'dk-skel'; skel.innerHTML = '<i></i><i></i><i></i>';
+    dockBody.appendChild(skel);
+    await wait(760); if (!aliveD(gen)) return;        /* honest, brief "reading…" */
+    skel.classList.add('out');
+    await wait(200); if (!aliveD(gen)) return;
+    if (skel.parentNode) skel.parentNode.removeChild(skel);
+    await streamSummary(gen); if (!aliveD(gen)) return;
+    await wait(700); if (!aliveD(gen)) return;
+    await typeAsk(gen);
+  }
+
+  async function runDiscuss() {
+    if (!dock || !dockBody) return;
+    var gen = ++dockGen;
+    dockBusy = false;
+    /* fresh scene every visit — the old once-only chat showed a stale transcript forever */
+    dockBody.innerHTML = '';
+    dock.classList.remove('show');
+    if (discFab) discFab.classList.remove('press', 'gone', 'beckon');
+    dock.setAttribute('aria-hidden', 'false');
+    /* flush under the real toolbar, whatever its rendered height */
+    var bbar = document.querySelector('#hero .browser .bbar');
+    if (bbar) dock.style.top = (bbar.offsetHeight + 10) + 'px';   /* popup hangs under the toolbar */
+    /* the words the answers weave back in */
+    if (window.Shelf && !window.Shelf.has('coast')) populateShelf();
+
+    if (RM) {                       /* reduced motion: the scene assembles without theatrics */
+      await openDockFlow(gen);
+      return;
+    }
+
+    await wait(620); if (!aliveD(gen)) return;        /* let the copy swap land */
+    if (discFab) {
+      discFab.classList.add('show', 'beckon');
+      await wait(1050); if (!aliveD(gen)) return;     /* scripted press */
+      discFab.classList.remove('beckon');
+      discFab.classList.add('press');
+      await wait(140); if (!aliveD(gen)) return;
+      discFab.classList.add('gone');
+    }
+    await openDockFlow(gen);
+  }
+
+  /* user beats the script to the button — same flow, immediately */
+  if (discFab) discFab.addEventListener('click', function () {
+    if (phase !== 3 || !dock || dock.classList.contains('show')) return;
+    var gen = ++dockGen;            /* cancels the scripted pre-roll */
+    dockBusy = false;
+    discFab.classList.remove('beckon');
+    discFab.classList.add('press');
+    setTimeout(function () { discFab.classList.add('gone'); }, 130);
+    openDockFlow(gen);
+  });
+
+  /* simp-done state: departure board on left copy after word stream finishes */
+  window._heroToP3 = function () { document.body.classList.add('hero-simp'); };
+  window._heroToP2 = function () { document.body.classList.remove('hero-simp'); };
+
+  /* ---- inputs ---- */
+  if (dot1) dot1.addEventListener('click', toP1);
+  if (dot2) dot2.addEventListener('click', toP2);
+  if (dot3) dot3.addEventListener('click', toP3);
+  if (dot4) dot4.addEventListener('click', toP4);
+  if (dot5) dot5.addEventListener('click', toP5);
+  if (dotEv) dotEv.addEventListener('click', function () { toEverywhere(); });   /* phase 5 */
+  if (dot6)  dot6.addEventListener('click', function () { toCTA(); });           /* phase 6 */
+  if (navHome)     navHome.addEventListener('click', function (e) { e.preventDefault(); toP1(); });
+  if (navSimplify) navSimplify.addEventListener('click', function (e) { e.preventDefault(); toP2(); });
+
+  /* tpanel lang pill: click cycles translation language */
+  var LANG_CYCLE = ['uk', 'es', 'fr', 'de', 'pt'];
+  var langPillEl = document.getElementById('hero-tp-lang');
+  if (langPillEl) {
+    langPillEl.style.cursor = 'pointer';
+    langPillEl.title = 'Change language';
+    langPillEl.addEventListener('click', function () {
+      var cur  = userLang();
+      var next = LANG_CYCLE[(LANG_CYCLE.indexOf(cur) + 1) % LANG_CYCLE.length];
+      try { localStorage.setItem('lantern.gloss', next); } catch (e) {}
+      if (activeSel) openTPanel(activeSel);
+    });
+  }
+
+  /* swap button: flips src↔tgt text in the panel */
+  var swapBtn = document.getElementById('hero-tp-swap');
+  var swapped = false;
+  if (swapBtn) {
+    swapBtn.addEventListener('mouseover', function () { swapBtn.style.color = 'var(--ink)'; swapBtn.style.background = 'var(--paper-2)'; });
+    swapBtn.addEventListener('mouseout', function () { swapBtn.style.color = 'var(--ink-45)'; swapBtn.style.background = 'none'; });
+    swapBtn.addEventListener('click', function () {
+      if (!activeSel) return;
+      swapped = !swapped;
+      var key = activeSel.dataset.tr, data = TR[key];
+      if (!data) return;
+      var lang = userLang();
+      if (swapped) {
+        heroTpSrc.textContent = data[lang] || data.uk;
+        heroTpTgt.textContent = data.en;
+      } else {
+        heroTpSrc.textContent = data.en;
+        heroTpTgt.textContent = data[lang] || data.uk;
+      }
+    });
+  }
+
+  /* wheel: P1 → P2 → P3 → P4; at P4 a further scroll-down releases to the CTA section below */
+  var lastAwayTs = 0;
+  window.addEventListener('wheel', function (e) {
+    if (!document.body.classList.contains('at-hero')) return;
+    // at-hero can stay true even when ev-close is centred: hero + ev-close are both 100vh, so
+    // the scroll centre only *reaches* ev-close's midpoint, never passes it, and the v3 loop
+    // never flips at-hero off. Without this guard the phase handler keeps eating upward wheels
+    // down at the CTA, so the page can never scroll back up to the hero.
+    if (window.scrollY > window.innerHeight * 0.5) return;
+    /* inertia from the CTA→hero glide keeps emitting wheel events after scrollY crosses the
+       threshold — without this grace window a single hard flick rewound a phase or two */
+    if (performance.now() - lastAwayTs < 400) return;
+    /* a scrollable chat body owns its wheel (mirror of the pager's carve-out in lantern-v3.js) */
+    var cw = e.target && e.target.closest ? e.target.closest('.cw-body') : null;
+    if (cw && cw.scrollHeight > cw.clientHeight + 1) {
+      var atTop = cw.scrollTop <= 0;
+      var atBot = cw.scrollTop + cw.clientHeight >= cw.scrollHeight - 1;
+      if ((e.deltaY < 0 && !atTop) || (e.deltaY > 0 && !atBot)) return;
+    }
+    /* ONE SCREEN: every gesture is a phase morph in place — never a scroll.
+       Forward 0→6: hero phases → Everywhere (window splits) → CTA (pages dock).
+       Backward 6→0 walks the same chain in reverse. */
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (wheelLock) return;
+    /* a split/reassembly in flight owns the screen — swallow gestures until it lands */
+    var le0 = LE();
+    if (le0 && le0.busy && le0.busy()) return;
+    wheelLock = true;
+    /* one gesture = one phase: the lock must outlive the tween (the split morph
+       is the longest, ~1.5s) so an inertial flick can't skip a phase mid-flight */
+    setTimeout(function () { wheelLock = false; }, 1100);
+    if (e.deltaY > 0) {
+      if (phase === 0) toP2();
+      else if (phase === 1) toP3();
+      else if (phase === 2) toP4();
+      else if (phase === 3) toP5();
+      else if (phase === 4) toEverywhere();
+      else if (phase === 5) toCTA();
+      /* phase 6 (CTA): the end — nothing further */
+    } else {
+      if (phase === 6) toEverywhere();   /* CTA → Everywhere (overlay back, no re-flip) */
+      else if (phase === 5) backToHero();
+      else if (phase === 4) toP4();
+      else if (phase === 3) toP3();
+      else if (phase === 2) toP2();
+      else toP1();
+    }
+  }, { capture: true, passive: false });
+
+  /* one-screen model: there is no document scroll — keep the active dot in sync
+     with the phase (cheap, and covers any stray scroll/restore) */
+  function onScroll() { setDots(phase); }
+  window.addEventListener('scroll', onScroll, { passive: true });
+})();
+
+/* ============================================================
+   Magnetic m-dotnav — tick + navMagnet (ported from index.html)
+   ============================================================ */
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var dotNav = document.querySelector('.m-dotnav');
+  if (!dotNav) return;
+
+  var NEAR_PX = 250, FALL_PX = 132;
+  var navRAF = 0, lastFocus = -1, actx = null;
+
+  function unlockAudio() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC && !actx) actx = new AC();
+      if (actx && actx.state === 'suspended') actx.resume();
+    } catch (e) {}
+  }
+
+  function tick() {
+    if (!actx || actx.state !== 'running') return;
+    var t = actx.currentTime;
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'sine'; o.frequency.value = 60;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.28, t + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + 0.03);
+  }
+
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+  function navMagnet(cx, cy) {
+    if (window.innerWidth < 880) { dotNav.classList.remove('peek'); lastFocus = -1; return; }
+    var r = dotNav.getBoundingClientRect();
+    if (!r.width) return;
+    /* cursor proximity: approaches from right toward left-side nav */
+    var near = clamp(1 - (cx - r.left) / NEAR_PX, 0, 1);
+    dotNav.classList.toggle('peek', near > 0.02);
+    var btns = dotNav.querySelectorAll('.m-dot-wrap');
+    var fi = -1, fm = 0.5;
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i], br = b.getBoundingClientRect();
+      var m = near * clamp(1 - Math.abs(cy - (br.top + br.height / 2)) / FALL_PX, 0, 1);
+      b.style.setProperty('--near', near.toFixed(3));
+      b.style.setProperty('--m', m.toFixed(3));
+      if (m > fm) { fm = m; fi = i; }
+    }
+    if (near <= 0.02) lastFocus = -1;
+    else if (fi !== lastFocus) { if (fi >= 0) tick(); lastFocus = fi; }
+  }
+
+  document.addEventListener('pointerdown', unlockAudio);
+  document.addEventListener('keydown', unlockAudio);
+
+  window.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;
+    var cx = e.clientX, cy = e.clientY;
+    if (navRAF) return;
+    navRAF = requestAnimationFrame(function () { navRAF = 0; navMagnet(cx, cy); });
+  }, { passive: true });
+
+  document.addEventListener('pointerleave', function () {
+    dotNav.classList.remove('peek');
+    lastFocus = -1;
+  });
+})();
+
+/* ============================================================
+   Hero simplify dot — orange dot on hero-extra paragraph
+   ============================================================ */
+(function () {
+  var para = document.getElementById('hero-simp-para');
+  var dot  = document.getElementById('hero-simp-dot');
+  var body = document.getElementById('hero-simp-body');
+  if (!para || !dot || !body) return;
+
+  /* simple version: {lemma} = word from shelf (highlighted if saved) */
+  var SIMPLE = [
+    'Before building this ',
+    { lemma: 'route',  text: 'route' },
+    ', engineers studied the ',
+    { lemma: 'rugged', text: 'rugged' },
+    ' ',
+    { lemma: 'coast',  text: 'coast' },
+    ' with care — a ',
+    { lemma: 'remote', text: 'remote' },
+    ' place where storms fought them at every stage.'
+  ];
+
+  var simplified = false, busy = false;
+  var origNodes  = null;  /* saved DOM nodes on first simplify (preserves .hl listeners) */
+
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  /* reading-level badge: was C1 (dense) → now B2 (simplified to your level).
+     Reuses .simp-level styles from lantern-v3.css; sits below the paragraph, right. */
+  var levelEl = null;
+  function ensureLevel() {
+    if (levelEl) return levelEl;
+    levelEl = document.createElement('div');
+    levelEl.className = 'simp-level';
+    levelEl.innerHTML =
+      '<span class="sl-cap">now at your level</span>' +
+      '<span class="sl-chip before">C1</span>' +
+      '<span class="sl-arrow">→</span>' +
+      '<span class="sl-chip after">B2</span>';
+    para.appendChild(levelEl);
+    return levelEl;
+  }
+
+  function buildSimpleSpans() {
+    body.innerHTML = '';
+    var spans = [];
+    SIMPLE.forEach(function (tok) {
+      if (typeof tok === 'string') {
+        tok.split(/(\s+)/).forEach(function (part) {
+          if (/^\s+$/.test(part)) { body.appendChild(document.createTextNode(part)); return; }
+          var s = document.createElement('span');
+          s.className = 'simp-w';
+          s.textContent = part;
+          body.appendChild(s);
+          spans.push(s);
+        });
+      } else {
+        var saved = window.Shelf && window.Shelf.has(tok.lemma);
+        var s = document.createElement('span');
+        s.className = 'simp-w' + (saved ? ' saved' : '');
+        s.textContent = tok.text;
+        s.dataset.w   = tok.lemma;
+        body.appendChild(s);
+        spans.push(s);
+      }
+    });
+    return spans;
+  }
+
+  async function swapIn(spans) {
+    /* fire the left-copy departure board when the word stream is almost done */
+    var boardAt = Math.max(0, spans.length - 3);
+    for (var i = 0; i < spans.length; i++) {
+      if (i === boardAt && window._heroToP3) window._heroToP3();
+      var s = spans[i];
+      if (s.classList.contains('saved') && window.flyShelfCardTo && window.Shelf && window.Shelf.has(s.dataset.w)) {
+        await window.flyShelfCardTo(s.dataset.w, s.getBoundingClientRect(), { scale: 0.5, settle: 0 });
+        s.classList.add('on');
+        await wait(150);
+      } else {
+        s.classList.add('on');
+        await wait(44);
+      }
+    }
+  }
+
+  dot.addEventListener('click', async function () {
+    /* the dot is invisible but hit-testable in P3/P4 (hero-p2 stays on body) — never fire there */
+    if (document.body.classList.contains('hero-p3')) return;
+    if (busy) return;
+    busy = true;
+
+    if (!simplified) {
+      /* save original nodes before first swap */
+      if (!origNodes) origNodes = Array.prototype.slice.call(body.childNodes);
+      simplified = true;
+      dot.style.animation = 'none';
+      para.classList.add('simplified');
+      var lvl = ensureLevel();
+      lvl.classList.remove('rolled', 'pulse');
+      lvl.classList.add('show');                 // badge enters showing C1 (the dense level)
+      body.classList.add('fade');
+      await wait(188);
+      var spans = buildSimpleSpans();
+      body.classList.remove('fade');
+      await wait(320);                           // brief hold so C1 reads before it ticks
+      lvl.classList.add('rolled', 'pulse');      // C1 → B2 with a green pulse + "now at your level"
+      setTimeout(function () { lvl.classList.remove('pulse'); }, 760);
+      await wait(280);
+      await swapIn(spans);
+    } else {
+      simplified = false;
+      para.classList.remove('simplified');
+      dot.style.animation = '';
+      if (levelEl) levelEl.classList.remove('show', 'rolled', 'pulse');
+      if (window._heroToP2) window._heroToP2();
+      body.classList.add('fade');
+      await wait(250);
+      /* restore original nodes (event listeners intact) */
+      while (body.firstChild) body.removeChild(body.firstChild);
+      if (origNodes) origNodes.forEach(function (n) { body.appendChild(n); });
+      body.classList.remove('fade');
+    }
+
+    busy = false;
+  });
+
+  /* phase changes restore the original paragraph instantly, so a later return
+     to P2 never shows simplified text desynced from the left copy */
+  window._heroSimpReset = function () {
+    if (!simplified || busy) return;
+    simplified = false;
+    para.classList.remove('simplified');
+    dot.style.animation = '';
+    if (levelEl) levelEl.classList.remove('show', 'rolled', 'pulse');
+    body.classList.remove('fade');
+    while (body.firstChild) body.removeChild(body.firstChild);
+    if (origNodes) origNodes.forEach(function (n) { body.appendChild(n); });
+  };
+})();
+
+/* ============================================================
+   Phase 5 — In-page exercises
+   ============================================================ */
+(function () {
+  var hxHud    = document.getElementById('hx-hud');
+  var hxToggle = document.getElementById('hx-toggle');
+  var hxCue    = document.getElementById('hx-cue');
+  var hxCount  = document.getElementById('hx-count');
+  var hxProg   = document.getElementById('hx-prog');
+  if (!hxHud) return;
+
+  var WORDS   = ['route', 'coast', 'rugged', 'remote'];
+  var targets = [];
+  var solved  = 0;
+  var enabled = false;
+  var RM      = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function buildGap(exw) {
+    var a = exw.dataset.a, opts = exw.dataset.o.split('|');
+    var word = exw.textContent.trim();
+    exw.classList.add('inqgap');
+    exw.dataset.answer = a;
+    exw.innerHTML =
+      '<span class="gt"><span class="ghost">' + a + '</span>' +
+      '<span class="lex">' + word + '</span><span class="ln"></span></span>' +
+      '<span class="menu">' + opts.map(function (o) { return '<button>' + o + '</button>'; }).join('') + '</span>';
+    var gt   = exw.querySelector('.gt');
+    var menu = exw.querySelector('.menu');
+    gt.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (exw.dataset.done || !exw.classList.contains('formed')) return;
+      targets.forEach(function (g) { if (g !== exw) g.classList.remove('open'); });
+      exw.classList.toggle('open');
+    });
+    menu.querySelectorAll('button').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (exw.dataset.done) return;
+        if (b.textContent.trim() === a) {
+          exw.classList.remove('open');
+          solve(exw);
+        } else {
+          b.classList.add('wrong'); exw.classList.add('wrong');
+          setTimeout(function () { b.classList.remove('wrong'); exw.classList.remove('wrong'); }, 450);
+        }
+      });
+    });
+  }
+
+  function formGap(exw) { exw.classList.add('formed'); }
+
+  function solve(exw) {
+    if (exw.dataset.done) return;
+    exw.dataset.done = '1';
+    exw.classList.remove('open');
+    solved++;
+    var i = targets.indexOf(exw);
+    if (hxProg && hxProg.children[i]) hxProg.children[i].classList.add('on');
+    var m = exw.querySelector('.menu');
+    if (m) m.remove();
+    exw.classList.add('done', 'flash');
+    setTimeout(function () { exw.classList.remove('flash'); }, 760);
+    if (hxCount) { var b = hxCount.querySelector('b'); if (b) b.textContent = solved; }
+    if (solved >= targets.length) {
+      hxHud.classList.add('done');
+      if (hxCue) hxCue.innerHTML =
+        '<span class="hud-tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">' +
+        '<path d="M20 6 9 17l-5-5"/></svg></span> All done';
+    }
+  }
+
+  function enable() {
+    if (enabled) return;
+    enabled = true;
+    if (hxToggle) hxToggle.classList.remove('beckon');
+    hxHud.classList.add('hud-go');
+    if (window.Shelf) {
+      WORDS.forEach(function (w) { if (!window.Shelf.has(w)) window.Shelf.add(w); });
+      window.Shelf.reveal();
+    }
+    var exPage = document.querySelector('#hero .ex-page');
+    if (!exPage) return;
+    targets = Array.prototype.slice.call(exPage.querySelectorAll('.exw'));
+    targets.forEach(function (exw) { buildGap(exw); });
+    if (hxProg) {
+      targets.forEach(function () {
+        var seg = document.createElement('i');
+        hxProg.appendChild(seg);
+      });
+    }
+    var delay = 0;
+    targets.forEach(function (exw) {
+      (function (e, d) {
+        setTimeout(function () {
+          var gt = e.querySelector('.gt');
+          if (!RM && window.flyShelfCardTo && gt) {
+            window.flyShelfCardTo(e.dataset.answer, gt.getBoundingClientRect(), { scale: 0.46, settle: 0 })
+              .then(function () { formGap(e); });
+          } else {
+            formGap(e);
+          }
+        }, d);
+      })(exw, delay);
+      delay += 220;
+    });
+  }
+
+  document.addEventListener('click', function () {
+    targets.forEach(function (g) { g.classList.remove('open'); });
+  });
+
+  if (hxToggle) hxToggle.addEventListener('click', enable);
+
+  window._heroExOnEnter = function () {
+    if (!enabled && hxToggle) {
+      setTimeout(function () { hxToggle.classList.add('beckon'); }, 600);
+    }
+  };
+})();
+</script>
+</body>
+</html>
