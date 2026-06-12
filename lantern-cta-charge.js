@@ -400,12 +400,14 @@
      grid; the six cards wire DOWN/UP into the share button, beads flow along the
      wires, and each arrival warms the button one step ink → amber. ---- */
   let mShareBtn = null;
-  function buildMobile() {
-    if (armed || innerWidth > 920) return; armed = true;
+  /* build + position the mobile dock (cards, the relocated button row, the foot),
+     WITHOUT revealing the cards or drawing wires — shared by the plain build and
+     the finale→CTA flip, which needs the slots measured before it reveals them.
+     layout "b" (council 7/7): the button + note sit ISOLATED at the TOP, the six
+     pills form a clean 3×2 grid below, and the email link + reassurance drop to
+     the very bottom — clear of the wires, which run UP into the button */
+  function mLayout() {
     buildCards();
-    /* layout "b" (council 7/7): the button + note sit ISOLATED at the TOP, the
-       six pills form a clean 3×2 grid below, and the email link + reassurance
-       drop to the very bottom — clear of the wires, which run UP into the button */
     const mcta = section.querySelector('.m-close-cta');
     if (mcta) {
       dock.insertBefore(mcta, cards[0] || null);          /* note + button = top row */
@@ -417,18 +419,45 @@
       if (hint) foot.appendChild(hint);
       if (foot.childNodes.length) dock.appendChild(foot); /* below the pill grid */
     }
-    cards.forEach(function (c) { c.classList.add('snap', 'in'); });   /* no stagger on mobile */
     mShareBtn = mcta && mcta.querySelector('.m-share-btn');
-    if (!mShareBtn) return;
     /* the warm-touch layer the bead traces live in (clipped to the pill) */
-    if (!mShareBtn.querySelector('.d1-warm')) {
+    if (mShareBtn && !mShareBtn.querySelector('.d1-warm')) {
       const warm = document.createElement('span');
       warm.className = 'd1-warm';
       mShareBtn.insertBefore(warm, mShareBtn.firstChild);
     }
+  }
+  function buildMobile() {
+    if (armed || innerWidth > 920) return; armed = true;
+    mLayout();
+    cards.forEach(function (c) { c.classList.add('snap', 'in'); });   /* no stagger on mobile */
+    if (!mShareBtn) return;
     if (RM) { mShareBtn.style.backgroundColor = heatColor(1); mShareBtn.classList.add('blazing'); return; }
     /* let the grid settle (cards land), then draw the wires + beads */
     setTimeout(function () { if (mShareBtn) drawWiresMobile(mShareBtn, true); }, 260);
+  }
+  /* finale flip (mobile): lay the dock out with the cards HELD hidden, then hand
+     back each slot's measured centre + markup so the flip-clones can fly there. */
+  function slotsMobile() {
+    if (innerWidth > 920) return [];
+    if (!armed) {
+      armed = true;
+      mLayout();
+      cards.forEach(function (c) { c.classList.add('snap'); c.style.visibility = 'hidden'; });
+    }
+    void dock.offsetHeight;                                /* commit the grid layout before measuring */
+    return cards.map(function (c, k) {
+      const r = c.getBoundingClientRect();
+      return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width,
+               side: FEATS[k].s, color: FEATS[k].c, html: cardInnerHTML(FEATS[k]) };
+    });
+  }
+  /* the clones have landed on the slots — reveal the real cards in place, then
+     draw the wires + beads (no streak charge: the day cells are hidden on mobile) */
+  function armDockedMobile() {
+    cards.forEach(function (c) { c.style.visibility = ''; c.classList.add('in'); });
+    if (RM) { if (mShareBtn) { mShareBtn.style.backgroundColor = heatColor(1); mShareBtn.classList.add('blazing'); } return; }
+    if (mShareBtn) drawWiresMobile(mShareBtn, true);
   }
 
   const obs = new IntersectionObserver(function (es, o) {
@@ -473,6 +502,10 @@
     armDocked: armDocked,
     /* mobile: build the vertical dock (no flip, no beads) */
     buildMobile: buildMobile,
+    /* mobile finale→CTA flip: measure the dock slots (cards held hidden) and,
+       once the flip-clones land, reveal the real cards + draw the wires */
+    slotsMobile: slotsMobile,
+    armDockedMobile: armDockedMobile,
     armed: function () { return armed; }
   };
 })();

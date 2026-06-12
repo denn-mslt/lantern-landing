@@ -39,11 +39,15 @@
     if (!words.length) return;
     var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    /* mobile rest slots are COLUMN-major (TL, BL, TR, BR) so the save order
+       route·coast·rugged·remote lands left-column then right-column — when they
+       later morph straight down into the left→right vocab strip, none of the
+       flight paths cross (row-major made coast & rugged swap sides mid-air). */
     var slots = MOBILE ? [
-      { xp: 0.04, yp: 8,  rot: -5 },
-      { xp: 0.20, yp: 18, rot: 2  },
-      { xp: 0.36, yp: 10, rot: -2 },
-      { xp: 0.52, yp: 22, rot: 6  }
+      { xp: 0.02,  yp: 8,   rot: 2  },
+      { xp: 0.255, yp: 13,  rot: -2 },
+      { xp: 0.49,  yp: 6,   rot: 3  },
+      { xp: 0.62,  yp: 11,  rot: -2 }
     ] : [
       { xp: 0.820, yp: 0.150, rot: 7 },
       { xp: 0.862, yp: 0.470, rot: -6 },
@@ -82,10 +86,9 @@
       card.style.setProperty('--cbdur', CARD_DURS[idx % CARD_DURS.length]);
       card.style.setProperty('--cbdel', CARD_DELS[idx % CARD_DELS.length]);
       card.innerHTML =
-        '<div class="wordcard" style="--rot:' + slot.rot + 'deg;width:' + (MOBILE ? 120 : 186) + 'px">' +
+        '<div class="wordcard" style="--rot:' + slot.rot + 'deg;width:' + (MOBILE ? 140 : 186) + 'px">' +
           '<div class="wtop"><span class="w">' + m.w + '</span>' +
           '<span class="cefr-b b-' + c + '">' + m.cefr + '</span></div>' +
-          '<div class="ph">' + m.ph + '</div>' +
           '<div class="tr t-' + c + '">' + m.gloss + '</div></div>';
       card.style.left = (slot.xp * hero.offsetWidth) + 'px';
       card.style.top = slotTop(slot) + 'px';
@@ -123,24 +126,36 @@
       var slot = slots[slotI % slots.length]; slotI++;
       var card = buildCard(word, slot);
       card.style.opacity = '1';
-      card.style.transform = 'none';
+      card.classList.add('rested');
       markSaved(word);
     }
 
     // ---- as the reader scrolls off the hero, the big floating cards fold neatly
     //      into the "My vocab" deck (each glides to its deck slot and shrinks in) ----
     var folded = false;
-    function foldCardsToDeck() {
+    function foldCardsToDeck(force) {
       if (folded || !rested.length) return;
-      if (!window.Shelf || window.innerWidth < 1200) return;   // deck only docks on wide viewports
+      if (!window.Shelf) return;
+      if (!force && window.innerWidth < 1200) return;   // scroll path: deck docks on wide viewports only
       folded = true;
-      document.body.classList.add('vocab-on');                 // reveal the deck on the hero
+      if (!MOBILE) document.body.classList.add('vocab-on');    // desktop: reveal the hero-docked deck (mobile uses the P2 strip)
+      /* pass 1 — add ALL deck slots first and capture from-rects while the hero
+         layout is intact.  This is critical on mobile where the deck is a flex
+         row: measuring to-rect after only the first Shelf.add() gives width =
+         entire deck width, so sc = deck/card > 1 → cards GROW instead of shrink. */
+      var items = [];
       rested.forEach(function (rc, i) {
-        var card = rc.card, lemma = rc.word.dataset.w, delay = i * 80;
+        var card = rc.card, lemma = rc.word.dataset.w;
         if (REDUCED) { if (!window.Shelf.has(lemma)) window.Shelf.add(lemma); if (card.parentNode) card.parentNode.removeChild(card); return; }
         var from = card.getBoundingClientRect();
         if (window.Shelf.has(lemma)) { if (card.parentNode) card.parentNode.removeChild(card); return; }
         var deckCard = window.Shelf.add(lemma, { preset: true });   // reserve its deck slot, invisible
+        items.push({ card: card, from: from, deckCard: deckCard, delay: i * 80 });
+      });
+      /* pass 2 — all deck cards are now in the flex row → measure final to-rects,
+         then lift each hero card to fixed coords and animate it to its slot. */
+      items.forEach(function (item) {
+        var card = item.card, from = item.from, deckCard = item.deckCard, delay = item.delay;
         var to = deckCard.getBoundingClientRect();
         if (to.width < 2 || from.width < 2) { deckCard.classList.add('in'); if (card.parentNode) card.parentNode.removeChild(card); return; }
         // lift the card out of the (scrolling) hero into fixed coords, then glide + shrink to the slot
@@ -154,15 +169,21 @@
         card.style.zIndex = '95';
         card.style.transformOrigin = 'top left';
         document.body.appendChild(card);
-        card.getBoundingClientRect();                          // commit the fixed start
+        card.getBoundingClientRect();                          // commit the fixed start position
         var sc = to.width / from.width;
+        var tx = (to.left - from.left).toFixed(1), ty = (to.top - from.top).toFixed(1);
+        /* two-rAF pattern: rAF-1 applies the transition property so the browser
+           records the current transform as the "from" state; rAF-2 changes the
+           transform so the transition fires reliably in all browsers. */
         requestAnimationFrame(function () {
           card.style.transition = 'transform .62s cubic-bezier(.4,0,.2,1) ' + delay + 'ms, opacity .38s ease ' + (delay + 340) + 'ms';
-          card.style.transform = 'translate(' + (to.left - from.left).toFixed(1) + 'px,' + (to.top - from.top).toFixed(1) + 'px) scale(' + sc.toFixed(3) + ')';
+          requestAnimationFrame(function () {
+            card.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + sc.toFixed(3) + ')';
+          });
         });
-        setTimeout(function () { deckCard.classList.add('in'); }, delay + 480);   // real deck card fades up under it
-        setTimeout(function () { card.style.opacity = '0'; }, delay + 440);
-        setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, delay + 800);
+        setTimeout(function () { deckCard.classList.add('in'); }, delay + 500);   // real deck card fades up under it
+        setTimeout(function () { card.style.opacity = '0'; }, delay + 460);
+        setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, delay + 820);
       });
     }
     var foldRAF = 0;
@@ -174,6 +195,15 @@
         if (window.scrollY > hero.offsetHeight * 0.32) foldCardsToDeck();
       });
     }, { passive: true });
+
+    /* mobile drives navigation by phase, not scroll: index.html's toP2() calls
+       this so the screen-1 word cards MORPH (one continuous FLIP each) into the
+       vocab strip — same card flying + shrinking to its deck slot, then the real
+       deck card takes over underneath. No cross-fade, no blink. */
+    window.HeroWords = {
+      foldToDeck: function () { foldCardsToDeck(true); },
+      pending: function () { return !folded && rested.length > 0; }
+    };
 
     // Save action — one button, two outcomes by screen:
     //   hero (P1)        → the word floats out as a big word-card
@@ -444,14 +474,45 @@
       });
     }
 
+    // ---- cards scatter away from the "Send to yourself" button on hover/touch ----
+    function attachScatter() {
+      if (!MOBILE) return;
+      var btn = hero.querySelector('.m-share-btn');
+      if (!btn) return;
+      function scatter(on) {
+        if (!rested.length) return;
+        var br = btn.getBoundingClientRect();
+        var bcx = br.left + br.width / 2, bcy = br.top + br.height / 2;
+        rested.forEach(function (rc) {
+          var card = rc.card;
+          if (on) {
+            var cr = card.getBoundingClientRect();
+            var dx = (cr.left + cr.width / 2) - bcx, dy = (cr.top + cr.height / 2) - bcy;
+            var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            var PUSH = 36;
+            card.style.transition = 'transform 0.28s cubic-bezier(.2,.85,.25,1)';
+            card.style.transform = 'translate(' + ((dx / dist * PUSH).toFixed(1)) + 'px,' + ((dy / dist * PUSH).toFixed(1)) + 'px)';
+          } else {
+            card.style.transition = 'transform 0.4s cubic-bezier(.4,0,.2,1)';
+            card.style.transform = '';
+          }
+        });
+      }
+      btn.addEventListener('touchstart',  function () { scatter(true); },  { passive: true });
+      btn.addEventListener('touchend',    function () { setTimeout(function () { scatter(false); }, 350); }, { passive: true });
+      btn.addEventListener('touchcancel', function () { scatter(false); }, { passive: true });
+      btn.addEventListener('mouseenter',  function () { scatter(true); });
+      btn.addEventListener('mouseleave',  function () { scatter(false); });
+    }
+
     // ---- reduced motion: static cards, no demo ----
     if (REDUCED) { words.forEach(restCard); return; }
 
-    // mobile → skip onboarding card, just demo directly
+    // mobile → static cards immediately, no auto-demo
     if (MOBILE) {
+      words.forEach(restCard);
       buildPill();
-      if (window.whenFontsReady) window.whenFontsReady(function () { setTimeout(demo, 900); });
-      else setTimeout(demo, 1800);
+      attachScatter();
       return;
     }
 

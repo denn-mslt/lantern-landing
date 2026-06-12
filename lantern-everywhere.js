@@ -340,12 +340,26 @@
   function toCTA() {
     if (flaming || morphing) return;
     var LC = window.LanternCharge;
-    /* no desktop flip/bead engine below 980 (phones + the tablet gap). On true
-       phones (≤920, where the CSS dock-grid + m-only layout apply) build the
-       vertical dock; the 921–979 tablet gap keeps the plain "Add to Chrome". */
-    if (REDUCED || innerWidth < 980 || !LC || pages.length !== 6) {
+    /* phones (≤920): the SAME card-flip as desktop, vertical layout. The wall's
+       six articles flip over and become the dock pills around the share button.
+       The 921–979 tablet gap keeps the plain "Add to Chrome" (no dock grid). */
+    if (innerWidth < 980) {
+      var built = !!(LC && LC.armed && LC.armed());
+      /* the flip only the FIRST time, and only when arriving from the live wall
+         (a scrubber tap can jump straight here from any phase — then the wall was
+         never split, so there's nothing to flip: fall back to the plain dock) */
+      if (!REDUCED && innerWidth <= 920 && LC && LC.slotsMobile && pages.length === 6 && revealed && !built) {
+        toCTAmobile(LC); return;
+      }
       document.body.classList.add('ph-cta');
-      if (innerWidth <= 920 && LC && LC.buildMobile) LC.buildMobile();
+      if (innerWidth <= 920 && LC) {
+        if (!built && LC.buildMobile) LC.buildMobile();   /* direct arrival → plain dock */
+        hideWall();                                       /* show the docked cards, hide any wall */
+      }
+      return;
+    }
+    if (REDUCED || !LC || pages.length !== 6) {
+      document.body.classList.add('ph-cta');
       return;
     }
     /* already played once → just swap the overlay back in, no re-flip */
@@ -395,6 +409,63 @@
         });
         if (p < 1) { requestAnimationFrame(step); return; }
         LC.armDocked();                               /* real cards take the slots, wires + beads fire */
+        clones.forEach(function (c) { c.wrap.remove(); });
+        flaming = false;
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  /* ── mobile twin of the flip: same mechanic, vertical dock ──
+        The wall is a 2-col grid; the dock is a 3-col grid around the share
+        button. We clone each article at its wall spot, build the dock with its
+        cards held hidden, measure the slots, then fly + flip every clone onto
+        its slot. On land the real cards reveal in place and the wires fire. ── */
+  function toCTAmobile(LC) {
+    docked = true; flaming = true;
+    if (LC.takeOver) LC.takeOver();
+
+    var clones = pages.map(function (pg) {
+      var r = pg.getBoundingClientRect();
+      var wrap  = document.createElement('div'); wrap.className = 'flip-clone m-flip';
+      var rot   = document.createElement('div'); rot.className = 'fc-rot';
+      var front = document.createElement('div'); front.className = 'fc-front';
+      var back  = document.createElement('div'); back.className = 'fc-back';
+      var pgc = pg.cloneNode(true); pgc.style.transform = ''; pgc.style.opacity = '';
+      front.appendChild(pgc);
+      rot.appendChild(front); rot.appendChild(back);
+      wrap.appendChild(rot);
+      document.body.appendChild(wrap);
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      wrap.style.transform = 'translate(' + cx + 'px,' + cy + 'px)';
+      return { wrap: wrap, rot: rot, back: back, cx: cx, cy: cy, tx: cx, ty: cy };
+    });
+    hideWall();
+    document.body.classList.add('ph-cta');
+
+    requestAnimationFrame(function () {
+      var slots = LC.slotsMobile();
+      if (!slots || slots.length !== 6) {                 /* safety: snap to a clean docked state */
+        clones.forEach(function (c) { c.wrap.remove(); });
+        if (LC.armDockedMobile) LC.armDockedMobile();
+        flaming = false; return;
+      }
+      clones.forEach(function (c, i) {
+        var s = slots[FLIP_MAP[i]];
+        c.back.innerHTML = '<div class="dk-card snap in ' + s.side + '" style="width:' + s.w.toFixed(1) + 'px;--fc:' + s.color + '">' + s.html + '</div>';
+        c.tx = s.cx; c.ty = s.cy;
+      });
+
+      var DUR = 760, t0 = performance.now();
+      function step(now) {
+        var p = Math.min((now - t0) / DUR, 1);
+        var e2 = p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;   /* easeInOutCubic */
+        clones.forEach(function (c) {
+          c.wrap.style.transform = 'translate(' + (c.cx + (c.tx - c.cx) * e2) + 'px,' + (c.cy + (c.ty - c.cy) * e2) + 'px)';
+          c.rot.style.transform  = 'rotateY(' + (180 * e2) + 'deg)';
+        });
+        if (p < 1) { requestAnimationFrame(step); return; }
+        if (LC.armDockedMobile) LC.armDockedMobile();     /* real cards reveal, wires + beads fire */
         clones.forEach(function (c) { c.wrap.remove(); });
         flaming = false;
       }

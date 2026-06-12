@@ -295,10 +295,12 @@ body.at-hero .pill{opacity:0;visibility:hidden;pointer-events:none}
 .hud-activate{position:absolute;inset:0;display:flex;align-items:center;gap:14px;padding:0 18px;transition:opacity .35s ease,transform .4s cubic-bezier(.2,.8,.2,1)}
 .ha-text{font-size:12.5px;color:var(--ink-70);display:inline-flex;align-items:center;gap:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ha-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 3px rgba(239,142,28,.16);flex-shrink:0}
-.ha-go{margin-left:auto;flex-shrink:0;display:inline-flex;align-items:center;gap:8px;background:var(--amber);color:#3a2402;border:none;border-radius:11px;padding:9px 15px 9px 11px;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 12px 24px -13px rgba(239,142,28,.9);transition:background .2s,box-shadow .2s,transform .2s}
-.ha-go:hover{background:var(--amber-bright);transform:translateY(-1px)}
+.ha-go{margin-left:auto;flex-shrink:0;display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:9px 15px 9px 11px;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 6px 16px -10px rgba(26,23,20,.28);transition:background .2s,box-shadow .2s,transform .2s,border-color .2s}
+.ha-go:hover{background:var(--paper-2);border-color:#dcd6c9;transform:translateY(-1px)}
 .ha-go .lmark{width:18px;height:18px;border-radius:5px;padding-bottom:3px}
-.ha-go.beckon{animation:fabpulse 1.6s ease-in-out infinite}
+.ha-go.beckon{animation:softpulse 1.6s ease-in-out infinite}
+/* neutral beckon ring for the light in-page pills (.ha-go / .disc-fab) */
+@keyframes softpulse{0%,100%{box-shadow:0 8px 20px -12px rgba(26,23,20,.3),0 0 0 0 rgba(26,23,20,.14)}50%{box-shadow:0 8px 20px -12px rgba(26,23,20,.3),0 0 0 10px rgba(26,23,20,0)}}
 .hud-track{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:0 18px;opacity:0;pointer-events:none;transition:opacity .45s ease}
 .inq-hud.hud-go .hud-activate{opacity:0;transform:translateY(-8px);pointer-events:none}
 .inq-hud.hud-go .hud-track{opacity:1;pointer-events:auto}
@@ -969,6 +971,8 @@ body.ev-active #worddeck,body.at-hero #worddeck,body.at-close #worddeck{opacity:
 .wd-card.collapsing{overflow:hidden;transition:opacity .4s ease,transform .44s cubic-bezier(.4,0,.2,1),max-height .44s cubic-bezier(.4,0,.2,1),margin-bottom .44s ease,padding-top .44s ease,padding-bottom .44s ease}
 .wd-card.collapsing.gone{opacity:0;transform:translateX(-14px) scale(.9);max-height:0;margin-bottom:0;padding-top:0;padding-bottom:0}
 .wd-w{font-weight:600;font-size:16px;letter-spacing:-.014em;color:var(--ink);line-height:1.05}
+/* native gloss — shown on the small mobile cards (see the ≤920px rules); hidden on desktop, which keeps phonetic + level */
+.wd-tr{display:none;font-size:13px;font-weight:500;letter-spacing:-.01em;line-height:1.1}
 .wd-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:18px}
 .wd-ph{font-family:var(--mono);font-size:10.5px;color:var(--ink-45)}
 .wd-card .cefr-b{font-size:9px;padding:2px 6px}
@@ -1047,10 +1051,10 @@ body.ev-active #worddeck,body.at-hero #worddeck,body.at-close #worddeck{opacity:
 /* reading-level badge: was C1 (hard) → now B1 (your level).
    Sits just BELOW the paragraph, right-aligned — reads as the outcome and never
    collides with the paragraph above (the inter-paragraph gap is only ~12px). */
-.simp-level{position:absolute;bottom:-28px;right:0;display:flex;align-items:center;gap:5px;
+.simp-level{position:absolute;bottom:-28px;left:50%;display:flex;align-items:center;gap:5px;
   font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.03em;white-space:nowrap;
-  opacity:0;transform:translateY(-4px);transition:opacity .4s ease,transform .4s ease;pointer-events:none;z-index:5}
-.simp-level.show{opacity:1;transform:none}
+  opacity:0;transform:translateX(-50%) translateY(-4px);transition:opacity .4s ease,transform .4s ease;pointer-events:none;z-index:5}
+.simp-level.show{opacity:1;transform:translateX(-50%)}
 .sl-chip{display:inline-flex;align-items:center;justify-content:center;min-width:23px;padding:2px 7px;border-radius:999px;
   background:#fff;border:1px solid var(--line);color:var(--ink-70);transition:background .4s ease,color .4s ease,border-color .4s ease}
 .sl-chip.before{color:#b06a2c;background:rgba(176,106,44,.09);border-color:rgba(176,106,44,.34)}
@@ -1179,10 +1183,11 @@ body.at-hero.vocab-on #worddeck{display:block!important;opacity:1;pointer-events
 .dca-focus{border-radius:3px;transition:background .35s ease,box-shadow .35s ease}
 .disc-article.focus .dca-focus{background:rgba(26,23,20,.07);box-shadow:inset 0 -2px 0 rgba(26,23,20,.32)}
 /* floating "ask this page" button docked on the article */
-.disc-fab{position:absolute;right:18px;bottom:16px;display:inline-flex;align-items:center;gap:9px;background:var(--amber);color:#3a2402;border:none;border-radius:13px;padding:10px 16px 10px 11px;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 18px 36px -16px rgba(239,142,28,.75);transition:transform .2s,box-shadow .2s,background .2s}
-.disc-fab .lmark{width:20px;height:20px;border-radius:6px;padding-bottom:3px}
-.disc-fab:hover{transform:translateY(-2px);background:var(--amber-bright)}
-.disc-fab.beckon{animation:fabpulse 1.6s ease-in-out infinite}
+.disc-fab{position:absolute;right:18px;bottom:16px;display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:9px 15px 9px 13px;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 8px 20px -12px rgba(26,23,20,.3),0 1px 3px -1px rgba(26,23,20,.1);transition:transform .2s,box-shadow .2s,background .2s,border-color .2s}
+.disc-fab .dc-ico{width:18px;height:18px;flex-shrink:0;color:var(--ink-70);display:flex}
+.disc-fab .dc-ico svg{width:100%;height:100%;display:block}
+.disc-fab:hover{transform:translateY(-2px);background:var(--paper-2);border-color:#dcd6c9}
+.disc-fab.beckon{animation:softpulse 1.6s ease-in-out infinite}
 @keyframes fabpulse{0%,100%{box-shadow:0 18px 36px -16px rgba(239,142,28,.75),0 0 0 0 rgba(239,142,28,.34)}50%{box-shadow:0 18px 36px -16px rgba(239,142,28,.75),0 0 0 11px rgba(239,142,28,0)}}
 /* thought bubble that pops near the cursor while "reading" */
 .disc-think{position:absolute;left:0;top:0;z-index:34;display:inline-flex;align-items:center;gap:9px;background:var(--amber);color:#3a2402;border-radius:14px;border-bottom-left-radius:5px;padding:8px 14px 8px 9px;font-size:13.5px;font-weight:600;white-space:nowrap;box-shadow:0 22px 44px -22px rgba(239,142,28,.65);opacity:0;transform:translateY(8px) scale(.9);transform-origin:0 100%;transition:opacity .3s ease,transform .42s cubic-bezier(.2,.85,.25,1);pointer-events:none}
@@ -1643,7 +1648,16 @@ body:not(.at-hero) .m-dotnav{display:none}
 /* float wrappers with gentle bob */
 .pg-float{position:relative;animation:pgbob var(--dur,7s) ease-in-out infinite;animation-delay:var(--del,0s);will-change:transform}
 .pg-float:hover{z-index:6}
-@keyframes pgbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+/* a continuous, slightly-elliptical drift (not a hard up/down bob) + a hair of
+   rotation → the cards read as LIGHT, hovering on air. Each card's own --dur/--del
+   keeps the six out of phase, so they never sway in lockstep. */
+@keyframes pgbob{
+  0%  {transform:translate(0,-2px)  rotate(.35deg)}
+  25% {transform:translate(5px,-8px) rotate(0deg)}
+  50% {transform:translate(0,-10px) rotate(-.35deg)}
+  75% {transform:translate(-5px,-6px) rotate(0deg)}
+  100%{transform:translate(0,-2px)  rotate(.35deg)}
+}
 /* while the single window is splitting into 5, freeze the bob so the stacked
    window is rock-steady (otherwise the overlapped cards drift apart) */
 .ev.ev-splitting .pg-float{animation:none;transform:none}

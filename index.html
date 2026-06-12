@@ -25,13 +25,15 @@ body.hero-p5 #hero .hero-stage { transform: translateX(calc(-5vw - 4.5%)) transl
 
 #hero .browser {
   position: relative;                /* tpanel + discuss dock anchor to the browser viewport */
-  transform: perspective(1300px) rotateY(-10.5deg);   /* 3D: right edge leans toward the viewer (softened 30%) */
+  transform: perspective(1300px) rotateY(-4.4deg);
   transform-origin: 50% 50%;
   transition: transform 0.8s cubic-bezier(.4,0,.2,1), box-shadow 0.6s ease;
 }
+/* tr-active: the browser holds still on ALL viewports — only the riser sentence
+   card gets the 3D pop. Shadow stays neutral. */
 body.hero-p3 #hero.tr-active .browser {
-  transform: perspective(1300px) rotateY(0deg) rotate(-2deg) scale(0.92) !important;
-  box-shadow: 0 70px 110px -50px rgba(26,23,20,.7), 0 18px 40px -18px rgba(26,23,20,.22);
+  transform: perspective(1300px) rotateY(0deg) rotate(-2deg) !important;
+  box-shadow: inherit;
 }
 #hero .browser,
 body.hero-p2 #hero .browser,
@@ -56,7 +58,7 @@ body.hero-p2 #hero .hero-copy {
 
 #hero .hw-card { transition: transform 0.45s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; }
 body.hero-p2 #hero .hw-card  { opacity: 0 !important; pointer-events: none; }
-#hero .hw-card .wordcard { transform: rotate(0deg) !important; }  /* straight cards — no tilt */
+#hero .hw-card .wordcard { transform: rotate(var(--rot, 0deg)); }
 /* big word-cards drift gently in the air once they settle (overrides lantern-v3.css, which pinned them static) */
 #hero .hw-card.rested { animation: card-bob var(--cbdur, 4.6s) ease-in-out infinite; animation-delay: var(--cbdel, 0s); }
 /* transitions live on the base selector so the return direction animates too */
@@ -115,7 +117,7 @@ body.hero-p2 .hero-extra {
   opacity: 1;
 }
 
-.scroll-cue { transition: opacity 0.3s ease; }
+.scroll-cue { transition: opacity 0.3s ease; display: none !important; }
 body.hero-p2 .scroll-cue { opacity: 0; }
 
 /* mobile-only bottom nav cluster — hidden on desktop (shown in the ≤920px block) */
@@ -201,6 +203,81 @@ body.hero-p2.at-hero .pill {
   opacity: var(--m, 0);
   transform: none;
   transition: opacity 0.12s, transform 0.14s;
+}
+
+/* ═══ desktop bottom deck — council verdict B: the side rail retires; navigation
+   moves to a bottom media-player (caption + scrubber + PLAY), built mouse-native
+   and as a real focusable slider. Driven through window.LanternPhases. ═══ */
+#d-deck { display: none; }
+@media (min-width: 921px) {
+  .m-dotnav { display: none !important; }            /* side rail retired on desktop */
+  .scroll-cue { display: none !important; }          /* deck's PLAY replaces the "scroll" hint */
+  #d-deck {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+    z-index: 71; pointer-events: none;                /* children re-enable */
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    transition: opacity .3s ease;
+  }
+  body.ph-cta #d-deck { opacity: 0; pointer-events: none; }   /* clear the install screen */
+  .d-deck-cap {
+    font-family: var(--mono, monospace); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; white-space: nowrap; color: var(--ink, #1a1714);
+    opacity: .55; transition: opacity .18s ease;
+  }
+  .d-deck-row { display: flex; align-items: center; gap: 12px; pointer-events: none; }
+  .d-playbtn {
+    pointer-events: auto; flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1.5px solid rgba(26,23,20,.22); box-sizing: border-box;
+    background: var(--paper, #f7f6f3); box-shadow: 0 2px 10px rgba(26,23,20,.14);
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    cursor: pointer; transition: border-color .18s, background .18s, transform .12s;
+  }
+  .d-playbtn:hover { border-color: rgba(26,23,20,.42); }
+  .d-playbtn:active { transform: scale(.92); }
+  .d-playbtn:focus-visible { outline: 2px solid var(--amber, #ef8e1c); outline-offset: 3px; }
+  .d-playbtn svg { width: 19px; height: 19px; fill: var(--amber-deep, #c96b00); }
+  .d-playbtn .ic-stop { display: none; }
+  .d-playbtn.playing { border-color: var(--amber, #ef8e1c); background: rgba(239,142,28,.10); }
+  .d-playbtn.playing .ic-play { display: none; }
+  .d-playbtn.playing .ic-stop { display: block; }
+
+  .d-scrub {
+    pointer-events: auto; width: min(46vw, 520px); padding: 13px 9px;
+    cursor: pointer; touch-action: none; border-radius: 8px;
+  }
+  .d-scrub:focus-visible { outline: 2px solid var(--amber, #ef8e1c); outline-offset: 2px; }
+  .d-track { position: relative; height: 3px; border-radius: 2px; background: rgba(26,23,20,.12); }
+  .d-tick {
+    position: absolute; top: 50%; width: 5px; height: 5px; border-radius: 50%;
+    transform: translate(-50%,-50%); background: var(--paper, #f7f6f3);
+    border: 1px solid rgba(26,23,20,.30); box-sizing: border-box;
+    transition: background .25s, border-color .25s;
+  }
+  .d-tick.passed { background: var(--amber, #ef8e1c); border-color: var(--amber, #ef8e1c); }
+  .d-fill {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 2px;
+    background: linear-gradient(90deg, rgba(239,142,28,.45), var(--amber, #ef8e1c));
+    transition: width .45s cubic-bezier(.3,.1,.25,1);
+  }
+  .d-scrub.drag .d-fill { transition: none; }
+  .d-ball {
+    position: absolute; left: 0; top: 50%; width: 17px; height: 17px; border-radius: 50%;
+    transform: translate(-50%,-50%); background: var(--amber, #ef8e1c);
+    border: 2.5px solid #fff; box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(26,23,20,.30), 0 0 0 1px rgba(26,23,20,.08);
+    cursor: grab; transition: left .45s cubic-bezier(.3,.1,.25,1);
+  }
+  .d-scrub.drag .d-ball { transition: none; cursor: grabbing; }
+  .d-goal {
+    position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%;
+    transform: translate(-50%,-50%); border: 2px solid var(--amber-deep, #c96b00);
+    box-sizing: border-box; opacity: 0; transition: opacity .25s ease;
+  }
+  .d-scrub.chasing .d-goal { opacity: .8; }
+  @media (prefers-reduced-motion: reduce) {
+    .d-fill, .d-ball, .d-tick { transition: none; }
+  }
 }
 
 /* hero simplify dot: fade in after text is visible */
@@ -477,7 +554,12 @@ body.hero-p5 #hero .hx-hud { display: block; }
 /* menu dropdowns inside the browser — open upward so they don't overflow the frame */
 #hero .ex-page .inqgap .menu {
   top: auto; bottom: calc(100% + 7px);
+  min-width: 98px; border-radius: 9px;
 }
+#hero .ex-page .inqgap .menu button { font-size: 12px; padding: 5px 10px; border-radius: 6px; }
+/* Oops! bubble: menu occupies the space above, so flip it below the gap */
+#hero .ex-page .inqgap .ex-bubble { bottom: auto; top: calc(100% + 8px); }
+#hero .ex-page .inqgap .ex-bubble::after { bottom: auto; top: -6px; border-right: none; border-bottom: none; border-left: 2px solid #1a1714; border-top: 2px solid #1a1714; }
 
 /* ===== CTA CHARGE — the six features wire into the install button =====
    Cards + wires live in .cta-dock, built by lantern-cta-charge.js.
@@ -524,7 +606,13 @@ body.hero-p5 #hero .hx-hud { display: block; }
 .fc-back { transform: translate(-50%, -50%) rotateY(180deg); }
 .fc-front .pg { margin: 0; }
 .fc-back .dk-card { position: relative !important; left: auto !important; top: auto !important; transform: none !important; animation: none !important; }
-@media (max-width: 979px) { .flip-clone { display: none; } }
+/* the desktop flip stays desktop-only; the mobile flip opts in with .m-flip */
+@media (max-width: 979px) { .flip-clone:not(.m-flip) { display: none; } }
+/* mobile flip clones: the back must match the compact in-#ev-close dock card
+   (no preview, tight padding) since the clone lives on <body>, outside that scope */
+.m-flip .dk-prev { display: none; }
+.m-flip .dk-in { padding: 10px 10px 8px; }
+.m-flip .dk-top { margin-bottom: 0; }
 /* ═══════════ ONE-SCREEN MODEL ═══════════
    Everywhere + CTA are NOT scroll sections — they are phase overlays of the one
    pinned hero screen. No scrolling between screens: the browser window morphs
@@ -587,21 +675,26 @@ body.ph-cta.at-hero.vocab-on #worddeck {
 #hero #hero-disc-fab { bottom: 16px; }
 body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; }
 
-/* ── P3: the sentence lifts off the page as a 3D card and translates in place ── */
+/* ── P3: sentences — hover tint, lift = translateY+shadow only, zero scale/rotate ── */
 #hero .tr-page .sel {
-  transition: transform .5s cubic-bezier(.2,.8,.25,1), box-shadow .5s ease,
-              background .3s ease, color .22s ease;
+  display: inline-block;
+  box-shadow: none !important;        /* kill the blue inset-underline from .page .sel */
+  transition: background .2s ease, border-radius .2s ease,
+              transform .38s cubic-bezier(.2,.8,.25,1), box-shadow .38s ease,
+              opacity .15s ease, padding .38s cubic-bezier(.2,.8,.25,1);
+}
+#hero .tr-page .sel:hover {
+  background: rgba(239,142,28,.07); border-radius: 6px;
+  box-shadow: none !important; cursor: pointer;
 }
 #hero .tr-page .sel.m-lift {
-  display: inline-block;
   position: relative; z-index: 5;
-  background: #fff;
-  padding: 12px 14px; border-radius: 12px;
-  transform: perspective(700px) rotateX(3deg) rotateY(-4deg) scale(1.06);
-  transform-origin: 100% 50%;
-  box-shadow: 0 22px 44px -18px rgba(26,23,20,.38), 0 4px 12px -6px rgba(26,23,20,.16);
+  background: #fff; border-radius: 11px; padding: 11px 13px;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px -8px rgba(26,23,20,.18), 0 2px 6px -3px rgba(26,23,20,.09) !important;
 }
-#hero .tr-page .sel.m-swap { color: transparent; }
+/* exit: fade + nudge up (no scale) */
+#hero .tr-page .sel.m-lift.m-swap { opacity: 0; transform: translateY(-9px); }
 #hero .tr-page .sel.m-lift::after {
   content: attr(data-langchip);
   position: absolute; top: -10px; right: 10px;
@@ -613,9 +706,18 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   opacity: 0; transform: translateY(4px);
   transition: opacity .25s ease, transform .25s ease;
 }
-#hero .tr-page .sel.m-uk::after { opacity: 1; transform: none; }
+#hero .tr-page .sel.m-uk::after { opacity: 1; transform: none; transition-delay: .3s; }
+/* riser clone — out-of-flow, page never reflows */
+#hero .tr-page .sel.m-riser {
+  z-index: 5;
+  transition: transform .38s cubic-bezier(.2,.8,.25,1), box-shadow .38s ease,
+              background .2s ease, opacity .15s ease,
+              padding .38s cubic-bezier(.2,.8,.25,1), border-radius .38s ease,
+              left .38s cubic-bezier(.2,.8,.25,1), top .38s cubic-bezier(.2,.8,.25,1),
+              height .4s cubic-bezier(.25,.8,.25,1);
+}
 @media (min-width: 921px) {
-  #hero .tr-page .sel.m-lift { padding: 20px 28px; font-size: 19px; border-radius: 16px; }
+  #hero .tr-page .sel.m-lift { padding: 16px 20px; border-radius: 13px; }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -665,20 +767,20 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     min-width: 0;
   }
 
-  /* the per-phase title now rides the bottom scrubber caption (e.g. "05 · PRACTICE"),
-     so drop the big title block at the TOP of every phase — frees the browser/demo to
-     sit higher and stop the success card from crowding the headline */
-  #hero .hero-copy .hero-eyebrow,
+  /* per-phase title block rides ABOVE the browser — the message of each screen
+     ("Every word you actually use", "Read it simpler", …). The bottom scrubber
+     caption stays the progress marker; the headline carries the meaning. Kept
+     compact (rules below) + clamped to 2 lines so the browser + cards still fit. */
   #hero .hero-copy h1,
-  #hero .hero-copy-p2 .p2-eyebrow, #hero .hero-copy-p2 h2,
-  #hero .hero-copy-p3 .p2-eyebrow, #hero .hero-copy-p3 h2,
-  #hero .hero-copy-p4 .p2-eyebrow, #hero .hero-copy-p4 h2,
-  #hero .hero-copy-p5 .p2-eyebrow, #hero .hero-copy-p5 h2,
-  #hero .hero-copy-simp .sc-pre,  #hero .hero-copy-simp .sc-h { display: none !important; }
+  #hero .hero-copy-p2 h2, #hero .hero-copy-p3 h2,
+  #hero .hero-copy-p4 h2, #hero .hero-copy-p5 h2 {
+    display: -webkit-box !important; -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; overflow: hidden;
+  }
 
   /* compact copy on mobile */
-  #hero .hero-copy h1 { font-size: clamp(30px, 9vw, 46px) !important; line-height: 1.08; margin-bottom: 8px; }
-  #hero .hero-copy .hero-eyebrow { font-size: 11px; margin-bottom: 10px; }
+  #hero .hero-copy h1 { font-size: clamp(26px, 7.4vw, 40px) !important; line-height: 1.08; margin-bottom: 6px; }
+  #hero .hero-copy .hero-eyebrow { font-size: 10px; letter-spacing: .18em; margin-bottom: 8px; }
   #hero .hero-copy .hsub,
   #hero .hero-copy-p2 .p2-sub,
   #hero .hero-copy-p3 .p2-sub,
@@ -691,7 +793,8 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   #hero .hero-copy-p5 h2 { font-size: clamp(24px, 7vw, 38px) !important; margin-bottom: 0; line-height: 1.1; }
   #hero .hero-copy-p2 .p2-eyebrow,
   #hero .hero-copy-p3 .p2-eyebrow,
-  #hero .hero-copy-p4 .p2-eyebrow { font-size: 10px; letter-spacing: .18em; margin-bottom: 10px; }
+  #hero .hero-copy-p4 .p2-eyebrow,
+  #hero .hero-copy-p5 .p2-eyebrow { font-size: 10px; letter-spacing: .18em; margin-bottom: 8px; }
   #hero .hero-copy-simp .sc-h { font-size: clamp(22px, 7vw, 36px) !important; }
   #hero .hero-copy-simp .sc-pre { font-size: 14px; margin-bottom: 10px; }
 
@@ -701,14 +804,19 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   body.hero-p4 #hero .hero-copy-p3 { transform: translateY(-12px) !important; }
   body.hero-p5 #hero .hero-copy-p3 { transform: translateY(-12px) !important; }
 
-  /* hero: don't vertical-centre — let copy + stage stack from top */
-  #hero { align-items: flex-start !important; padding: 0 var(--gut, 20px) 60px !important; position: relative; }
+  /* hero: don't vertical-centre — let copy + stage stack from top.
+     sticky: the crank runway below scrolls under it while the story plays in place */
+  #hero { align-items: flex-start !important; padding: 0 var(--gut, 20px) 60px !important; position: sticky; top: 0; }
+
+  /* the crank runway: ~80vh of native scroll per phase step (6 steps) */
+  #m-crank { height: 480vh; height: 480svh; }
+  html, body { overscroll-behavior-y: none; }
   #hero .hero-inner {
     width: 100% !important;
     box-sizing: border-box !important;
     align-self: stretch !important;
     min-height: calc(100vh - var(--nav, 56px));
-    padding: calc(var(--nav, 56px) + 14px) 0 calc(env(safe-area-inset-bottom,0px) + 120px) !important;
+    padding: calc(var(--nav, 56px) + 10px) 0 calc(env(safe-area-inset-bottom,0px) + 120px) !important;
   }
 
   /* float: lantern-v3.css sets display:none at 920px — un-hide and make static */
@@ -726,9 +834,21 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     transform: none !important; clip-path: none !important;
     box-shadow: 0 10px 28px -8px rgba(26,23,20,.18) !important;
   }
+  /* translate beat: the desktop tilt/shrink (#hero.tr-active) must NOT move the
+     browser on mobile — the frame holds still, only the sentence lifts inside it */
+  body.hero-p3 #hero.tr-active .browser {
+    transform: none !important;
+    box-shadow: 0 10px 28px -8px rgba(26,23,20,.18) !important;
+  }
 
-  /* browser page: smaller font; keep min-height (children are position:absolute) */
-  #hero .browser .page { font-size: 14px !important; line-height: 1.65 !important; padding: 16px !important; min-height: 220px !important; }
+  /* browser page: smaller font; keep min-height (children are position:absolute).
+     P1 sized to the FULL 4-line article (no clip), tightened inner padding so the
+     paragraph wraps to fewer lines and the window stays compact — cards below ride
+     higher and clear the CTA + scrubber (P2 grows it to 330 for the simplify para) */
+  #hero .browser .page { font-size: 14px !important; line-height: 1.6 !important; padding: 16px !important; min-height: 196px !important; }
+  #hero .browser .page-en,
+  #hero .browser .tr-page,
+  #hero .browser .ex-page { padding: 18px 20px !important; }
   #hero .browser .page > p:first-child,
   #hero .browser .page h3 { font-size: 15px !important; }
   /* reserve the 2nd-paragraph height from the start (phase 1) so the window is
@@ -758,16 +878,21 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
      on phones the copy button is hidden and a sibling clone sits under the browser. */
   #hero .hero-copy .hcta { display: none !important; }
   #hero .hcta-m {
-    position: absolute !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 76px) !important;
+    position: absolute !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
     left: 0 !important; right: 0 !important;
     grid-column: unset !important; grid-row: unset !important;
     margin: 0 !important; display: block; transition: opacity 0.4s ease;
   }
   /* compact word cards on mobile */
-  #hero .hw-card .wordcard { padding: 12px 14px !important; }
-  #hero .hw-card .wordcard .w { font-size: 18px !important; }
-  #hero .hw-card .wordcard .ph { font-size: 10.5px !important; margin-top: 3px !important; }
-  #hero .hw-card .wordcard .tr { font-size: 14px !important; margin-top: 7px !important; }
+  #hero .hw-card .wordcard { padding: 9px 11px !important; }
+  #hero .hw-card .wordcard .w { font-size: 16px !important; }
+  #hero .hw-card .wordcard .ph { font-size: 10px !important; margin-top: 2px !important; }
+  #hero .hw-card .wordcard .tr { font-size: 13px !important; margin-top: 5px !important; }
+  #hero .hw-card .wordcard .cefr-b { font-size: 10px !important; padding: 2px 6px !important; }
+  /* leaving screen 1, the cards MORPH into the vocab strip (JS FLIP in
+     lantern-hero-words.js, fired from toP2). The fold lifts each card OUT of
+     #hero to fixed coords, so this opacity:0 only catches the fallback case
+     where no morph runs (it never flashes during the morph). */
   /* only on the Home phase; fades away once the user swipes on */
   body.hero-p2   #hero .hcta-m,
   body.hero-p3   #hero .hcta-m,
@@ -786,14 +911,39 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   }
   #hero .tpanel.show { transform: none !important; }
 
-  /* discuss dock: fixed bottom panel */
+  /* discuss phase: chat floats as a fixed card in front of the whole screen —
+     same focal treatment as desktop but adapted for portrait. The browser frame
+     stays visible below as a grounding backdrop. */
+  body.hero-p4 #hero .browser { max-width: 460px !important; }
+  body.hero-p4 #hero .browser .page { min-height: calc(100vh - 480px) !important; }
+
   #hero-dock {
     position: fixed !important;
-    left: 12px !important; right: 12px !important; width: auto !important;
-    top: auto !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
-    max-height: 44vh !important;
-    transform-origin: bottom right !important;
+    left: 16px !important; right: 16px !important;
+    width: auto !important; max-width: 420px !important;
+    margin: 0 auto !important;
+    top: auto !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 92px) !important;
+    height: auto !important;
+    max-height: 62vh !important;
+    border-radius: 20px !important;
+    box-shadow: 0 32px 72px -20px rgba(26,23,20,.52), 0 0 0 1px rgba(26,23,20,.07) !important;
+    transform: translateY(18px) scale(0.97) !important;
+    transform-origin: bottom center !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.3s ease, transform 0.38s cubic-bezier(.2,.85,.25,1) !important;
   }
+  #hero-dock.show {
+    opacity: 1 !important;
+    transform: translateY(0) scale(1) !important;
+    pointer-events: auto !important;
+  }
+  #hero-dock .cw-body {
+    height: auto !important; flex: 1 1 auto !important;
+    min-height: 0 !important; max-height: 38vh !important; overflow-y: auto !important;
+  }
+  body.hero-p4 #hero .browser .page { opacity: 0.22 !important; transition: opacity .3s ease; }
 
   /* word deck: compact right-rail — visible P2 onwards */
   #worddeck { position: fixed; top: 68px; right: 12px; width: 110px; }
@@ -801,6 +951,19 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   .wd-ph { display: none; }
   .wd-label { font-size: 9px; margin-bottom: 5px; }
   .wd-card { padding: 7px 9px; border-radius: 10px; margin-top: -12px; }
+  /* the small cards carry the gloss (the translation), not the phonetic/level —
+     that's the payoff the visitor reads; the level badge is dropped, the row with it */
+  .wd-card .wd-tr { display: block !important; }
+  .wd-card .wd-row { display: none !important; }
+
+  /* word popup: compact on mobile */
+  .popup.hw-popup { width: min(256px, calc(100vw - 32px)) !important; padding: 12px 14px !important; }
+  .popup.hw-popup .w { font-size: 17px !important; }
+  .popup.hw-popup hr { margin: 8px 0 !important; }
+  .popup.hw-popup .def { font-size: 13px !important; line-height: 1.4 !important; }
+  .popup.hw-popup .ex { display: none !important; }
+  .popup.hw-popup .save { margin-top: 9px !important; }
+  .popup.hw-popup .savebtn { padding: 9px 14px !important; font-size: 13px !important; }
 
   /* P2–P5: worddeck horizontal strip just above the scrubber */
   body.hero-p2 #worddeck {
@@ -816,6 +979,9 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   body.hero-p2 #wd-stack { display: flex !important; flex-direction: row !important; gap: 5px !important; }
   body.hero-p2 .wd-card { flex: 1 !important; min-width: 0 !important; margin: 0 !important; }
   body.hero-p2 .wd-label { display: none !important; }
+
+  /* strip cards sit flat — no float animation, no scatter offset */
+  body.hero-p2 #worddeck .wd-card.in { transform: none !important; animation: none !important; }
 
   /* left nav dots: hidden */
   .m-dotnav { display: none !important; }
@@ -848,9 +1014,31 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
   /* (2) scrubber — drag the bead anywhere; the demo plays every phase on the
      way there at a capped speed. Generous vertical padding = fat hit target. */
+  /* play + scrub on one media-player row; track stays the truth, play is opt-in */
+  .m-scrub-row {
+    display: flex; align-items: center; gap: 10px;
+    pointer-events: none;          /* children re-enable; cluster stays click-through */
+  }
+  .m-playbtn {
+    pointer-events: auto; flex-shrink: 0;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid rgba(26,23,20,.22); box-sizing: border-box;
+    background: var(--paper, #f7f6f3);
+    box-shadow: 0 2px 8px rgba(26,23,20,.14);
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: border-color .18s ease, background .18s ease, transform .12s ease;
+  }
+  .m-playbtn:active { transform: scale(.92); }
+  .m-playbtn svg { width: 18px; height: 18px; fill: var(--amber-deep, #c96b00); }
+  .m-playbtn .ic-stop { display: none; }
+  .m-playbtn.playing { border-color: var(--amber, #ef8e1c); background: rgba(239,142,28,.10); }
+  .m-playbtn.playing .ic-play { display: none; }
+  .m-playbtn.playing .ic-stop { display: block; }
+
   .m-scrub {
     pointer-events: auto;
-    width: min(78vw, 320px);
+    width: min(72vw, 300px);
     padding: 14px 0 10px;
     touch-action: none;            /* the track owns its gestures */
   }
@@ -911,6 +1099,15 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   /* solid paper background so the section properly covers the Everywhere
      screen during and after the phase transition */
   #ev-close { background: var(--paper, #f7f6f3); }
+
+  /* the content block is short for a tall phone — centred, it floats with a big
+     dead gap up top. Anchor it to the UPPER area instead so the screen reads as
+     deliberate, not half-empty (overrides the inline justify-content:center) */
+  #ev-close .close-wrap {
+    flex: none !important;
+    justify-content: flex-start !important;
+    padding-top: clamp(96px, 16vh, 150px) !important;
+  }
 
   /* topbar install pill is useless on mobile (Chrome Web Store rejects it) */
   .topbar .pill { display: none !important; }
@@ -1136,14 +1333,23 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   #ev-close .m-cta-foot .m-hero-hint {
     margin: 0; font-size: 12px; color: var(--ink-45, rgba(26,23,20,.5));
   }
-  /* cards: relative so ::before/::after can anchor to them */
+  /* cards: relative so ::before/::after can anchor to them; float on their own ellipse */
+  @keyframes dkfloatM {
+    0%   { transform: translateY(0px) rotate(.3deg); }
+    25%  { transform: translateY(calc(var(--ay, 3px) * -.65)) rotate(0deg); }
+    50%  { transform: translateY(calc(var(--ay, 3px) * -1)) rotate(-.3deg); }
+    75%  { transform: translateY(calc(var(--ay, 3px) * -.65)) rotate(0deg); }
+    100% { transform: translateY(0px) rotate(.3deg); }
+  }
   #ev-close .dk-card {
     position: relative !important;
     left: auto !important; top: auto !important;
-    transform: none !important;
-    animation: none !important;
     width: auto !important;
   }
+  #ev-close .dk-card.in {
+    animation: dkfloatM var(--fd, 8s) ease-in-out var(--fdelay, 0s) infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { #ev-close .dk-card.in { animation: none; } }
   /* compact: icon + label only */
   #ev-close .dk-in  { padding: 10px 10px 8px; }
   #ev-close .dk-top { margin-bottom: 0; }
@@ -1252,7 +1458,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
       <div class="float" data-speed="-0.08" style="top:8%;left:-1%;z-index:1">
         <div class="floatwrap" style="--dur:8s;--del:0s">
           <div class="browser" style="box-shadow:0 72px 124px -46px rgba(58,36,2,.22),0 18px 38px -20px rgba(26,23,20,.16)">
-            <div class="bbar"><div class="bdots"><i></i><i></i><i></i></div><div class="url">nationalgeographic.com</div><span style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:#f0ebe3;flex-shrink:0"><span class="lmark" style="width:15px;height:15px"></span></span></div>
+            <div class="bbar"><div class="bdots"><i></i><i></i><i></i></div><div class="url">nationalgeographic.com</div></div>
             <div class="page" style="font-size:16.5px;line-height:1.72;position:relative">
               <!-- English content — Phase 1 & 2 -->
               <div class="page-en" style="padding:26px 32px">
@@ -1296,7 +1502,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
             <!-- Phase 4 — "Discuss the article" pill + side panel docked inside the
                  browser frame, the way the real extension opens -->
-            <button class="disc-fab" id="hero-disc-fab" type="button" aria-hidden="true" tabindex="-1"><span class="lmark"></span>Discuss the article</button>
+            <button class="disc-fab" id="hero-disc-fab" type="button" aria-hidden="true" tabindex="-1"><span class="dc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2Z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg></span>Discuss this article</button>
           </div>
         </div>
       </div>
@@ -1383,6 +1589,11 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
   <div class="scroll-cue"><span>Scroll</span><span class="ln"></span></div>
 </header>
+
+<!-- mobile CRANK: invisible scroll runway — native scroll position maps onto the
+     phase track (lantern-scrub.js); the hero above is position:sticky so the
+     story plays in place while the finger "winds the barrel organ" -->
+<div id="m-crank" class="m-only" aria-hidden="true"></div>
 
 <!-- ============ ACT III — EVERYWHERE ============ -->
 <section class="ev" id="finale" data-screen-label="Everywhere">
@@ -1505,10 +1716,16 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
 <div class="m-navcluster">
   <div class="m-phase-caption" id="m-phase-caption">01 · HOME</div>
-  <div class="m-scrub" id="m-scrub" aria-hidden="true">
-    <div class="m-scrub-track">
-      <div class="m-scrub-fill"></div>
-      <div class="m-scrub-ball"></div>
+  <div class="m-scrub-row">
+    <button class="m-playbtn" id="m-playbtn" type="button" aria-label="Play the story">
+      <svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+      <svg class="ic-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg>
+    </button>
+    <div class="m-scrub" id="m-scrub" aria-hidden="true">
+      <div class="m-scrub-track">
+        <div class="m-scrub-fill"></div>
+        <div class="m-scrub-ball"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1671,11 +1888,41 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     mobGen++;
     var hero = document.getElementById('hero');
     if (hero) hero.classList.remove('tr-active');
+    document.querySelectorAll('#hero .tr-page .m-riser').forEach(function (n) { n.remove(); });
     document.querySelectorAll('#hero .tr-page .sel').forEach(function (s) {
-      s.classList.remove('m-lift', 'm-swap', 'm-uk');
+      s.classList.remove('m-lift', 'm-swap', 'm-uk', 'on');
+      s.style.cssText = '';                       /* restore the hidden original */
       var d = TR[s.dataset.tr];
       if (d) s.textContent = d.en;
     });
+  }
+
+  /* text swap on the riser:
+     - exit: caller adds m-swap → opacity:0 + translateY(-7px) via CSS
+     - here we swap text + FLIP height while invisible
+     - prime the "enter from below" position, re-arm transitions,
+       then caller removes m-swap → opacity 1 + translateY slides up into place */
+  function riserSwap(clone, txt) {
+    var h0 = clone.offsetHeight;
+    clone.style.height = '';
+    clone.textContent = txt;
+    var h1 = clone.offsetHeight;
+    if (Math.abs(h1 - h0) > 1) {
+      clone.style.overflow = 'hidden';
+      clone.style.height = h0 + 'px';
+      void clone.offsetHeight;
+      clone.style.height = h1 + 'px';
+      setTimeout(function () { clone.style.overflow = ''; clone.style.height = ''; }, 470);
+    }
+    /* prime enter-from-below: freeze transitions, set the "from" transform,
+       reflow, re-arm → caller's removal of m-swap fires slide-up + fade-in */
+    /* prime enter-from-below: while invisible, set start pos, rearm transitions,
+       clear → CSS .m-lift = translateY(-3px), transition fires: +8→-3 = 11px up */
+    clone.style.transition = 'none';
+    clone.style.transform = 'translateY(8px)';
+    void clone.offsetHeight;
+    clone.style.transition = '';
+    clone.style.transform = '';
   }
   function mobTranslate(sel, chainNext) {
     var gen = ++mobGen;
@@ -1683,37 +1930,73 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     if (!data) return;
     var lang = userLang();
     var tgt  = data[lang] || data.uk;
-    sel.dataset.langchip = 'EN → ' + (data[lang] ? lang : 'uk').toUpperCase();
     function alive() { return gen === mobGen && phase === 2; }
     var hero = document.getElementById('hero');
-    sel.classList.add('on');
+    var page = sel.closest('.tr-page');
+    if (!page) return;
+    document.querySelectorAll('#hero .tr-page .m-riser').forEach(function (n) { n.remove(); });
+
+    /* the riser: an absolute clone over the real sentence — the page flow
+       NEVER reflows. The real sentence hides under it (its space is kept);
+       lift, text morph and settle all play out on the out-of-flow card. */
+    var pr  = page.getBoundingClientRect();
+    var r   = sel.getBoundingClientRect();
+    var cs  = getComputedStyle(sel);
+    var pl0 = parseFloat(cs.paddingLeft) || 0, pt0 = parseFloat(cs.paddingTop) || 0;
+    var x0  = r.left - pr.left, y0 = r.top - pr.top;
+    /* lifted padding mirrors .m-lift CSS (11/13 phone, 16/20 desktop) */
+    var LIFT = matchMedia('(min-width: 921px)').matches ? { v: 16, h: 20 } : { v: 11, h: 13 };
+
+    var clone = sel.cloneNode(true);
+    clone.classList.add('m-riser', 'on');
+    clone.removeAttribute('tabindex'); clone.removeAttribute('role');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.dataset.langchip = 'EN → ' + (data[lang] ? lang : 'uk').toUpperCase();
+    clone.style.cssText = 'position:absolute;margin:0;transition:none;' +
+      'left:' + x0 + 'px;top:' + y0 + 'px;' +
+      'width:' + (r.width - pl0 - (parseFloat(cs.paddingRight) || 0)) + 'px;';
+    page.appendChild(clone);
+    sel.style.opacity = '0';
+    sel.style.pointerEvents = 'none';
+
     setTimeout(function () {
       if (!alive()) return;
-      sel.classList.add('m-lift');
+      clone.style.transition = '';            /* arm the stylesheet transitions */
+      clone.classList.add('m-lift');
+      /* left/top glide against the growing padding — the glyphs hold still */
+      clone.style.left = (x0 - (LIFT.h - pl0)) + 'px';
+      clone.style.top  = (y0 - (LIFT.v - pt0)) + 'px';
       if (hero) hero.classList.add('tr-active');
       setTimeout(function () {
         if (!alive()) return;
-        sel.classList.add('m-swap');
+        clone.classList.add('m-swap');
         setTimeout(function () {
           if (!alive()) return;
-          sel.textContent = tgt;
-          sel.classList.add('m-uk');
-          sel.classList.remove('m-swap');
+          riserSwap(clone, tgt);
+          clone.classList.add('m-uk');
+          clone.classList.remove('m-swap');
           setTimeout(function () {
             if (!alive()) return;
-            sel.classList.add('m-swap');
+            clone.classList.add('m-swap');
             setTimeout(function () {
               if (!alive()) return;
-              sel.textContent = data.en;
-              sel.classList.remove('m-swap', 'm-uk');
+              riserSwap(clone, data.en);
+              clone.classList.remove('m-swap', 'm-uk');
               setTimeout(function () {
                 if (!alive()) return;
-                sel.classList.remove('m-lift', 'on');
+                clone.classList.remove('m-lift', 'on');
+                clone.style.left = x0 + 'px';
+                clone.style.top  = y0 + 'px';
                 if (hero) hero.classList.remove('tr-active');
-                if (chainNext) {
-                  var sels = document.querySelectorAll('#hero .tr-page .sel');
-                  if (sels[1]) setTimeout(function () { if (gen === mobGen && phase === 2) mobTranslate(sels[1], false); }, 500);
-                }
+                setTimeout(function () {
+                  if (!alive()) return;
+                  sel.style.opacity = ''; sel.style.pointerEvents = '';
+                  clone.remove();
+                  if (chainNext) {
+                    var sels = document.querySelectorAll('#hero .tr-page .sel:not(.m-riser)');
+                    if (sels[1]) setTimeout(function () { if (gen === mobGen && phase === 2) mobTranslate(sels[1], false); }, 500);
+                  }
+                }, 520);
               }, 380);
             }, 180);
           }, 2200);
@@ -1891,7 +2174,18 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     }
     /* any entry into P2 guarantees the four words — a dot1→dot3 jump used to
        skip this and silently degrade the simplify demo to plain text */
-    if (!window.Shelf || !window.Shelf.has('coast')) setTimeout(populateShelf, 400);
+    var needWords = !window.Shelf || !window.Shelf.has('coast');
+    var canMorph = window.HeroWords && window.HeroWords.pending();
+    if (needWords && canMorph) {
+      /* the screen-1 cards lift to fixed coords and MORPH straight into the
+         vocab strip (mobile) or deck rail (desktop) — one continuous FLIP each.
+         Two-rAF pattern in foldToDeck guarantees the transition fires before
+         the hero-p2 opacity:0 is painted. */
+      window.HeroWords.foldToDeck();
+      setTimeout(populateShelf, 220);
+    } else if (needWords) {
+      setTimeout(populateShelf, 400);
+    }
     setDots(1);
     /* mobile: nobody hunts for a 13px dot with a thumb — the paragraph
        simplifies itself once the reveal lands */
@@ -2063,7 +2357,10 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     pinDock();
     if (!aliveD(gen)) return;
     rows.forEach(function (r) { r.row.classList.add('live'); });
-    await Promise.all(rows.map(function (r) { return revealWords(r.queue, gen); }));
+    for (var ri = 0; ri < rows.length; ri++) {
+      if (!aliveD(gen)) return;
+      await revealWords(rows[ri].queue, gen);
+    }
   }
 
   /* the typed word is credited: green flash in the bubble, a spark flies to
@@ -2246,6 +2543,8 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   /* wheel: P1 → P2 → P3 → P4; at P4 a further scroll-down releases to the CTA section below */
   var lastAwayTs = 0;
   window.addEventListener('wheel', function (e) {
+    /* crank mode (mobile): native scroll drives the phases — don't double-step */
+    if (window.__mCrank) return;
     if (!document.body.classList.contains('at-hero')) return;
     // at-hero can stay true even when ev-close is centred: hero + ev-close are both 100vh, so
     // the scroll centre only *reaches* ev-close's midpoint, never passes it, and the v3 loop
@@ -2328,8 +2627,6 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     touchStartY = t.clientY; touchStartX = t.clientX; touchStartT = performance.now();
   }, { passive: true });
   document.addEventListener('touchend', function (e) {
-    if (!document.body.classList.contains('at-hero')) return;
-    if (window.scrollY > window.innerHeight * 0.5) return;
     /* the scrubber owns its own gestures */
     if (e.target && e.target.closest && e.target.closest('.m-scrub')) return;
     var t = e.changedTouches[0];
@@ -2341,6 +2638,25 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     /* don't capture swipes inside a scrollable chat body */
     var cw = e.target && e.target.closest ? e.target.closest('.cw-body') : null;
     if (cw && cw.scrollHeight > cw.clientHeight + 1) return;
+
+    /* crank mode: a phase is ~80vh of runway, so a flick almost never scrolls far
+       enough to cross one — drive the phase DIRECTLY (one step per swipe), then
+       snap the runway to it and mute the leftover momentum so it can't rewind. */
+    if (window.__mCrank) {
+      if (wheelLock) return;
+      var LPc = window.LanternPhases;
+      if (LPc && LPc.busy && LPc.busy()) return;
+      wheelLock = true; clearTimeout(wheelLockTimer);
+      wheelLockTimer = setTimeout(function () { wheelLock = false; }, 600);
+      if (window.LanternCrank) window.LanternCrank.suppress(700);
+      if (LPc && LPc.step) LPc.step(dy > 0 ? 1 : -1);
+      if (window.LanternCrank && LPc) setTimeout(function () { window.LanternCrank.syncTo(LPc.get()); }, 40);
+      return;
+    }
+
+    /* ── legacy (no crank runway): step phases against scroll position ── */
+    if (!document.body.classList.contains('at-hero')) return;
+    if (window.scrollY > window.innerHeight * 0.5) return;
     if (wheelLock) return;
     var le0 = LE();
     if (le0 && le0.busy && le0.busy()) return;
@@ -2777,6 +3093,47 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     function alive() { return document.body.classList.contains('hero-p5'); }
     var t = 0;
     function step(d, fn) { t += d; setTimeout(function () { if (alive()) fn(); }, t); }
+
+    /* cursor — same SVG as the word-hover demo; finger on mobile via existing CSS */
+    var heroEl = document.getElementById('hero');
+    var cur = null;
+    if (heroEl && !RM) {
+      cur = document.createElement('div');
+      cur.className = 'hw-cursor';
+      cur.innerHTML =
+        '<span class="hwc-ico"><svg viewBox="0 0 24 24" width="25" height="25">' +
+        '<path d="M3 2 L3 18.6 L7.3 14.6 L10.3 21 L13 19.8 L10 13.5 L16.2 13.5 Z" ' +
+        'fill="#1a1714" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg></span>' +
+        '<span class="hwc-ring"></span>';
+      heroEl.appendChild(cur);
+    }
+    function moveTo(el) {
+      if (!cur || !heroEl || !el) return;
+      var hr = heroEl.getBoundingClientRect(), er = el.getBoundingClientRect();
+      if (!er.width && !er.height) return;
+      cur.style.transform = 'translate(' + (er.left + er.width * 0.5 - hr.left).toFixed(1) + 'px,' +
+        (er.top + er.height * 0.5 - hr.top).toFixed(1) + 'px)';
+      cur.classList.add('show');
+    }
+    function tap() {
+      if (!cur) return;
+      cur.classList.remove('tap'); void cur.offsetWidth; cur.classList.add('tap');
+    }
+    function hideCur() {
+      if (!cur) return;
+      cur.classList.add('gone');
+      setTimeout(function () { if (cur.parentNode) cur.parentNode.removeChild(cur); }, 400);
+    }
+    function findBtn(i, correct) {
+      var g = targets[i]; if (!g) return null;
+      var a = g.dataset.answer, found = null;
+      Array.prototype.forEach.call(g.querySelectorAll('.menu button'), function (b) {
+        var hit = (b.textContent.trim() === a);
+        if (correct ? hit : (!hit && !found)) found = b;
+      });
+      return found;
+    }
+
     function open(i) {
       var g = targets[i];
       if (!g || g.dataset.done || !g.classList.contains('formed')) return;
@@ -2793,8 +3150,6 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
       });
       if (!btn) return;
       if (correct) {
-        /* press the right option down + green it FIRST, hold a beat so it reads as
-           correct, THEN lock it in (the menu closes on solve) */
         btn.classList.add('right');
         setTimeout(function () { if (alive() && !g.dataset.done) btn.click(); }, 460);
       } else {
@@ -2802,31 +3157,54 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
         bubble(g, 'Oops!', 'oops');
       }
     }
-    /* the cadence speeds up — the page is learning your hand */
-    step(500,  function () { open(0); });
-    step(750,  function () { pick(0, true); });
-    step(950,  function () { open(1); });
-    step(650,  function () { pick(1, true); });
-    step(850,  function () { open(2); });
-    step(550,  function () { pick(2, false); });   /* …WRONG — Oops! */
-    step(1400, function () { pick(2, true); });    /* recovered */
-    step(750,  function () { open(3); });
-    step(550,  function () { pick(3, true); });
-    step(900,  function () { if (solved >= targets.length) successWin(); });
+
+    /* cursor → "Turn into exercises" button → enable() */
+    step(400,  function () { moveTo(hxToggle); });
+    step(400,  function () { tap(); if (hxToggle) hxToggle.click(); });
+
+    /* gaps form: stagger ~220ms × 4 + card flights ≈ 1400ms */
+
+    /* gap 0 */
+    step(1500, function () { var g = targets[0]; moveTo(g && (g.querySelector('.gt') || g)); });
+    step(350,  function () { tap(); open(0); });
+    step(550,  function () { moveTo(findBtn(0, true)); });
+    step(280,  function () { tap(); pick(0, true); });
+
+    /* gap 1 */
+    step(800,  function () { var g = targets[1]; moveTo(g && (g.querySelector('.gt') || g)); });
+    step(350,  function () { tap(); open(1); });
+    step(500,  function () { moveTo(findBtn(1, true)); });
+    step(280,  function () { tap(); pick(1, true); });
+
+    /* gap 2 — WRONG first (menu stays open via stopPropagation), then corrected */
+    step(800,  function () { var g = targets[2]; moveTo(g && (g.querySelector('.gt') || g)); });
+    step(350,  function () { tap(); open(2); });
+    step(500,  function () { moveTo(findBtn(2, false)); });
+    step(280,  function () { tap(); pick(2, false); });
+    step(1150, function () { moveTo(findBtn(2, true)); });
+    step(350,  function () { tap(); pick(2, true); });
+
+    /* gap 3 */
+    step(800,  function () { var g = targets[3]; moveTo(g && (g.querySelector('.gt') || g)); });
+    step(350,  function () { tap(); open(3); });
+    step(500,  function () { moveTo(findBtn(3, true)); });
+    step(280,  function () { tap(); pick(3, true); });
+
+    step(950,  function () { hideCur(); if (solved >= targets.length) successWin(); });
   }
 
   window._heroExOnEnter = function () {
     if (enabled) return;
-    /* show the text for 1.2s so the viewer sees it as normal — then MAGIC */
+    /* show the text for 1.2s so the viewer sees it as normal — then cursor-guided demo */
     setTimeout(function () {
       if (enabled || !document.body.classList.contains('hero-p5')) return;
-      enable();
-      /* mobile: gaps form (~220ms stagger + card flights), then the auto-hand plays */
-      if (window.matchMedia('(max-width: 920px)').matches) setTimeout(autoplay, 1900);
+      if (RM) { enable(); return; }
+      autoplay();
     }, 1200);
   };
 })();
 </script>
 <script src="lantern-scrub.js"></script>
+<script src="lantern-deck.js"></script>
 </body>
 </html>

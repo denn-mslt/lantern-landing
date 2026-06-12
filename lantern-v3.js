@@ -39,6 +39,7 @@ const DICT = {
   spell:    { w:'spell',    ph:'/spel/',         tr:'період',      lvl:'B1', cls:'b-blue',   syn:'period · stretch', def:'A short period of a particular kind of weather or activity.', ex:'A calm **spell** let the work go on.' },
   // popup-only extras (read but not part of the marquee save set)
   bridges:  { w:'bridge',   ph:'/brɪdʒ/',        tr:'міст',        lvl:'A2', cls:'b-green',  syn:'span · crossing', def:'A structure built over a road, river or gap so people can cross.', ex:'Low **bridges** hop from island to island.' },
+  island:   { w:'island',   ph:'/ˈaɪ.lənd/',     tr:'острів',      lvl:'A2', cls:'b-green',  syn:'isle', def:'A piece of land surrounded by water.', ex:'A scatter of small **islands** lies offshore.' },
   islands:  { w:'island',   ph:'/ˈaɪ.lənd/',     tr:'острів',      lvl:'A2', cls:'b-green',  syn:'isle', def:'A piece of land surrounded by water.', ex:'A scatter of small **islands** lies offshore.' },
   storms:   { w:'storm',    ph:'/stɔːm/',        tr:'шторм',       lvl:'A2', cls:'b-green',  syn:'tempest · gale', def:'Very bad weather with strong wind and rain.', ex:'Winter **storms** close the road for days.' },
   // full PARA0 coverage — so any saved word carries a transcription
@@ -57,7 +58,7 @@ const DICT = {
   atlantic: { w:'Atlantic', ph:'/ətˈlæntɪk/',    tr:'Атлантичний', lvl:'B1', cls:'b-blue',   syn:'', def:'The ocean between Europe/Africa and the Americas.', ex:'The **Atlantic** Road.' },
 };
 const FALLBACK_PH = { the:'/ðə/', an:'/ən/', a:'/ə/', of:'/əv/', by:'/baɪ/', for:'/fɔː/', its:'/ɪts/', to:'/tuː/', low:'/ləʊ/', much:'/mʌtʃ/', just:'/dʒʌst/', above:'/əˈbʌv/', seems:'/siːmz/' };
-const genDef = w => ({ w, ph:(FALLBACK_PH[w] || ''), tr:'', lvl:'A2', cls:'b-green', syn:'', def:'Tap to see this word at your level — its meaning, pronunciation and examples.', ex:'' });
+const genDef = w => ({ w, ph:(FALLBACK_PH[w] || ''), tr:'···', lvl:'A2', cls:'b-green', syn:'', def:'Tap to see this word at your level — its meaning, pronunciation and examples.', ex:'' });
 const boldEx = s => s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 
 /* ============ guided ghost cursor (shared coachmark) ============
@@ -158,10 +159,12 @@ const Shelf = (function () {
       'stroke-linecap="round" transform="rotate(-90 13 13)"/>' +
       '</svg>';
     const card = el('wd-card ' + (d.cls || 'b-green')); card.dataset.w = lemma;
+    const trCls = 't-' + (d.cls || 'b-green').replace(/^b-/, '');
     card.innerHTML =
       ring +
       '<span class="wd-w">' + d.w + '</span>' +
-      '<span class="wd-row"><span class="wd-ph">' + (d.ph || '') + '</span><span class="cefr-b ' + d.cls + '">' + d.lvl + '</span></span>';
+      '<span class="wd-row"><span class="wd-ph">' + (d.ph || '') + '</span><span class="cefr-b ' + d.cls + '">' + d.lvl + '</span></span>' +
+      '<span class="wd-tr ' + trCls + '">' + (d.tr || '') + '</span>';
     stackEl.appendChild(card);
     reveal();
     if (opts.preset) {
@@ -288,19 +291,29 @@ function loop() {
   curY += (targetY - curY) * 0.12;
   if (Math.abs(targetY - curY) < 0.2) curY = targetY;
   if (TX.on) { mx += (tmx - mx) * 0.05; my += (tmy - my) * 0.05; }
-  const vh = innerHeight, vc = curY + vh / 2;
+  /* crank mode (mobile): scroll position is the phase dial, not a camera move —
+     the hero must hold still, so the parallax sees a permanent scrollY of 0 */
+  const vh = innerHeight, vc = (window.__mCrank ? 0 : curY) + vh / 2;
   sects.forEach((s, i) => {
     const d = (offs[i] + hs[i] / 2 - vc) / vh;
     const ad = Math.min(Math.abs(d), 1);
     if (TX.on) {
-      s.style.opacity = (1 - ad * 0.62).toFixed(3); txEls[i].style.transform = txTransform(s, d, ad);
-      speedEls[i].forEach(e => {
-        const sp = parseFloat(e.dataset.speed) || 0;
-        const isFloat = e.classList.contains('float');
-        const moX = isFloat ? mx * sp * 300 : 0;
-        const moY = isFloat ? my * sp * 200 : 0;
-        e.style.transform = `translate3d(${moX.toFixed(1)}px,${(d * -sp * 220 + moY).toFixed(1)}px,0)`;
-      });
+      if (window.__mCrank) {
+        /* crank mode: phases are controlled by classes, not parallax —
+           skip opacity fade (hero section is 480vh+ tall so its center is
+           far from vc and would otherwise render at ~0.38 opacity) */
+        s.style.opacity = ''; txEls[i].style.transform = '';
+        speedEls[i].forEach(e => e.style.transform = '');
+      } else {
+        s.style.opacity = (1 - ad * 0.62).toFixed(3); txEls[i].style.transform = txTransform(s, d, ad);
+        speedEls[i].forEach(e => {
+          const sp = parseFloat(e.dataset.speed) || 0;
+          const isFloat = e.classList.contains('float');
+          const moX = isFloat ? mx * sp * 300 : 0;
+          const moY = isFloat ? my * sp * 200 : 0;
+          e.style.transform = `translate3d(${moX.toFixed(1)}px,${(d * -sp * 220 + moY).toFixed(1)}px,0)`;
+        });
+      }
     } else {
       s.style.opacity = ''; txEls[i].style.transform = '';
       speedEls[i].forEach(e => e.style.transform = '');
@@ -385,8 +398,9 @@ addEventListener('wheel', e => {
     const atTop = sc.scrollTop <= 0, atBot = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
     if (!((atTop && e.deltaY < 0) || (atBot && e.deltaY > 0))) return;  // scroll inside it
   }
-  e.preventDefault();
+  if (innerWidth < 920) return;
   if (performance.now() < pagerLock) return;
+  e.preventDefault();
   wheelAcc += e.deltaY;
   clearTimeout(wheelClr); wheelClr = setTimeout(() => wheelAcc = 0, 200);
   const TH = 24;
