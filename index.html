@@ -27,7 +27,11 @@ body.hero-p5 #hero .hero-stage { transform: translateX(calc(-5vw - 4.5%)) transl
   position: relative;                /* tpanel + discuss dock anchor to the browser viewport */
   transform: perspective(1300px) rotateY(-10.5deg);   /* 3D: right edge leans toward the viewer (softened 30%) */
   transform-origin: 50% 50%;
-  transition: transform 0.8s cubic-bezier(.4,0,.2,1);
+  transition: transform 0.8s cubic-bezier(.4,0,.2,1), box-shadow 0.6s ease;
+}
+body.hero-p3 #hero.tr-active .browser {
+  transform: perspective(1300px) rotateY(0deg) rotate(-2deg) scale(0.92) !important;
+  box-shadow: 0 70px 110px -50px rgba(26,23,20,.7), 0 18px 40px -18px rgba(26,23,20,.22);
 }
 #hero .browser,
 body.hero-p2 #hero .browser,
@@ -118,6 +122,9 @@ body.hero-p2 .scroll-cue { opacity: 0; }
 .m-navcluster { display: none; }
 /* mobile-only relocated CTA clone — hidden on desktop */
 .hcta-m { display: none; }
+/* responsive visibility helpers */
+.m-only { display: none; }
+.d-only { display: block; }
 
 /* worddeck: lift at-hero suppression in phase 2 */
 body.hero-p2 #worddeck {
@@ -296,6 +303,7 @@ body.hero-p4 #hero .tr-page .sel { pointer-events: none; }
 #hero-disc-fab {
   opacity: 0; transform: translateY(10px); pointer-events: none; z-index: 6;
   transition: opacity 0.3s ease, transform 0.38s cubic-bezier(.2,.85,.25,1);
+  border-radius: 999px;
 }
 #hero-disc-fab.show  { opacity: 1; transform: none; pointer-events: auto; }
 #hero-disc-fab.press { transform: scale(.93); transition: transform 0.12s ease; }
@@ -538,6 +546,11 @@ body.ph-cta .m-dotnav { opacity: 0; pointer-events: none; }
    now it all lives in one click". Keyed on ph-cta so it auto-restores (slides
    back) when you leave the CTA. The 4-class selector out-specifies the forced
    rule (1,3,1 > 1,2,1) so it wins without !important on the transform. */
+/* same on the finale (Everywhere): the browser wall + the vocab strip would
+   overlap, so the deck glides off there too — keyed on ph-ev so it slides back
+   when you return to the hero. */
+body.ph-ev #worddeck,
+body.ph-ev.at-hero.vocab-on #worddeck,
 body.ph-cta #worddeck,
 body.ph-cta.at-hero.vocab-on #worddeck {
   opacity: 0 !important;
@@ -574,11 +587,45 @@ body.ph-cta.at-hero.vocab-on #worddeck {
 #hero #hero-disc-fab { bottom: 16px; }
 body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; }
 
+/* ── P3: the sentence lifts off the page as a 3D card and translates in place ── */
+#hero .tr-page .sel {
+  transition: transform .5s cubic-bezier(.2,.8,.25,1), box-shadow .5s ease,
+              background .3s ease, color .22s ease;
+}
+#hero .tr-page .sel.m-lift {
+  display: inline-block;
+  position: relative; z-index: 5;
+  background: #fff;
+  padding: 12px 14px; border-radius: 12px;
+  transform: perspective(700px) rotateX(3deg) rotateY(-4deg) scale(1.06);
+  transform-origin: 100% 50%;
+  box-shadow: 0 22px 44px -18px rgba(26,23,20,.38), 0 4px 12px -6px rgba(26,23,20,.16);
+}
+#hero .tr-page .sel.m-swap { color: transparent; }
+#hero .tr-page .sel.m-lift::after {
+  content: attr(data-langchip);
+  position: absolute; top: -10px; right: 10px;
+  font-family: var(--mono, monospace); font-size: 9.5px; font-weight: 600;
+  line-height: 1; letter-spacing: .08em;
+  background: var(--amber, #ef8e1c); color: #fff;
+  padding: 4px 7px; border-radius: 999px;
+  box-shadow: 0 3px 8px -3px rgba(201,107,0,.5);
+  opacity: 0; transform: translateY(4px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+#hero .tr-page .sel.m-uk::after { opacity: 1; transform: none; }
+@media (min-width: 921px) {
+  #hero .tr-page .sel.m-lift { padding: 20px 28px; font-size: 19px; border-radius: 16px; }
+}
+
 /* ═══════════════════════════════════════════════════════
    MOBILE (≤920px) — reveal hero stage, scale browser,
    swipe-navigable phases, bottom progress dots
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 920px) {
+  .m-only { display: block; }
+  .d-only { display: none; }
+
   /* un-hide stage (lantern-v3.css sets display:none at 920px) */
   #hero .hero-stage {
     display: block !important;
@@ -618,6 +665,17 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     min-width: 0;
   }
 
+  /* the per-phase title now rides the bottom scrubber caption (e.g. "05 · PRACTICE"),
+     so drop the big title block at the TOP of every phase — frees the browser/demo to
+     sit higher and stop the success card from crowding the headline */
+  #hero .hero-copy .hero-eyebrow,
+  #hero .hero-copy h1,
+  #hero .hero-copy-p2 .p2-eyebrow, #hero .hero-copy-p2 h2,
+  #hero .hero-copy-p3 .p2-eyebrow, #hero .hero-copy-p3 h2,
+  #hero .hero-copy-p4 .p2-eyebrow, #hero .hero-copy-p4 h2,
+  #hero .hero-copy-p5 .p2-eyebrow, #hero .hero-copy-p5 h2,
+  #hero .hero-copy-simp .sc-pre,  #hero .hero-copy-simp .sc-h { display: none !important; }
+
   /* compact copy on mobile */
   #hero .hero-copy h1 { font-size: clamp(30px, 9vw, 46px) !important; line-height: 1.08; margin-bottom: 8px; }
   #hero .hero-copy .hero-eyebrow { font-size: 11px; margin-bottom: 10px; }
@@ -644,7 +702,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   body.hero-p5 #hero .hero-copy-p3 { transform: translateY(-12px) !important; }
 
   /* hero: don't vertical-centre — let copy + stage stack from top */
-  #hero { align-items: flex-start !important; padding: 0 var(--gut, 20px) 60px !important; }
+  #hero { align-items: flex-start !important; padding: 0 var(--gut, 20px) 60px !important; position: relative; }
   #hero .hero-inner {
     width: 100% !important;
     box-sizing: border-box !important;
@@ -684,6 +742,13 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   #hero .browser .page { transition: min-height 1s cubic-bezier(.4,0,.2,1) 0.12s; }
   body.hero-p2 #hero .browser .page { min-height: 330px !important; }
 
+  /* words pre-highlighted on mobile (no interactive demo; show saved state by default) */
+  #hero .browser .hl { border-radius: 4px; padding: 0 2px; }
+  #hero .browser .hl[data-cls="blue"]   { background: #e3edfd; color: #2f6fd6; }
+  #hero .browser .hl[data-cls="green"]  { background: #d8f3e3; color: #1d8348; }
+  #hero .browser .hl[data-cls="red"]    { background: #fde3e3; color: #c0392b; }
+  #hero .browser .hl[data-cls="violet"] { background: #ebe3fd; color: #7d3c98; }
+
   /* the fake article should read like a real page — left-aligned, not centred
      (the marketing headline + CTA stay centred; only the browser content resets) */
   #hero .browser .page { text-align: left !important; }
@@ -693,8 +758,10 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
      on phones the copy button is hidden and a sibling clone sits under the browser. */
   #hero .hero-copy .hcta { display: none !important; }
   #hero .hcta-m {
-    display: block; grid-column: 1; grid-row: 3;
-    margin-top: 100px; transition: opacity 0.4s ease;
+    position: absolute !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 76px) !important;
+    left: 0 !important; right: 0 !important;
+    grid-column: unset !important; grid-row: unset !important;
+    margin: 0 !important; display: block; transition: opacity 0.4s ease;
   }
   /* compact word cards on mobile */
   #hero .hw-card .wordcard { padding: 12px 14px !important; }
@@ -728,8 +795,27 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     transform-origin: bottom right !important;
   }
 
-  /* word deck: hide (too complex for mobile, not needed for the core demo) */
-  #worddeck { display: none !important; }
+  /* word deck: compact right-rail — visible P2 onwards */
+  #worddeck { position: fixed; top: 68px; right: 12px; width: 110px; }
+  body.hero-p2 #worddeck.show { display: block !important; }
+  .wd-ph { display: none; }
+  .wd-label { font-size: 9px; margin-bottom: 5px; }
+  .wd-card { padding: 7px 9px; border-radius: 10px; margin-top: -12px; }
+
+  /* P2–P5: worddeck horizontal strip just above the scrubber */
+  body.hero-p2 #worddeck {
+    position: fixed !important;
+    bottom: 88px !important;
+    left: var(--gut, 20px) !important;
+    right: var(--gut, 20px) !important;
+    top: auto !important;
+    width: auto !important;
+    transform: none !important;
+  }
+  body.hero-p2 #worddeck.show { display: block !important; }
+  body.hero-p2 #wd-stack { display: flex !important; flex-direction: row !important; gap: 5px !important; }
+  body.hero-p2 .wd-card { flex: 1 !important; min-width: 0 !important; margin: 0 !important; }
+  body.hero-p2 .wd-label { display: none !important; }
 
   /* left nav dots: hidden */
   .m-dotnav { display: none !important; }
@@ -826,10 +912,6 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
      screen during and after the phase transition */
   #ev-close { background: var(--paper, #f7f6f3); }
 
-  /* lantern-v3.css:1558 sets .d1-track{display:flex} after the mobile display:none
-     at line 684, so the later rule wins — re-hide here where this style block wins */
-  .d1-track, .d1-fine { display: none !important; }
-
   /* topbar install pill is useless on mobile (Chrome Web Store rejects it) */
   .topbar .pill { display: none !important; }
 
@@ -886,10 +968,15 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
   /* the share button IS the primary CTA on mobile — amber = "the action" */
   .m-share-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    border: none; cursor: pointer; white-space: nowrap;
+    font-family: var(--sans); font-weight: 600; font-size: 16px; letter-spacing: -.01em;
+    padding: 15px 26px; border-radius: 999px;
     background: var(--amber, #ef8e1c);
     color: #fff;
     box-shadow: 0 16px 36px -14px rgba(239,142,28,.55), 0 3px 8px -4px rgba(26,23,20,.2);
   }
+  .m-share-btn svg { width: 18px; height: 18px; flex: none; }
   .m-share-btn:active { opacity: .88; }
   /* …except on the CTA screen, where it starts INK and the bead arrivals
      heat it to amber (inline background-color from lantern-cta-charge.js) */
@@ -922,37 +1009,6 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     border: 1.5px solid rgba(255,255,255,.9);
     box-shadow: 0 2px 8px rgba(26,23,20,.25);
   }
-
-  /* ── P3: the sentence lifts off the page as a 3D card and translates
-     in place — no separate panel window on mobile ────────────────── */
-  #hero .tr-page .sel {
-    transition: transform .5s cubic-bezier(.2,.8,.25,1), box-shadow .5s ease,
-                background .3s ease, color .22s ease;
-  }
-  #hero .tr-page .sel.m-lift {
-    display: inline-block;
-    position: relative; z-index: 5;
-    background: #fff;
-    padding: 12px 14px; border-radius: 12px;
-    transform: perspective(700px) rotateX(3deg) rotateY(-4deg) scale(1.06);
-    transform-origin: 100% 50%;            /* anchored to the right edge */
-    box-shadow: 0 22px 44px -18px rgba(26,23,20,.38), 0 4px 12px -6px rgba(26,23,20,.16);
-  }
-  /* the swap beat: words dissolve, then return in your language */
-  #hero .tr-page .sel.m-swap { color: transparent; }
-  /* language chip rides the lifted card's corner */
-  #hero .tr-page .sel.m-lift::after {
-    content: attr(data-langchip);
-    position: absolute; top: -10px; right: 10px;
-    font-family: var(--mono, monospace); font-size: 9.5px; font-weight: 600;
-    line-height: 1; letter-spacing: .08em;
-    background: var(--amber, #ef8e1c); color: #fff;
-    padding: 4px 7px; border-radius: 999px;
-    box-shadow: 0 3px 8px -3px rgba(201,107,0,.5);
-    opacity: 0; transform: translateY(4px);
-    transition: opacity .25s ease, transform .25s ease;
-  }
-  #hero .tr-page .sel.m-uk::after { opacity: 1; transform: none; }
 
   /* ── P5: comic beats for the self-playing exercise ───────────────── */
   .ex-bubble {
@@ -1020,9 +1076,28 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   /* 2-column wall */
   .ev-wall { gap: 12px !important; max-width: 380px !important; }
 
-  /* ── CTA screen: 3 cards → button → 3 cards, with amber wire lines ─ */
+  /* ── CTA screen (council 7/7, layout "b"): button+note isolated at TOP,
+        six pills in a clean 3×2 grid below, wires run UP into the button ─ */
 
-  /* dock becomes a 3-column grid; JS inserts .m-close-cta between row 1 & row 2 */
+  /* the desktop "Add to Chrome" pill can't install on a phone (Chrome Web Store
+     needs a desktop browser) — drop it; the dock's "Send to desktop" IS the CTA */
+  #ev-close .d1-track { display: none !important; }
+
+  /* council: no footer + no "Read the world" branding on the phone — the screen
+     ends on the action, not on a vanity bar */
+  #ev-close footer { display: none !important; }
+
+  /* council 7/7: a quiet brand mark top-left replaces the lost navbar/footer logo */
+  #ev-close .m-cta-logo {
+    display: flex; align-items: center; gap: 8px;
+    position: absolute; top: 18px; left: 18px; z-index: 6;
+    font-weight: 600; font-size: 17px; letter-spacing: -.01em;
+    color: var(--ink, #1a1714);
+  }
+  #ev-close .m-cta-logo .lmark { width: 21px; height: 21px; }
+
+  /* dock = vertical grid; JS puts .m-close-cta first (top), then the 3×2 pills,
+     then .m-cta-foot (email + reassurance) last */
   #ev-close .cta-dock {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr);
@@ -1033,15 +1108,33 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     z-index: 1 !important;
     pointer-events: none;
   }
-  /* button block spans the full middle row — above the wire overlay, so
-     wire tails slip UNDER the pill exactly like the desktop install button */
+  /* the button block: isolated full-width TOP row, generous air below so the
+     wires have a clean lane up from the pills (no copy for them to cross) */
   #ev-close .cta-dock > .m-close-cta {
     grid-column: 1 / -1;
     order: 0;
     position: relative; z-index: 4;
     pointer-events: auto;
     display: flex !important;
-    margin: 4px 0;
+    flex-direction: column; align-items: center; gap: 11px;
+    text-align: center;
+    margin: 2px 0 22px;
+  }
+  #ev-close .m-close-cta .m-close-note {
+    margin: 0; font-size: 12.5px; line-height: 1.45;
+    color: var(--ink-45, rgba(26,23,20,.5));
+  }
+  /* email link + reassurance dropped below the pill grid, clear of the wires */
+  #ev-close .cta-dock > .m-cta-foot {
+    grid-column: 1 / -1;
+    order: 9;
+    pointer-events: auto;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    text-align: center; margin-top: 16px;
+  }
+  #ev-close .m-cta-foot .m-email-link { margin: 0; }
+  #ev-close .m-cta-foot .m-hero-hint {
+    margin: 0; font-size: 12px; color: var(--ink-45, rgba(26,23,20,.5));
   }
   /* cards: relative so ::before/::after can anchor to them */
   #ev-close .dk-card {
@@ -1212,7 +1305,6 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
            over the window like the translate panel, free to grow past the frame -->
       <aside id="hero-dock" aria-hidden="true" aria-label="Discuss the article">
         <div class="cw-head">
-          <span class="dc-ava"><span class="lmark"></span></span>
           <div class="dc-id">
             <span class="dc-name">Discuss the article</span>
             <span class="dc-src">nationalgeographic.com · The Atlantic Road</span>
@@ -1387,6 +1479,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
 <!-- ============ CTA — compact closer (ported from index.html) ============ -->
 <section id="ev-close" data-screen-label="Read the world" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:var(--nav)">
+  <div class="m-cta-logo m-only" aria-hidden="true"><span class="lmark"></span><span class="m-cta-wm">Lantern</span></div>
   <div class="close-wrap d1-wrap" data-cascade style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;padding:0 var(--gut)">
     <div class="d1-kick">every word you save makes the next page easier</div>
     <h2 class="disp d1-headline reveal-lines">Day one is one&nbsp;click away.</h2>
@@ -1576,6 +1669,8 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   var mobGen = 0;
   function mobTranslateReset() {
     mobGen++;
+    var hero = document.getElementById('hero');
+    if (hero) hero.classList.remove('tr-active');
     document.querySelectorAll('#hero .tr-page .sel').forEach(function (s) {
       s.classList.remove('m-lift', 'm-swap', 'm-uk');
       var d = TR[s.dataset.tr];
@@ -1590,19 +1685,21 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     var tgt  = data[lang] || data.uk;
     sel.dataset.langchip = 'EN → ' + (data[lang] ? lang : 'uk').toUpperCase();
     function alive() { return gen === mobGen && phase === 2; }
+    var hero = document.getElementById('hero');
     sel.classList.add('on');
     setTimeout(function () {
       if (!alive()) return;
       sel.classList.add('m-lift');
+      if (hero) hero.classList.add('tr-active');
       setTimeout(function () {
         if (!alive()) return;
-        sel.classList.add('m-swap');                       /* text fades out */
+        sel.classList.add('m-swap');
         setTimeout(function () {
           if (!alive()) return;
-          sel.textContent = tgt;                           /* …and returns translated */
+          sel.textContent = tgt;
           sel.classList.add('m-uk');
           sel.classList.remove('m-swap');
-          setTimeout(function () {                         /* hold, then come home */
+          setTimeout(function () {
             if (!alive()) return;
             sel.classList.add('m-swap');
             setTimeout(function () {
@@ -1612,16 +1709,17 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
               setTimeout(function () {
                 if (!alive()) return;
                 sel.classList.remove('m-lift', 'on');
+                if (hero) hero.classList.remove('tr-active');
                 if (chainNext) {
                   var sels = document.querySelectorAll('#hero .tr-page .sel');
-                  if (sels[1]) setTimeout(function () { if (gen === mobGen && phase === 2) mobTranslate(sels[1], false); }, 700);
+                  if (sels[1]) setTimeout(function () { if (gen === mobGen && phase === 2) mobTranslate(sels[1], false); }, 500);
                 }
-              }, 550);
-            }, 240);
-          }, 3000);
-        }, 240);
-      }, 650);
-    }, 650);
+              }, 380);
+            }, 180);
+          }, 2200);
+        }, 180);
+      }, 350);
+    }, 200);
   }
 
   function openTPanel(sel) {
@@ -1658,8 +1756,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   document.querySelectorAll('#hero .tr-page .sel').forEach(function (sel) {
     sel.addEventListener('click', function () {
       if (phase !== 2) return;
-      if (window.matchMedia('(max-width: 920px)').matches) { mobTranslateReset(); mobTranslate(sel, false); }
-      else openTPanel(sel);
+      mobTranslateReset(); mobTranslate(sel, false);
     });
   });
 
@@ -1827,8 +1924,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
          fires at 1600ms so the phase-entry animation lands before the panel slides in,
          and simultaneously clears wheelLock so the next scroll advances to P4.
          mobile: no panel — the sentence lifts and translates in place. */
-      if (window.matchMedia('(max-width: 920px)').matches) mobTranslate(first, true);
-      else openTPanel(first);
+      mobTranslate(first, false);
       wheelLock = false;
       clearTimeout(wheelLockTimer);
     }, 1600);
@@ -1965,12 +2061,9 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
       return { row: b, queue: buildWords(w, t) };   /* built hidden — height reserved, no jitter */
     });
     pinDock();
-    for (var i = 0; i < rows.length; i++) {
-      if (!aliveD(gen)) return;
-      rows[i].row.classList.add('live');
-      await revealWords(rows[i].queue, gen);
-      await wait(140);
-    }
+    if (!aliveD(gen)) return;
+    rows.forEach(function (r) { r.row.classList.add('live'); });
+    await Promise.all(rows.map(function (r) { return revealWords(r.queue, gen); }));
   }
 
   /* the typed word is credited: green flash in the bubble, a spark flies to
@@ -2050,6 +2143,10 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     await streamSummary(gen); if (!aliveD(gen)) return;
     await wait(700); if (!aliveD(gen)) return;
     await typeAsk(gen);
+    await wait(1400); if (!aliveD(gen)) return;
+    dock.classList.remove('show');
+    await wait(380); if (!aliveD(gen)) return;
+    toP5();
   }
 
   async function runDiscuss() {
@@ -2297,6 +2394,11 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
         else return false;
       }
       return true;
+    },
+    jump: function (n) {
+      var fns = [toP1, toP2, toP3, toP4, toP5, toEverywhere, toCTA];
+      if (n >= 0 && n < fns.length) { fns[n](); return true; }
+      return false;
     }
   };
 })();
@@ -2563,6 +2665,8 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
           solve(exw);
         } else {
           b.classList.add('wrong'); exw.classList.add('wrong');
+          var mi = targets.indexOf(exw);
+          if (hxProg && hxProg.children[mi]) hxProg.children[mi].classList.add('miss');   // show the slip on the tracker
           setTimeout(function () { b.classList.remove('wrong'); exw.classList.remove('wrong'); }, 450);
         }
       });
@@ -2577,7 +2681,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     exw.classList.remove('open');
     solved++;
     var i = targets.indexOf(exw);
-    if (hxProg && hxProg.children[i]) hxProg.children[i].classList.add('on');
+    if (hxProg && hxProg.children[i]) { hxProg.children[i].classList.remove('miss'); hxProg.children[i].classList.add('on'); }
     var m = exw.querySelector('.menu');
     if (m) m.remove();
     exw.classList.add('done', 'flash');
@@ -2688,8 +2792,15 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
         if (correct ? hit : (!hit && !btn)) btn = b;
       });
       if (!btn) return;
-      btn.click();
-      if (!correct) bubble(g, 'Oops!', 'oops');
+      if (correct) {
+        /* press the right option down + green it FIRST, hold a beat so it reads as
+           correct, THEN lock it in (the menu closes on solve) */
+        btn.classList.add('right');
+        setTimeout(function () { if (alive() && !g.dataset.done) btn.click(); }, 460);
+      } else {
+        btn.click();
+        bubble(g, 'Oops!', 'oops');
+      }
     }
     /* the cadence speeds up — the page is learning your hand */
     step(500,  function () { open(0); });

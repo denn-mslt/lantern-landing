@@ -33,13 +33,18 @@
     var hero = document.getElementById('hero');
     var browser = hero && hero.querySelector('.browser');
     if (!hero || !browser) return;
-    if (window.innerWidth < 1000) return;
+    var MOBILE = window.innerWidth < 1000;
 
     var words = Array.prototype.slice.call(browser.querySelectorAll('.hl'));
     if (!words.length) return;
     var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    var slots = [
+    var slots = MOBILE ? [
+      { xp: 0.04, yp: 8,  rot: -5 },
+      { xp: 0.20, yp: 18, rot: 2  },
+      { xp: 0.36, yp: 10, rot: -2 },
+      { xp: 0.52, yp: 22, rot: 6  }
+    ] : [
       { xp: 0.820, yp: 0.150, rot: 7 },
       { xp: 0.862, yp: 0.470, rot: -6 },
       { xp: 0.800, yp: 0.780, rot: 5 },
@@ -47,6 +52,12 @@
     ];
     var slotI = 0;
     var rested = [];
+
+    function slotTop(slot) {
+      if (!MOBILE) return slot.yp * hero.offsetHeight;
+      var hr = hero.getBoundingClientRect(), br = browser.getBoundingClientRect();
+      return (br.bottom - hr.top) + slot.yp;
+    }
 
     var CARD_DURS = ['4.2s', '5.1s', '4.7s'];
     var CARD_DELS = ['0s', '-1.5s', '-0.8s'];
@@ -71,13 +82,13 @@
       card.style.setProperty('--cbdur', CARD_DURS[idx % CARD_DURS.length]);
       card.style.setProperty('--cbdel', CARD_DELS[idx % CARD_DELS.length]);
       card.innerHTML =
-        '<div class="wordcard" style="--rot:' + slot.rot + 'deg;width:186px">' +
+        '<div class="wordcard" style="--rot:' + slot.rot + 'deg;width:' + (MOBILE ? 120 : 186) + 'px">' +
           '<div class="wtop"><span class="w">' + m.w + '</span>' +
           '<span class="cefr-b b-' + c + '">' + m.cefr + '</span></div>' +
           '<div class="ph">' + m.ph + '</div>' +
           '<div class="tr t-' + c + '">' + m.gloss + '</div></div>';
       card.style.left = (slot.xp * hero.offsetWidth) + 'px';
-      card.style.top = (slot.yp * hero.offsetHeight) + 'px';
+      card.style.top = slotTop(slot) + 'px';
       hero.appendChild(card);
       rested.push({ card: card, word: word });
       return card;
@@ -90,7 +101,7 @@
     }
     function doFly(word) {
       var slot = slots[slotI % slots.length]; slotI++;
-      var sx = slot.xp * hero.offsetWidth, sy = slot.yp * hero.offsetHeight;
+      var sx = slot.xp * hero.offsetWidth, sy = slotTop(slot);
       var card = buildCard(word, slot);
       var cw = card.offsetWidth, ch = card.offsetHeight;
       var hr = hero.getBoundingClientRect(), wr = word.getBoundingClientRect();
@@ -376,17 +387,21 @@
     function tap(c) { c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); }
 
     function demo() {
-      var c = makeCursor();
-      placeCursor(c, words[0]);
-      var t = 450;
+      var c = MOBILE ? null : makeCursor();
+      if (!MOBILE) placeCursor(c, words[0]);
+      var t = MOBILE ? 300 : 450;
       words.forEach(function (w) {
         (function (word, start) {
-          setTimeout(function () { moveCursor(c, word); }, start);
-          setTimeout(function () { tap(c); flyCard(word); }, start + 600);
+          if (MOBILE) {
+            setTimeout(function () { flyCard(word); }, start);
+          } else {
+            setTimeout(function () { moveCursor(c, word); }, start);
+            setTimeout(function () { tap(c); flyCard(word); }, start + 600);
+          }
         })(w, t);
-        t += 1450;
+        t += MOBILE ? 950 : 1450;
       });
-      setTimeout(function () { c.classList.add('gone'); }, t + 350);
+      if (!MOBILE) setTimeout(function () { c.classList.add('gone'); }, t + 350);
     }
 
     // ---- onboarding card (new visitors only) ----
@@ -431,6 +446,14 @@
 
     // ---- reduced motion: static cards, no demo ----
     if (REDUCED) { words.forEach(restCard); return; }
+
+    // mobile → skip onboarding card, just demo directly
+    if (MOBILE) {
+      buildPill();
+      if (window.whenFontsReady) window.whenFontsReady(function () { setTimeout(demo, 900); });
+      else setTimeout(demo, 1800);
+      return;
+    }
 
     // returning visitor → auto-demo; new visitor → onboarding prompt
     if (saved()) {

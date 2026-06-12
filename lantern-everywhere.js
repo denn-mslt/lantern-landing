@@ -340,9 +340,12 @@
   function toCTA() {
     if (flaming || morphing) return;
     var LC = window.LanternCharge;
-    /* no dock (mobile / reduced motion / unexpected count): just reveal the CTA */
+    /* no desktop flip/bead engine below 980 (phones + the tablet gap). On true
+       phones (≤920, where the CSS dock-grid + m-only layout apply) build the
+       vertical dock; the 921–979 tablet gap keeps the plain "Add to Chrome". */
     if (REDUCED || innerWidth < 980 || !LC || pages.length !== 6) {
       document.body.classList.add('ph-cta');
+      if (innerWidth <= 920 && LC && LC.buildMobile) LC.buildMobile();
       return;
     }
     /* already played once → just swap the overlay back in, no re-flip */

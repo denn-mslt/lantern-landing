@@ -19,8 +19,14 @@
 
   const SVGNS = 'http://www.w3.org/2000/svg';
   const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const GLOBE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg>';
-  const CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/></svg>';
+  /* icons borrowed from the dot-nav (lantern-v3.js NAV_ICON) so the dock cards
+     read the same as the rail; the rest are inline */
+  const TRANSLATE = NAV_ICON.translate;   /* swap-arrows mark from the nav menu */
+  const DISCUSS = NAV_ICON.discuss;       /* speech bubble from the nav */
+  const BOLT = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
+  const TARGET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>';
+  /* simplify reduces to the essence — a bare orange dot, no icon plate */
+  const DOT = '<svg viewBox="0 0 24 24" fill="#ef8e1c"><circle cx="12" cy="12" r="6"/></svg>';
 
   /* ---- the visitor's own session feeds the previews ---- */
   function userLang() {
@@ -37,15 +43,15 @@
     return [
       { n: 'Save',      c: '#ef8e1c', ic: ICON.bk,    x: 13, y: 18, s: 'l', row: 0,
         prev: '<span class="dkw"><b>route</b><i>/ruːt/</i><em class="cefr-b b-blue">B1</em></span><span class="dkok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>saved</span>' },
-      { n: 'Simplify',  c: '#2f9e5f', ic: ICON.spark, x: 87, y: 18, s: 'r', row: 0,
+      { n: 'Simplify',  c: '#2f9e5f', ic: DOT, bare: true, x: 87, y: 18, s: 'r', row: 0,
         prev: '<span class="dksm"><s>exhaustive survey</s><span class="ar">→</span><b>studied with care</b></span>' },
-      { n: 'Translate', c: '#3b6fd4', ic: GLOBE,      x: 11, y: 50, s: 'l', row: 1,
+      { n: 'Translate', c: '#3b6fd4', ic: TRANSLATE,  x: 11, y: 50, s: 'l', row: 1,
         prev: '<span class="dktr"><span class="s">the coast</span><span class="ar">→</span><span class="t">' + gloss('coast', 'узбережжя') + '</span></span>' },
-      { n: 'Discuss',   c: '#7a6f9c', ic: CHAT,       x: 89, y: 50, s: 'r', row: 1,
+      { n: 'Discuss',   c: '#7a6f9c', ic: DISCUSS,    x: 89, y: 50, s: 'r', row: 1,
         prev: '<span class="dkq">Why seven years?</span><span class="dka">The coast gave the crews no shelter…</span>' },
-      { n: 'Exercises', c: '#d4503b', ic: ICON.ck,    x: 13, y: 82, s: 'l', row: 2,
+      { n: 'Exercises', c: '#d4503b', ic: BOLT,       x: 13, y: 82, s: 'l', row: 2,
         prev: '<span class="dkcz">one <span class="gap">remote</span> island</span>' },
-      { n: 'Practice',  c: '#bd6e0c', ic: ICON.flame, x: 87, y: 82, s: 'r', row: 2,
+      { n: 'Practice',  c: '#bd6e0c', ic: TARGET,     x: 87, y: 82, s: 'r', row: 2,
         prev: '<span class="dkfc"><span class="f">route</span><span class="b">' + gloss('route', 'маршрут') + '</span></span>' }
     ];
   }
@@ -114,7 +120,7 @@
      lantern-everywhere.js via the public API) are byte-identical to the real
      dock cards, making the hand-off at the end of the flip seamless */
   function cardInnerHTML(f) {
-    return '<div class="dk-in"><div class="dk-top"><span class="dk-ic">' + f.ic + '</span><span class="dk-name">' + f.n + '</span></div><div class="dk-prev">' + f.prev + '</div></div>';
+    return '<div class="dk-in"><div class="dk-top"><span class="dk-ic' + (f.bare ? ' dk-bare' : '') + '">' + f.ic + '</span><span class="dk-name">' + f.n + '</span></div><div class="dk-prev">' + f.prev + '</div></div>';
   }
 
   function buildCards() {
@@ -150,21 +156,22 @@
   }
   /* a bead landing = (a) a glowing trace that CONTINUES the bead's flight
      inside the pill before fading, (b) one even step of heat on the button */
-  function warmTouch(tx, ty, fromLeft, dvy) {
-    const warm = btn.querySelector('.d1-warm');
+  function warmTouch(target, tx, ty, dx, dy, step) {
+    const warm = target.querySelector('.d1-warm');
     if (warm) {
       const t = document.createElement('span');
       t.className = 'd1-touch';
       t.style.left = tx.toFixed(1) + 'px';
       t.style.top = ty.toFixed(1) + 'px';
-      t.style.setProperty('--dx', (fromLeft ? 52 : -52) + 'px');
-      t.style.setProperty('--dy', (dvy || 0).toFixed(1) + 'px');
+      t.style.setProperty('--dx', (dx || 0).toFixed(1) + 'px');
+      t.style.setProperty('--dy', (dy || 0).toFixed(1) + 'px');
       warm.appendChild(t);
       setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 700);
     }
-    heatLevel = Math.min(1, heatLevel + 1 / 25);       /* 25 arrivals → fully amber */
-    btn.style.backgroundColor = heatColor(heatLevel);
-    if (heatLevel >= 1) btn.classList.add('blazing');  /* amber glow shadow */
+    const h = Math.min(1, (target.__heat || 0) + (step || 1 / 25));   /* per-target heat accumulator */
+    target.__heat = h;
+    target.style.backgroundColor = heatColor(h);
+    if (h >= 1) target.classList.add('blazing');       /* amber glow shadow */
   }
 
   /* leaves the card at once (linear term → no nub crawling out), then whips
@@ -189,6 +196,20 @@
     it.len = it.path.getTotalLength();
   }
 
+  /* mobile geometry: the dock is a vertical 3-col grid, so wires run from each
+     card's edge that FACES the button (bottom edge for the top row, top edge for
+     the bottom row) and curve into the button's near rim — a vertical cubic. */
+  function syncGeomM(it, dr, bb) {
+    const r = it.c.getBoundingClientRect();
+    const ex = r.left + r.width / 2 - dr.left;          /* card centre x */
+    const ey = (it.above ? r.bottom : r.top) - dr.top;  /* card edge facing the button */
+    const px = bb.left + bb.width * it.bx - dr.left;     /* entry spread across the button */
+    const py = (it.above ? bb.top + 8 : bb.bottom - 8) - dr.top;   /* dive 8px under the rim */
+    const my = ey + (py - ey) * 0.5;
+    it.path.setAttribute('d', 'M ' + ex.toFixed(1) + ' ' + ey.toFixed(1) + ' C ' + ex.toFixed(1) + ' ' + my.toFixed(1) + ' ' + px.toFixed(1) + ' ' + my.toFixed(1) + ' ' + px.toFixed(1) + ' ' + py.toFixed(1));
+    it.len = it.path.getTotalLength();
+  }
+
   /* ---- the bead engine: one rAF loop drives every bead along its path ----
      SMIL + setTimeout could never sync the trace to the touch: the bead
      decelerates on its easing curve while timers fire on wall-clock guesses,
@@ -197,7 +218,7 @@
      spawn the trace. Zero delay by construction. The first pass also drags
      the wire's dash-front at exactly the bead's position, so the line is
      literally drawn by its bead. */
-  function startBeads(items) {
+  function startBeads(items, target) {
     if (RM || !items.length) return;
     const beads = items.map(function (it) {
       const c = document.createElementNS(SVGNS, 'circle');
@@ -211,12 +232,12 @@
     function frame(now) {
       const ts = (now - t0) / 1000;
       const dr = dock.getBoundingClientRect();
-      const bb = btn.getBoundingClientRect();
+      const bb = target.getBoundingClientRect();
       const bx0 = bb.left - dr.left, bx1 = bb.right - dr.left;
       const by0 = bb.top - dr.top, by1 = bb.bottom - dr.top;
       beads.forEach(function (b) {
         const it = b.it;
-        syncGeom(it, dr, bb);                /* keep the wire glued to its floating card + the live button */
+        it.sync(it, dr, bb);                 /* keep the wire glued to its card + the live button */
         let t = (ts - it.delay) / it.dur;
         if (t < 0) { b.c.setAttribute('opacity', '0'); return; }   /* not departed yet */
         if (t >= 1) {
@@ -234,7 +255,7 @@
         if (under) {                         /* slipped under the pill — hand off to the trace */
           if (!b.crossed) {
             b.crossed = true;
-            warmTouch(it.touch[0], it.touch[1], it.touch[2], it.touch[3]);
+            warmTouch(target, it.touch[0], it.touch[1], it.touch[2], it.touch[3], it.step);
           }
           b.c.setAttribute('opacity', '0');
         } else {
@@ -269,10 +290,10 @@
       path.setAttribute('class', 'wire');
       wires.appendChild(path);
       const it = {
-        c: c, left: left, rowFrac: ry, path: path, col: FEATS[k].c,
+        c: c, left: left, rowFrac: ry, path: path, col: FEATS[k].c, sync: syncGeom,
         /* trace coords are button-relative (clipped to the pill), so they don't
-           need the live geometry: [x, y, fromLeft, verticalDrift] */
-        touch: [left ? 1 : bb.width - 1, bb.height * ry, left, (ry - 0.5) * 14],
+           need the live geometry: [x, y, dx, dy] */
+        touch: [left ? 1 : bb.width - 1, bb.height * ry, left ? 52 : -52, (ry - 0.5) * 14],
         dur: 1.7 + Math.random() * 1.8,      /* this wire's bead period, 1.7–3.5s */
         delay: animate ? 0.07 + k * 0.07 : 0.3 + k * 0.12,
         draw: !!animate                      /* first pass draws the wire (skip on resize) */
@@ -286,7 +307,47 @@
       }
       return it;
     });
-    startBeads(items);                       /* no static origin dot — the bead itself slides out of the card */
+    startBeads(items, btn);                   /* no static origin dot — the bead itself slides out of the card */
+  }
+
+  /* ---- mobile wires: vertical geometry, six cards → the share button ---- */
+  function drawWiresMobile(target, animate) {
+    pulseCleanups.forEach(function (fn) { fn(); }); pulseCleanups = [];
+    wires.innerHTML = '';
+    const dr = dock.getBoundingClientRect();
+    if (!dr.width || !dr.height) return;
+    wires.setAttribute('viewBox', '0 0 ' + dr.width + ' ' + dr.height);
+    const bb = target.getBoundingClientRect();
+    const bcy = bb.top + bb.height / 2;
+    const COLBX = [0.24, 0.5, 0.76];          /* entry spread by grid column */
+    const items = cards.map(function (c, k) {
+      const r = c.getBoundingClientRect();
+      const above = (r.top + r.height / 2) < bcy;
+      const bx = COLBX[k % 3];
+      const path = document.createElementNS(SVGNS, 'path');
+      path.setAttribute('stroke', FEATS[k].c);
+      path.setAttribute('class', 'wire');
+      wires.appendChild(path);
+      const it = {
+        c: c, above: above, bx: bx, path: path, col: FEATS[k].c, sync: syncGeomM,
+        /* button-relative trace coords [x, y, dx, dy] — the bead continues
+           INTO the pill, drifting away from the rim it entered through */
+        touch: [bb.width * bx, above ? 7 : bb.height - 7, 0, above ? 16 : -16],
+        dur: 1.5 + Math.random() * 1.4,       /* 1.5–2.9s */
+        delay: animate ? 0.10 + k * 0.06 : 0.2 + k * 0.10,
+        draw: !!animate,
+        step: 1 / 12                          /* 6 wires → fully amber in ~2 passes */
+      };
+      syncGeomM(it, dr, bb);
+      if (animate) {
+        path.style.strokeDasharray = it.len;
+        path.style.strokeDashoffset = it.len;
+      } else {
+        path.style.strokeDasharray = 'none';
+      }
+      return it;
+    });
+    startBeads(items, target);
   }
 
   /* ---- ignition: wires land → the button lights and stays lit ---- */
@@ -335,6 +396,41 @@
     setTimeout(charge, 1600);
   }
 
+  /* ---- mobile: same mechanic as desktop, vertical layout. The dock is a 3-col
+     grid; the six cards wire DOWN/UP into the share button, beads flow along the
+     wires, and each arrival warms the button one step ink → amber. ---- */
+  let mShareBtn = null;
+  function buildMobile() {
+    if (armed || innerWidth > 920) return; armed = true;
+    buildCards();
+    /* layout "b" (council 7/7): the button + note sit ISOLATED at the TOP, the
+       six pills form a clean 3×2 grid below, and the email link + reassurance
+       drop to the very bottom — clear of the wires, which run UP into the button */
+    const mcta = section.querySelector('.m-close-cta');
+    if (mcta) {
+      dock.insertBefore(mcta, cards[0] || null);          /* note + button = top row */
+      const foot = document.createElement('div');
+      foot.className = 'm-cta-foot';
+      const email = mcta.querySelector('.m-email-link');
+      const hint = mcta.querySelector('.m-hero-hint');
+      if (email) foot.appendChild(email);
+      if (hint) foot.appendChild(hint);
+      if (foot.childNodes.length) dock.appendChild(foot); /* below the pill grid */
+    }
+    cards.forEach(function (c) { c.classList.add('snap', 'in'); });   /* no stagger on mobile */
+    mShareBtn = mcta && mcta.querySelector('.m-share-btn');
+    if (!mShareBtn) return;
+    /* the warm-touch layer the bead traces live in (clipped to the pill) */
+    if (!mShareBtn.querySelector('.d1-warm')) {
+      const warm = document.createElement('span');
+      warm.className = 'd1-warm';
+      mShareBtn.insertBefore(warm, mShareBtn.firstChild);
+    }
+    if (RM) { mShareBtn.style.backgroundColor = heatColor(1); mShareBtn.classList.add('blazing'); return; }
+    /* let the grid settle (cards land), then draw the wires + beads */
+    setTimeout(function () { if (mShareBtn) drawWiresMobile(mShareBtn, true); }, 260);
+  }
+
   const obs = new IntersectionObserver(function (es, o) {
     es.forEach(function (e) {
       if (!e.isIntersecting) return;
@@ -348,7 +444,11 @@
      drives ignition via LanternCharge.armDocked() at the flip. */
   if (section.hasAttribute('data-sect')) obs.observe(section);
 
-  addEventListener('resize', function () { if (armed) drawWires(false); });
+  addEventListener('resize', function () {
+    if (!armed) return;
+    if (mShareBtn && innerWidth <= 920) drawWiresMobile(mShareBtn, false);
+    else if (innerWidth >= 980) drawWires(false);
+  });
 
   /* ---- public hooks for the finale→CTA flip transition (lantern-everywhere.js).
      Only meaningful on desktop where the dock exists. ---- */
@@ -371,6 +471,8 @@
     },
     /* called when the clones have landed — reveal the real cards + ignite */
     armDocked: armDocked,
+    /* mobile: build the vertical dock (no flip, no beads) */
+    buildMobile: buildMobile,
     armed: function () { return armed; }
   };
 })();

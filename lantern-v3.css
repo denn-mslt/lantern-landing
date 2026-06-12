@@ -278,6 +278,9 @@ body.at-hero .pill{opacity:0;visibility:hidden;pointer-events:none}
 .inqgap .menu button{display:block;width:100%;text-align:left;border:none;background:none;font-family:var(--sans);font-size:14px;font-weight:500;color:var(--ink-70);padding:8px 12px;border-radius:7px;cursor:pointer;transition:.12s;white-space:nowrap}
 .inqgap .menu button:hover{background:rgba(26,23,20,.05);color:var(--ink)}
 .inqgap .menu button.wrong{background:#f6e0dc;color:var(--red);animation:shake .4s}
+/* the chosen RIGHT answer presses down + lights green before the menu closes, so a
+   correct pick READS as correct instead of just silently vanishing */
+.inqgap .menu button.right{background:#d8f3e3;color:var(--green);font-weight:600;transform:scale(.96);transition:background .12s,color .12s,transform .12s}
 /* solved → the answer fades back in as clean prose at the exact same width; slot recedes */
 .inqgap.done .gt{background:transparent;cursor:default;animation:none;box-shadow:none}
 .inqgap.done .lex{opacity:1;color:#2a2620}
@@ -309,6 +312,8 @@ body.at-hero .pill{opacity:0;visibility:hidden;pointer-events:none}
 .hud-prog i{flex:1;height:5px;border-radius:3px;background:var(--paper-2);position:relative;overflow:hidden}
 .hud-prog i::after{content:"";position:absolute;inset:0;background:var(--green);border-radius:3px;transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .hud-prog i.on::after{transform:scaleX(1)}
+/* a missed gap flashes its bar segment red, so the slip shows on the tracker too */
+.hud-prog i.miss::after{background:var(--red);transform:scaleX(1)}
 /* complete: same layout, just a calm green wash + tick — no structural change, no resize */
 .inq-hud.done{background:#f1f8f3}
 .inq-hud.done .hud-cue{color:var(--green);font-weight:600}
@@ -1363,6 +1368,9 @@ body.at-hero.vocab-on #worddeck{display:block!important;opacity:1;pointer-events
 .dk-top{display:flex;align-items:center;gap:8px;margin-bottom:9px}
 .dk-ic{width:23px;height:23px;border-radius:7px;background:var(--fc);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .dk-ic svg{width:13px;height:13px}
+/* simplify: a bare orange dot, no plate — its svg carries its own size/fill */
+.dk-ic.dk-bare{background:none}
+.dk-ic.dk-bare svg{width:23px;height:23px}
 .dk-name{font-size:13px;font-weight:600;letter-spacing:-.01em}
 .dk-prev{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:11.5px;color:var(--ink-70);text-align:left;min-height:36px;padding:8px 9px;border-radius:8px;background:color-mix(in srgb,var(--fc) 5%,#fff);border:1px solid color-mix(in srgb,var(--fc) 13%,var(--line))}
 /* per-feature mini-UI */
@@ -1595,7 +1603,7 @@ body.tx-off .close-flame,body.tx-off.close-lit footer .lmark::before{animation:n
 .hw-lang-menu .code{font-family:var(--mono);font-size:11px;color:var(--ink-45);letter-spacing:.05em}
 .hw-lang-note{margin:5px 6px 2px;padding:8px 5px 2px;border-top:1px solid var(--line);font-family:var(--sans);font-size:11px;line-height:1.45;color:var(--ink-45)}
 .hw-card .tr{transition:opacity .18s ease}
-@media(max-width:1000px){.hw-lang{display:none}}
+@media(max-width:1000px){.hw-lang{position:static;display:flex}.hw-lang-label{display:none}}
 
 /* ===== HERO PHASE 2 ===== */
 /* hide page dotnav on hero — m-dotnav takes over */
@@ -1648,7 +1656,7 @@ body:not(.at-hero) .m-dotnav{display:none}
 .pg-url{font-family:var(--mono);font-size:11px;color:var(--ink-45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pg-kind{margin-left:auto;flex-shrink:0;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-45)}
 .pg-body{position:relative;padding:16px 18px 18px}
-.pg-head{font-weight:700;font-size:16.5px;letter-spacing:-.018em;line-height:1.24;margin-bottom:10px;color:var(--ink)}
+.pg-head{font-weight:700;font-size:16.5px;letter-spacing:-.018em;line-height:1.24;margin-bottom:10px;color:var(--ink);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .pg-stack{position:relative;display:grid}
 .pg-stack>p{grid-area:1/1;font-size:13px;line-height:1.58;margin:0}
 .t-hard{color:var(--ink-70);transition:opacity .3s ease}
