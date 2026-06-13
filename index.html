@@ -294,7 +294,7 @@ body.hero-p3 #hero-simp-dot { pointer-events: none !important; }
 
 /* All three article layers stay position:absolute — simultaneous crossfade, no layout shifts */
 #hero .browser .page { min-height: 220px; transition: min-height 1s cubic-bezier(.4,0,.2,1) 0.12s; }
-body.hero-p2 #hero .browser .page { min-height: 300px; }
+body.hero-p2 #hero .browser .page { min-height: 420px; }
 
 #hero .page-en {
   position: absolute; top: 0; left: 0; right: 0;
@@ -335,21 +335,69 @@ body.hero-p3 #hero.panel-open .hero-stage { transform: translateX(calc(-5vw - 2%
 }
 body.hero-p3 #hero .hero-copy-p3 { opacity: 1; transform: none; pointer-events: auto; }
 
-/* tpanel: appears at fixed position, then tilts 4deg right */
-#hero .tpanel {
-  position: fixed; bottom: 22%; right: calc(3% - 60px); left: auto; width: 360px;
-  transform: rotateZ(0deg);
-  transform-origin: center center;
-  opacity: 0;
-  animation: none;
-  transition: opacity 0.26s ease, transform 0.5s cubic-bezier(.34,.1,.64,1) 0.26s;
+/* translate card: a compact popup that pops out next to the sentence.
+   It is reparented to <body> on init so position:fixed resolves against the
+   viewport (the hero-stage carries a transform, which would otherwise become
+   the containing block). left/top come from the live sentence rect in JS;
+   transform-origin (--tc-ox / --tc-oy) points the pop toward the text. */
+/* .tcard = the fixed-positioned, gently-floating shell (left/top set in JS).
+   The float lives here as a transform animation; the one-time pop-in lives on
+   .tc-pop inside — two elements so the two transforms never fight. The card
+   floats ~3px on a SHORTER 4.5s cycle than the page browser's ~1px / 8s, so it
+   drifts on its own beat instead of moving in lockstep with the background. */
+.tcard {
+  position: fixed; left: 0; top: 0; z-index: 60;
+  width: 312px; max-width: min(340px, 86vw);
+  pointer-events: none;
+  animation: tcbob 4.5s ease-in-out infinite;
 }
-#hero .tpanel.show { opacity: 1; transform: rotateZ(4deg); }
+@keyframes tcbob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 
-/* swap emphasis: original (src) recedes to grey, translation (tgt) is pure black, prominent */
-#hero .tpanel .src { color: var(--ink-70); }
-#hero .tpanel .tgt,
-#hero .tpanel .tgt .tw { color: #000; }
+.tc-pop {
+  background: rgba(255,255,255,.94);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  box-shadow: 0 26px 54px -22px rgba(26,23,20,.42), 0 6px 16px -10px rgba(26,23,20,.16);
+  overflow: hidden;
+  font-family: var(--sans);
+  opacity: 0;
+  transform: translateY(7px) scale(.95);
+  transform-origin: var(--tc-ox, 24px) var(--tc-oy, 0%);
+  transition: opacity 0.2s ease, transform 0.44s cubic-bezier(.2,1.05,.3,1);
+}
+.tcard.show .tc-pop { opacity: 1; transform: none; }
+
+/* header bar: a warm strip with the translate glyph + language direction */
+.tc-bar {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 14px;
+  background: var(--paper-2, #f1efe9);
+  border-bottom: 1px solid var(--line-soft);
+}
+.tc-glyph { width: 15px; height: 15px; color: var(--amber, #ef8e1c); display: flex; }
+.tc-glyph svg { width: 15px; height: 15px; }
+.tc-title {
+  font-family: var(--mono, monospace); font-size: 10px; font-weight: 600;
+  letter-spacing: .15em; text-transform: uppercase; color: var(--ink-70, #5c574f);
+}
+.tc-lang {
+  margin-left: auto;
+  font-family: var(--mono, monospace); font-size: 10px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-45, #8d877e);
+}
+.tc-body { padding: 13px 15px 15px; }
+.tc-src {
+  font-size: 13px; line-height: 1.5; color: var(--ink-45, #8d877e);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.tc-rule { height: 1px; background: var(--line-soft); margin: 11px 0; }
+.tc-tgt { font-size: 15px; line-height: 1.55; color: var(--ink, #1a1714); }
+.tc-tgt .tw {
+  display: inline-block; opacity: 0; transform: translateY(6px);
+  animation: twWave 0.5s cubic-bezier(.2,.7,.2,1) both;
+}
 
 /* ===== HERO PHASE 4 — Discuss (the page talks back) =====
    The floating tilted chat is retired: a side panel docks INSIDE the browser
@@ -401,7 +449,7 @@ body.hero-p4 #hero .tr-page .sel { pointer-events: none; }
 }
 #hero-dock.show { opacity: 1; transform: none; pointer-events: auto; }
 #hero-dock .cw-body  { flex: 1 1 auto; min-height: 0; height: auto; overflow-y: auto; padding: 14px 16px 10px; }
-#hero-dock .cw-foot  { flex: 0 0 auto; padding: 9px 12px 12px; border-top: 1px solid var(--line-soft); }
+#hero-dock .cw-foot  { flex: 0 0 auto; padding: 9px 14px 15px; border-top: 1px solid var(--line-soft); }
 #hero-dock .cw-bot   { font-size: 14px; line-height: 1.55; }
 #hero-dock .cw-user  { font-size: 13.5px; }
 
@@ -557,7 +605,28 @@ body.hero-p5 #hero .hx-hud { display: block; }
   min-width: 98px; border-radius: 9px;
 }
 #hero .ex-page .inqgap .menu button { font-size: 12px; padding: 5px 10px; border-radius: 6px; }
-/* Oops! bubble: menu occupies the space above, so flip it below the gap */
+/* Oops! bubble base — mobile media query has these too; duplicated here so desktop gets them */
+.ex-bubble {
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  z-index: 30; white-space: nowrap;
+  font-family: var(--sans, 'General Sans', sans-serif);
+  font-weight: 700; font-size: 13px; letter-spacing: .01em;
+  background: #fff; color: #c43c3c;
+  border: 2px solid #1a1714; border-radius: 11px;
+  padding: 6px 11px;
+  box-shadow: 3px 3px 0 rgba(26,23,20,.85);
+  transform: translateX(-50%) scale(.5) rotate(-4deg);
+  opacity: 0;
+  transition: transform .22s cubic-bezier(.2,1.6,.35,1), opacity .15s ease;
+  pointer-events: none;
+}
+.ex-bubble::after {
+  content: ""; position: absolute; bottom: -6px; left: 50%;
+  width: 9px; height: 9px; transform: translateX(-50%) rotate(45deg);
+  background: #fff; border-right: 2px solid #1a1714; border-bottom: 2px solid #1a1714;
+}
+.ex-bubble.show { transform: translateX(-50%) scale(1) rotate(-4deg); opacity: 1; }
+/* hero exercise: menu opens upward, so flip bubble below the gap */
 #hero .ex-page .inqgap .ex-bubble { bottom: auto; top: calc(100% + 8px); }
 #hero .ex-page .inqgap .ex-bubble::after { bottom: auto; top: -6px; border-right: none; border-bottom: none; border-left: 2px solid #1a1714; border-top: 2px solid #1a1714; }
 
@@ -686,6 +755,11 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 #hero .tr-page .sel:hover {
   background: rgba(239,142,28,.07); border-radius: 6px;
   box-shadow: none !important; cursor: pointer;
+}
+/* active sentence (being translated): warm amber wash, not the blue .page .sel.on */
+#hero .tr-page .sel.on {
+  background: rgba(239,142,28,.14); border-radius: 6px;
+  box-shadow: inset 0 -2px 0 rgba(239,142,28,.55) !important;
 }
 #hero .tr-page .sel.m-lift {
   position: relative; z-index: 5;
@@ -943,6 +1017,9 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     height: auto !important; flex: 1 1 auto !important;
     min-height: 0 !important; max-height: 46vh !important; overflow-y: auto !important;
   }
+  /* bottom padding must clear the 20px card radius, else the composer's
+     rounded corners get sliced by the card's overflow:hidden corner */
+  #hero-dock .cw-foot { padding: 9px 15px 16px !important; }
   body.hero-p4 #hero .browser .page { opacity: 0.22 !important; transition: opacity .3s ease; }
 
   /* word deck: compact right-rail — visible P2 onwards */
@@ -1463,12 +1540,12 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
               <!-- English content — Phase 1 & 2 -->
               <div class="page-en" style="padding:26px 32px">
                 <p style="font-family:'General Sans',sans-serif;font-weight:700;font-size:21px;margin:0 0 14px;text-align:center">The Eras Tour</p>
-                <p style="margin:0">Few musicians have crossed so many <span class="hl" data-w="genre" data-ph="/ˈʒɒn.rə/" data-cls="blue" data-cefr="B2" data-tr="жанр" data-tr-uk="жанр" data-tr-es="género" data-tr-fr="genre" data-tr-de="Genre" data-tr-pt="gênero" data-tr-en="style">genre</span> boundaries and kept every audience with them. Taylor Swift moved from country to pop to indie folk without losing her <span class="hl" data-w="devoted" data-ph="/dɪˈvəʊ.tɪd/" data-cls="green" data-cefr="B2" data-tr="відданий" data-tr-uk="відданий" data-tr-es="devoto" data-tr-fr="dévoué" data-tr-de="treu" data-tr-pt="devotado" data-tr-en="loyal">devoted</span> fans, turning into a cultural <span class="hl" data-w="phenomenon" data-ph="/fɪˈnɒm.ɪ.nən/" data-cls="red" data-cefr="B2" data-tr="явище" data-tr-uk="явище" data-tr-es="fenómeno" data-tr-fr="phénomène" data-tr-de="Phänomen" data-tr-pt="fenômeno" data-tr-en="marvel">phenomenon</span> and leaving a <span class="hl" data-w="legacy" data-ph="/ˈleɡ.ə.si/" data-cls="violet" data-cefr="C1" data-tr="спадщина" data-tr-uk="спадщина" data-tr-es="legado" data-tr-fr="héritage" data-tr-de="Erbe" data-tr-pt="legado" data-tr-en="heritage">legacy</span> no one had predicted.</p>
+                <p style="margin:0">Few musicians branch out across so many <span class="hl" data-w="genre" data-ph="/ˈʒɒn.rə/" data-cls="blue" data-cefr="B2" data-tr="жанр" data-tr-uk="жанр" data-tr-es="género" data-tr-fr="genre" data-tr-de="Genre" data-tr-pt="gênero" data-tr-en="style">genre</span> walls and keep every audience. Taylor Swift moved from country to pop to folk without losing her <span class="hl" data-w="devoted" data-ph="/dɪˈvəʊ.tɪd/" data-cls="green" data-cefr="B2" data-tr="відданий" data-tr-uk="відданий" data-tr-es="devoto" data-tr-fr="dévoué" data-tr-de="treu" data-tr-pt="devotado" data-tr-en="loyal">devoted</span> fans — a cultural <span class="hl" data-w="phenomenon" data-ph="/fɪˈnɒm.ɪ.nən/" data-cls="red" data-cefr="B2" data-tr="явище" data-tr-uk="явище" data-tr-es="fenómeno" data-tr-fr="phénomène" data-tr-de="Phänomen" data-tr-pt="fenômeno" data-tr-en="marvel">phenomenon</span> who left a <span class="hl" data-w="legacy" data-ph="/ˈleɡ.ə.si/" data-cls="violet" data-cefr="C1" data-tr="спадщина" data-tr-uk="спадщина" data-tr-es="legado" data-tr-fr="héritage" data-tr-de="Erbe" data-tr-pt="legado" data-tr-en="heritage">legacy</span> no one had predicted.</p>
                 <!-- revealed in phase 2 — the dense paragraph that simplifies -->
                 <div class="hero-extra">
                   <p class="sv-para simp" id="hero-simp-para" style="margin:18px 0 0">
                     <button class="simp-dot" id="hero-simp-dot" aria-label="Simplify this paragraph"><span class="sd-core"></span></button>
-                    <span class="simp-body" id="hero-simp-body">Her unprecedented commercial dominance — spanning genres from country to pop to indie folk — has prompted critics to ask whether the contemporary music industry's infrastructure can even accommodate an artist of her singular, multifaceted resonance.</span>
+                    <span class="simp-body" id="hero-simp-body">Her unprecedented commercial dominance — spanning every genre from country to pop to indie folk — has left critics asking whether today's music industry can even accommodate a phenomenon of her scale. Few artists have built such a devoted following while crossing this many style boundaries.</span>
                   </p>
                 </div>
               </div>
@@ -1477,13 +1554,13 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
                 <p style="font-family:'General Sans',sans-serif;font-weight:700;font-size:21px;margin:0 0 14px;text-align:center">The Eras Tour</p>
                 <!-- same text as page-en, sentence-wrapped — the P2→P3 swap changes
                      the affordance (words → sentences), never the text position -->
-                <p style="margin:0"><span class="sel" data-tr="s1" tabindex="0" role="button">Few musicians have crossed so many genre boundaries and kept every audience with them. Taylor Swift moved from country to pop to indie folk without losing her devoted fans, turning into a cultural phenomenon and leaving a legacy no one had predicted.</span></p>
-                <p style="margin:18px 0 0"><span class="sel" data-tr="s4" tabindex="0" role="button">Her unprecedented commercial dominance — spanning genres from country to pop to indie folk — has prompted critics to ask whether the contemporary music industry's infrastructure can even accommodate an artist of her singular, multifaceted resonance.</span></p>
+                <p style="margin:0"><span class="sel" data-tr="s1" tabindex="0" role="button">Few musicians branch out across so many genre walls and keep every audience. Taylor Swift moved from country to pop to folk without losing her devoted fans — a cultural phenomenon who left a legacy no one had predicted.</span></p>
+                <p style="margin:18px 0 0"><span class="sel" data-tr="s4" tabindex="0" role="button">Her unprecedented commercial dominance — spanning every genre from country to pop to indie folk — has left critics asking whether today's music industry can even accommodate a phenomenon of her scale. Few artists have built such a devoted following while crossing this many style boundaries.</span></p>
               </div>
               <!-- Phase 5 — same text, exercise gaps instead of sentence-selects -->
               <div class="ex-page" style="padding:26px 32px">
                 <p style="font-family:'General Sans',sans-serif;font-weight:700;font-size:21px;margin:0 0 14px;text-align:center">The Eras Tour</p>
-                <p style="margin:0">Few musicians have crossed so many <span class="exw" data-a="genre" data-o="genre|style|trend">genre</span> boundaries and kept every audience with them. Taylor Swift moved from country to pop to indie folk without losing her <span class="exw" data-a="devoted" data-o="devoted|casual|loyal">devoted</span> fans, turning into a cultural <span class="exw" data-a="phenomenon" data-o="phenomenon|event|talent">phenomenon</span> and leaving a <span class="exw" data-a="legacy" data-o="legacy|career|record">legacy</span> no one had predicted.</p>
+                <p style="margin:0">Few musicians branch out across so many <span class="exw" data-a="genre" data-o="genre|style|trend">genre</span> walls and keep every audience. Taylor Swift moved from country to pop to folk without losing her <span class="exw" data-a="devoted" data-o="devoted|casual|loyal">devoted</span> fans — a cultural <span class="exw" data-a="phenomenon" data-o="phenomenon|event|talent">phenomenon</span> who left a <span class="exw" data-a="legacy" data-o="legacy|career|record">legacy</span> no one had predicted.</p>
                 <p style="margin:14px 0 0">Every show ran for more than three hours — long enough to feel like a whole life lived in a single night.</p>
               </div>
             </div>
@@ -1519,24 +1596,28 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
         <div class="cw-body" id="dock-body"></div>
         <div class="cw-foot">
           <div class="cw-composer">
-            <input placeholder="Ask about this article…" readonly tabindex="-1" aria-hidden="true" />
+            <textarea rows="1" placeholder="Ask about this article…" readonly tabindex="-1" aria-hidden="true"></textarea>
             <div class="cw-row">
               <button class="cw-send" type="button" aria-label="Send" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
             </div>
           </div>
         </div>
       </aside>
-      <!-- Translation panel — positioned in hero-stage so it floats right of browser -->
-      <div class="tpanel" id="hero-tpanel">
-        <div class="th"><span class="t">Translate</span><button class="close" id="hero-tp-close" aria-label="close">✕</button></div>
-        <div class="tb">
-          <div class="trow"><div class="src" id="hero-tp-src"></div></div>
-          <div class="trow"><div class="tgt" id="hero-tp-tgt"></div></div>
-        </div>
-        <div class="tf">
-          <span class="langpill on">EN</span>
-          <button id="hero-tp-swap" style="margin:0 8px;background:none;border:none;cursor:pointer;color:var(--ink-45);font-size:15px;padding:2px 4px;border-radius:5px;transition:color .15s,background .15s" title="Swap languages">⇄</button>
-          <span class="langpill on" id="hero-tp-lang">UK</span>
+      <!-- Translation card — a small popup that pops out next to the sentence;
+           source text on top, the translation fades in word-by-word below.
+           Positioned in JS (fixed) against the live sentence rect. -->
+      <div class="tcard" id="hero-tpanel" aria-hidden="true" aria-label="Translation">
+        <div class="tc-pop">
+          <div class="tc-bar">
+            <span class="tc-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></span>
+            <span class="tc-title">Translate</span>
+            <span class="tc-lang" id="hero-tp-lang">EN → UK</span>
+          </div>
+          <div class="tc-body">
+            <div class="tc-src" id="hero-tp-src"></div>
+            <div class="tc-rule"></div>
+            <div class="tc-tgt" id="hero-tp-tgt"></div>
+          </div>
         </div>
       </div>
 
@@ -1600,18 +1681,18 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
   <div class="ev-eye"><span class="idx">Part III</span><span class="bar"></span>Everywhere</div>
   <h2 class="ev-title">You can read<br />anything now.</h2>
-  <p class="ev-sub">A news article, a forum thread, a long read, a research paper &#8212; a lasagna recipe.</p>
+  <p class="ev-sub">A news article, a forum thread, a long read, a research paper&#160;&#8212; a lasagna recipe.</p>
 
   <div class="ev-wall" id="ev-wall">
 
     <div class="pg-float" style="--dur:7.2s;--del:0s">
       <article class="pg">
-        <div class="pg-bar"><span class="pg-fav" style="background:#bb1919">B</span><span class="pg-url">bbc.com/travel</span><span class="pg-kind">News</span></div>
+        <div class="pg-bar"><span class="pg-fav" style="background:#b00020">A</span><span class="pg-url">apnews.com</span><span class="pg-kind">News</span></div>
         <div class="pg-body">
-          <div class="pg-head">Norway&#8217;s Atlantic Road: a drive at the edge of the sea</div>
+          <div class="pg-head">Scientists map the full ocean floor</div>
           <div class="pg-stack">
-            <p class="t-hard">The coastal route threads past treacherous cliffs to the very brink where the surf is most unforgiving.</p>
-            <p class="t-easy" data-text="The road runs along steep cliffs, right out at the edge where the waves come in the very hardest."></p>
+            <p class="t-hard">The survey, integrating three decades of multibeam sonar data, catalogued more than 11,000 previously undocumented seamounts.</p>
+            <p class="t-easy" data-text="A new map shows the full ocean floor for the first time &#8212; and it found thousands of underwater mountains nobody knew existed."></p>
           </div>
         </div>
       </article>
@@ -1619,12 +1700,12 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
     <div class="pg-float" style="--dur:8.4s;--del:.6s">
       <article class="pg">
-        <div class="pg-bar"><span class="pg-fav" style="background:#ff4500">R</span><span class="pg-url">reddit.com/r/todayilearned</span><span class="pg-kind">Thread</span></div>
+        <div class="pg-bar"><span class="pg-fav" style="background:#ff4500">R</span><span class="pg-url">reddit.com/r/explainlikeimfive</span><span class="pg-kind">Thread</span></div>
         <div class="pg-body">
-          <div class="pg-head">TIL Norway built a road across the open sea</div>
+          <div class="pg-head">ELI5: Why time feels faster with age</div>
           <div class="pg-stack">
-            <p class="t-hard">Storm swell periodically engulfs the causeway, yet the traffic persists across it largely unabated.</p>
-            <p class="t-easy" data-text="In big storms the sea washes right over the road, and yet people just keep on driving across it."></p>
+            <p class="t-hard">Each year forms a smaller fraction of your total lifespan, so perceived duration compresses the older you get.</p>
+            <p class="t-easy" data-text="At age 5, one year is 20% of your whole life. At 50, it&#8217;s just 2% &#8212; so each year feels shorter, because relative to everything, it is."></p>
           </div>
         </div>
       </article>
@@ -1634,10 +1715,10 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
       <article class="pg">
         <div class="pg-bar"><span class="pg-fav" style="background:#1b1b1b">W</span><span class="pg-url">en.wikipedia.org</span><span class="pg-kind">Reference</span></div>
         <div class="pg-body">
-          <div class="pg-head">Atlantic Ocean Road</div>
+          <div class="pg-head">Neuroplasticity</div>
           <div class="pg-stack">
-            <p class="t-hard">Constructed upon an archipelago of low-lying skerries, the route is linked by eight cantilever bridges.</p>
-            <p class="t-easy" data-text="Built across a long chain of small rocky islands, the road is joined together by a set of eight bridges."></p>
+            <p class="t-hard">Neural networks reorganise through synaptogenesis and pruning in response to intrinsic and extrinsic stimuli.</p>
+            <p class="t-easy" data-text="The brain&#8217;s ability to rewire itself &#8212; forming new connections and cutting old ones &#8212; whenever you learn something or recover from injury."></p>
           </div>
         </div>
       </article>
@@ -1645,12 +1726,12 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
     <div class="pg-float" style="--dur:8.8s;--del:.3s">
       <article class="pg">
-        <div class="pg-bar"><span class="pg-fav" style="background:#b31b1b">X</span><span class="pg-url">arxiv.org/abs/2406.01155</span><span class="pg-kind">Paper</span></div>
+        <div class="pg-bar"><span class="pg-fav" style="background:#b31b1b">X</span><span class="pg-url">arxiv.org/abs/2412.08814</span><span class="pg-kind">Paper</span></div>
         <div class="pg-body">
-          <div class="pg-head">On the aerodynamics of low coastal bridges</div>
+          <div class="pg-head">Sleep loss cuts word retention by 38%</div>
           <div class="pg-stack">
-            <p class="t-hard">We characterise spans subjected to relentless hydrodynamic loading and sustained crosswind excitation.</p>
-            <p class="t-easy" data-text="We look at how the bridge holds up under the constant pounding of waves and strong winds from the side."></p>
+            <p class="t-hard">Sleep-deprived subjects consolidated significantly fewer novel second-language words overnight than fully-rested controls.</p>
+            <p class="t-easy" data-text="People who slept fewer than six hours remembered far fewer new words the next day compared to those who got a full night&#8217;s sleep."></p>
           </div>
         </div>
       </article>
@@ -1658,12 +1739,12 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
     <div class="pg-float" style="--dur:7.8s;--del:1.4s">
       <article class="pg">
-        <div class="pg-bar"><span class="pg-fav" style="background:#1a1a1a">A</span><span class="pg-url">theatlantic.com</span><span class="pg-kind">Essay</span></div>
+        <div class="pg-bar"><span class="pg-fav" style="background:#00ab6c">M</span><span class="pg-url">medium.com/@readslowly</span><span class="pg-kind">Essay</span></div>
         <div class="pg-body">
-          <div class="pg-head">The road that fought the sea &#8212; and won</div>
+          <div class="pg-head">The case for reading slowly</div>
           <div class="pg-stack">
-            <p class="t-hard">For seven years the endeavour proved indomitable against the relentlessly encroaching Atlantic tide.</p>
-            <p class="t-easy" data-text="For seven long years the rising sea kept winning the fight against the crews &#8212; until, at last, it didn&#8217;t."></p>
+            <p class="t-hard">We have systematically optimised our cognition for throughput at the expense of the contemplative engagement that dense prose demands.</p>
+            <p class="t-easy" data-text="We&#8217;ve trained our brains to skim. The cost is that we can no longer sit inside a sentence long enough to feel what it means."></p>
           </div>
         </div>
       </article>
@@ -1671,12 +1752,12 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
     <div class="pg-float" style="--dur:7.0s;--del:.9s">
       <article class="pg">
-        <div class="pg-bar"><span class="pg-fav" style="background:#ff0000">&#9658;</span><span class="pg-url">youtube.com/watch</span><span class="pg-kind">Video</span></div>
+        <div class="pg-bar"><span class="pg-fav" style="background:#e55e00">S</span><span class="pg-url">seriouseats.com</span><span class="pg-kind">Recipe</span></div>
         <div class="pg-body">
-          <div class="pg-head">Driving the Atlantic Road in a full storm &#8212; 4K</div>
+          <div class="pg-head">The lasagna worth the effort</div>
           <div class="pg-stack">
-            <p class="t-hard">The dashcam captures the instant the swell breaches the parapet and inundates the carriageway.</p>
-            <p class="t-easy" data-text="You can see the exact moment a wave breaks over the wall and floods the road."></p>
+            <p class="t-hard">The béchamel must be coaxed over low heat with constant agitation for twenty minutes to reach the right consistency.</p>
+            <p class="t-easy" data-text="Don&#8217;t rush the white sauce. Give it twenty minutes on low heat, keep stirring &#8212; that&#8217;s what makes the whole dish."></p>
           </div>
         </div>
       </article>
@@ -1845,6 +1926,9 @@ window.LanternPlaying = false;
 
   /* ---- translation panel ---- */
   var heroTpanel  = document.getElementById('hero-tpanel');
+  /* lift the card to <body> so its position:fixed is viewport-relative — inside
+     .hero-stage (which is transformed) fixed would anchor to the stage instead */
+  if (heroTpanel && heroTpanel.parentNode !== document.body) document.body.appendChild(heroTpanel);
   var heroTpSrc   = document.getElementById('hero-tp-src');
   var heroTpTgt   = document.getElementById('hero-tp-tgt');
   var heroTpClose = document.getElementById('hero-tp-close');
@@ -1858,12 +1942,12 @@ window.LanternPlaying = false;
 
   var TR = {
     s1: {
-      en: "Few musicians have crossed so many genre boundaries and kept every audience with them. Taylor Swift moved from country to pop to indie folk without losing her devoted fans, turning into a cultural phenomenon and leaving a legacy no one had predicted.",
-      uk: "Небагато музикантів перейшли через стільки жанрових меж і при цьому зберегли кожну аудиторію. Тейлор Свіфт рухалась від кантрі до попу та інді-фолку, не втрачаючи відданих фанатів і ставши культурним явищем, залишивши після себе спадщину, якої ніхто не очікував.",
-      es: "Pocos músicos han cruzado tantas fronteras de género manteniéndose con cada audiencia. Taylor Swift pasó del country al pop y al indie folk sin perder a sus fans devotos, convirtiéndose en un fenómeno cultural y dejando un legado que nadie había previsto.",
-      fr: "Peu de musiciens ont franchi autant de frontières de genre en gardant chaque public avec eux. Taylor Swift est passée du country à la pop et à l'indie folk sans perdre ses fans dévoués, devenant un phénomène culturel et laissant un héritage que personne n'avait prévu.",
-      de: "Wenige Musiker haben so viele Genregrenzen überschritten und dabei jedes Publikum mitgenommen. Taylor Swift wechselte vom Country über Pop zum Indie-Folk, ohne ihre treuen Fans zu verlieren, wurde zu einem kulturellen Phänomen und hinterließ ein Erbe, das niemand vorhergesagt hatte.",
-      pt: "Poucos músicos cruzaram tantas fronteiras de gênero mantendo cada público com eles. Taylor Swift passou do country ao pop e ao indie folk sem perder seus fãs devotados, tornando-se um fenômeno cultural e deixando um legado que ninguém havia previsto."
+      en: "Few musicians branch out across so many genre walls and keep every audience. Taylor Swift moved from country to pop to folk without losing her devoted fans — a cultural phenomenon who left a legacy no one had predicted.",
+      uk: "Небагато музикантів розвиваються в стількох жанрових напрямках і при цьому зберігають кожну аудиторію. Тейлор Свіфт перейшла від кантрі до попу та фолку, не втративши відданих шанувальників — культурне явище, що залишило спадщину, якої ніхто не очікував.",
+      es: "Pocos músicos se ramifican en tantos estilos y mantienen a cada audiencia. Taylor Swift pasó del country al pop y al folk sin perder a sus fans devotos — un fenómeno cultural que dejó un legado que nadie había predicho.",
+      fr: "Peu de musiciens s'étendent à travers autant de styles et gardent chaque public. Taylor Swift est passée du country à la pop et au folk sans perdre ses fans dévoués — un phénomène culturel qui a laissé un héritage que personne n'avait prévu.",
+      de: "Wenige Musiker verzweigen sich in so viele Genres und halten dabei jedes Publikum. Taylor Swift wechselte vom Country über Pop zum Folk, ohne ihre treuen Fans zu verlieren — ein kulturelles Phänomen, das ein Erbe hinterließ, das niemand vorhergesagt hatte.",
+      pt: "Poucos músicos se expandem por tantos estilos e mantêm cada público. Taylor Swift passou do country ao pop e ao folk sem perder seus fãs devotados — um fenômeno cultural que deixou um legado que ninguém havia previsto."
     },
     s2: {
       en: "Every autumn, storms drive waves across the roadway — sometimes shutting the road for days.",
@@ -1882,12 +1966,12 @@ window.LanternPlaying = false;
       pt: "Os engenheiros levaram sete anos para construir esta travessia, lutando contra o mar em cada etapa."
     },
     s4: {
-      en: "Her unprecedented commercial dominance — spanning genres from country to pop to indie folk — has prompted critics to ask whether the contemporary music industry's infrastructure can even accommodate an artist of her singular, multifaceted resonance.",
-      uk: "Її безпрецедентне комерційне домінування — у жанрах від кантрі до попу та інді-фолку — змусило критиків запитати, чи взагалі може сучасна музична індустрія вмістити художника з таким неповторним, багатогранним резонансом.",
-      es: "Su dominio comercial sin precedentes — que abarca géneros desde el country hasta el pop y el indie folk — ha llevado a los críticos a preguntarse si la infraestructura de la industria musical contemporánea puede incluso albergar a una artista de tan singular y multifacética resonancia.",
-      fr: "Sa domination commerciale sans précédent — couvrant des genres allant du country à la pop et à l'indie folk — a amené les critiques à se demander si l'infrastructure de l'industrie musicale contemporaine peut même accueillir une artiste d'une résonance aussi singulière et multifacette.",
-      de: "Ihre beispiellose kommerzielle Dominanz — die Genres vom Country über Pop bis Indie-Folk umspannt — hat Kritiker dazu veranlasst zu fragen, ob die Infrastruktur der zeitgenössischen Musikindustrie überhaupt eine Künstlerin von ihrer einzigartigen, vielschichtigen Resonanz aufnehmen kann.",
-      pt: "Seu domínio comercial sem precedentes — abrangendo gêneros do country ao pop e ao indie folk — levou os críticos a questionar se a infraestrutura da indústria musical contemporânea pode sequer acomodar uma artista de sua singular e multifacetada ressonância."
+      en: "Her unprecedented commercial dominance — spanning every genre from country to pop to indie folk — has left critics asking whether today's music industry can even accommodate a phenomenon of her scale. Few artists have built such a devoted following while crossing this many style boundaries.",
+      uk: "Її безпрецедентне комерційне домінування — у кожному жанрі від кантрі до попу та інді-фолку — змусило критиків запитати, чи взагалі може сучасна музична індустрія вмістити явище такого масштабу. Небагато артистів здобули таку віддану аудиторію, перетинаючи стільки жанрових меж.",
+      es: "Su dominio comercial sin precedentes — abarcando cada género desde el country hasta el pop y el indie folk — ha dejado a los críticos preguntándose si la industria musical actual puede acomodar un fenómeno de su escala. Pocas artistas han construido una base tan devota cruzando tantos estilos.",
+      fr: "Sa domination commerciale sans précédent — couvrant chaque genre du country à la pop et à l'indie folk — a laissé les critiques se demander si l'industrie musicale actuelle peut accueillir un phénomène de son envergure. Peu d'artistes ont bâti un public aussi dévoué en traversant autant de styles.",
+      de: "Ihre beispiellose kommerzielle Dominanz — die jedes Genre vom Country über Pop bis Indie-Folk umspannt — hat Kritiker dazu gebracht zu fragen, ob die heutige Musikindustrie ein Phänomen ihrer Größenordnung aufnehmen kann. Wenige Künstler haben eine so treue Fangemeinde aufgebaut und dabei so viele Stilgrenzen überschritten.",
+      pt: "Seu domínio comercial sem precedentes — abrangendo cada gênero do country ao pop e ao indie folk — deixou os críticos questionando se a indústria musical atual pode acomodar um fenômeno de sua escala. Poucas artistas construíram um público tão devotado cruzando tantos estilos."
     }
   };
 
@@ -2030,15 +2114,33 @@ window.LanternPlaying = false;
     }, 200);
   }
 
+  var tpGen = 0;
+  /* place the card against the live sentence rect — fixed coords survive the
+     stage's float/tilt transforms — and grow it out toward the sentence start */
+  function placeTCard(sel) {
+    var card = heroTpanel;
+    var cw = card.offsetWidth || 312, ch = card.offsetHeight || 160;
+    var r  = sel.getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight, M = 14;
+    var left = Math.min(Math.max(r.left, M), vw - cw - M);
+    var top, oy;
+    if (r.bottom + 12 + ch <= vh - M) { top = r.bottom + 12; oy = '0%'; }   /* below the line */
+    else { top = Math.max(M, r.top - ch - 12); oy = '100%'; }              /* flip above */
+    var ox = Math.min(Math.max(r.left + 22 - left, 18), cw - 18);
+    card.style.left = Math.round(left) + 'px';
+    card.style.top  = Math.round(top) + 'px';
+    card.style.setProperty('--tc-ox', Math.round(ox) + 'px');
+    card.style.setProperty('--tc-oy', oy);
+  }
+
   function openTPanel(sel) {
     var key  = sel.dataset.tr;
     var data = TR[key];
-    if (!data || !heroTpanel) return;
-    var lang     = userLang();
-    var tgtText  = data[lang] || data.uk;
-    /* update footer lang pill */
+    if (!data || !heroTpanel) return 0;
+    var lang    = userLang();
+    var tgtText = data[lang] || data.uk;
     var langPill = document.getElementById('hero-tp-lang');
-    if (langPill) langPill.textContent = lang.toUpperCase();
+    if (langPill) langPill.textContent = 'EN → ' + lang.toUpperCase();
     if (activeSel) activeSel.classList.remove('on');
     activeSel = sel;
     sel.classList.add('on');
@@ -2046,25 +2148,45 @@ window.LanternPlaying = false;
     heroTpSrc.textContent = data.en;
     heroTpTgt.innerHTML = '';
     swapped = false;
-    heroTpanel.classList.remove('show');
-    void heroTpanel.offsetWidth;
-    heroTpanel.classList.add('show');
-    document.getElementById('hero').classList.add('panel-open');
-    tgtText.split(' ').forEach(function (w, i) {
+    /* build the words first (hidden, but they hold layout) so the card measures
+       at full height before we place it; each then fades in as a wave */
+    var words = tgtText.split(' ');
+    var stagger = Math.max(14, Math.min(30, Math.round(560 / words.length)));
+    words.forEach(function (w, i) {
       if (i > 0) heroTpTgt.appendChild(document.createTextNode(' '));
       var span = document.createElement('span');
       span.className = 'tw';
-      span.style.animationDelay = (i * 55) + 'ms';
+      span.style.animationDelay = (i * stagger) + 'ms';
       span.textContent = w;
       heroTpTgt.appendChild(span);
     });
+    heroTpanel.setAttribute('aria-hidden', 'false');
+    heroTpanel.classList.remove('show');
+    void heroTpanel.offsetWidth;            /* restart the pop + word-wave */
+    placeTCard(sel);
+    heroTpanel.classList.add('show');
+    return words.length * stagger + 520;    /* ms until the fade has fully landed */
+  }
+
+  /* scripted P3 (desktop): pop the card, let the translation fade in, hold,
+     then release 'translate' so PLAY may walk on. The card rests open until the
+     phase is left (closeTPanel runs on toP2 / toP4). */
+  function playTranslate(sel) {
+    if (!heroTpanel) return;
+    var g = ++tpGen;
+    var fadeMs = openTPanel(sel) || 1200;
+    window.LanternBusy.set('translate', true);
+    setTimeout(function () {
+      if (g === tpGen && phase === 2) window.LanternBusy.set('translate', false);
+    }, fadeMs + 1300);
   }
 
   if (heroTpClose) heroTpClose.addEventListener('click', closeTPanel);
   document.querySelectorAll('#hero .tr-page .sel').forEach(function (sel) {
     sel.addEventListener('click', function () {
       if (phase !== 2) return;
-      mobTranslateReset(); mobTranslate(sel, false);
+      if (matchMedia('(min-width: 921px)').matches) { playTranslate(sel); }
+      else { mobTranslateReset(); mobTranslate(sel, false); }
     });
   });
 
@@ -2260,14 +2382,16 @@ window.LanternPlaying = false;
       if (phase !== 2) return;
       var first = document.querySelector('#hero .tr-page .sel');
       if (!first) return;
-      /* auto-translate: scroll already = "look at this" — open the panel automatically.
-         fires at 1600ms so the phase-entry animation lands before the panel slides in,
-         and simultaneously clears wheelLock so the next scroll advances to P4.
-         mobile: no panel — the sentence lifts and translates in place. */
-      mobTranslate(first, false);
+      /* auto-translate: scroll already = "look at this" — show it automatically.
+         fires once the phase-entry animation has landed, and clears wheelLock so
+         the next scroll advances to P4.
+         desktop: a compact card pops out next to the sentence, translation fading in.
+         mobile:  the sentence lifts off the page and morphs in place. */
+      if (matchMedia('(min-width: 921px)').matches) { playTranslate(first); }
+      else { mobTranslate(first, false); }
       wheelLock = false;
       clearTimeout(wheelLockTimer);
-    }, 1600);
+    }, 1000);
   }
 
   function toP4() {
@@ -2370,11 +2494,11 @@ window.LanternPlaying = false;
           window.flyShelfCardTo(s.lemma, s.el.getBoundingClientRect(), { scale: 0.5, settle: 0 }).then(function () {
             if (!aliveD(gen)) return done();
             s.el.classList.add('on');
-            setTimeout(function () { step(i + 1); }, RM ? 0 : 150);
+            setTimeout(function () { step(i + 1); }, RM ? 0 : 80);
           });
         } else {
           s.el.classList.add('on');
-          setTimeout(function () { step(i + 1); }, RM ? 0 : 46);
+          setTimeout(function () { step(i + 1); }, RM ? 0 : 17);
         }
       })(0);
     });
@@ -2442,16 +2566,17 @@ window.LanternPlaying = false;
   async function typeAsk(gen) {
     if (dockBusy || !aliveD(gen)) return;
     dockBusy = true;
-    var input = dock.querySelector('.cw-composer input');
+    var input = dock.querySelector('.cw-composer textarea');
     var send  = dock.querySelector('.cw-send');
     if (input && !RM) {
       if (send) send.classList.add('on');
       for (var i = 1; i <= ASK.plain.length; i++) {
-        if (!aliveD(gen)) { input.value = ''; dockBusy = false; return; }
+        if (!aliveD(gen)) { input.value = ''; input.style.height = ''; dockBusy = false; return; }
         input.value = ASK.plain.slice(0, i);
-        await wait(24 + (i % 3) * 12);
+        input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px';
+        await wait(9 + (i % 3) * 6);
       }
-      await wait(300); if (!aliveD(gen)) { input.value = ''; dockBusy = false; return; }
+      await wait(150); if (!aliveD(gen)) { input.value = ''; dockBusy = false; return; }
       if (send) { send.classList.add('press'); setTimeout(function () { send.classList.remove('press', 'on'); }, 180); }
       input.value = '';
     }
@@ -2459,15 +2584,15 @@ window.LanternPlaying = false;
     u.className = 'cw-user';
     buildWords(u, ASK.text).forEach(function (s) { s.el.classList.add('on'); });
     dockBody.appendChild(u); pinDock();
-    await wait(430); if (!aliveD(gen)) { dockBusy = false; return; }
+    await wait(240); if (!aliveD(gen)) { dockBusy = false; return; }
     var usedEl = u.querySelector('.cw-saved');
     if (usedEl) creditWord(ASK.lemma, usedEl);
-    await wait(760); if (!aliveD(gen)) { dockBusy = false; return; }
+    await wait(380); if (!aliveD(gen)) { dockBusy = false; return; }
     var bot = document.createElement('div');
     bot.className = 'cw-bot';
     bot.innerHTML = '<span class="cw-typing"><i></i><i></i><i></i></span>';
     dockBody.appendChild(bot); pinDock();
-    await wait(260); if (!aliveD(gen)) { dockBusy = false; return; }
+    await wait(200); if (!aliveD(gen)) { dockBusy = false; return; }
     bot.innerHTML = '';
     var queue = buildWords(bot, ASK.a);
     pinDock();
@@ -2479,18 +2604,18 @@ window.LanternPlaying = false;
   /* everything after the "Discuss the article" press */
   async function openDockFlow(gen) {
     dock.classList.add('show');
-    await wait(500); if (!aliveD(gen)) return;
+    await wait(260); if (!aliveD(gen)) return;
     var skel = document.createElement('div');
     skel.className = 'dk-skel'; skel.innerHTML = '<i></i><i></i><i></i>';
     dockBody.appendChild(skel);
-    await wait(760); if (!aliveD(gen)) return;        /* honest, brief "reading…" */
+    await wait(440); if (!aliveD(gen)) return;        /* honest, brief "reading…" */
     skel.classList.add('out');
-    await wait(200); if (!aliveD(gen)) return;
+    await wait(130); if (!aliveD(gen)) return;
     if (skel.parentNode) skel.parentNode.removeChild(skel);
     await streamSummary(gen); if (!aliveD(gen)) return;
-    await wait(700); if (!aliveD(gen)) return;
+    await wait(360); if (!aliveD(gen)) return;
     await typeAsk(gen);
-    await wait(1400); if (!aliveD(gen)) return;
+    await wait(1100); if (!aliveD(gen)) return;
     dock.classList.remove('show');
     await wait(380); if (!aliveD(gen)) return;
     window.LanternBusy.set('discuss', false);   /* chat played out → scene done */
@@ -2522,10 +2647,10 @@ window.LanternPlaying = false;
       return;
     }
 
-    await wait(620); if (!aliveD(gen)) return;        /* let the copy swap land */
+    await wait(320); if (!aliveD(gen)) return;        /* let the copy swap land */
     if (discFab) {
       discFab.classList.add('show', 'beckon');
-      await wait(1050); if (!aliveD(gen)) return;     /* scripted press */
+      await wait(620); if (!aliveD(gen)) return;      /* scripted press */
       discFab.classList.remove('beckon');
       discFab.classList.add('press');
       await wait(140); if (!aliveD(gen)) return;
@@ -2604,7 +2729,14 @@ window.LanternPlaying = false;
      stretch > WHEEL_GESTURE_GAP ms means a genuinely new gesture began; until
      then this flick has "already stepped" and we swallow every event whatever
      its sign. This is the layer that kills the self-skip-forward-and-back. */
-  var WHEEL_GESTURE_GAP = 160, wheelGestureTs = 0, wheelGestureStepped = false;
+  /* WHEEL_MIN_DELTA: ignore micro-events from a light finger touch (trackpad
+     sends deltaY=2..8 before the real swipe registers). 12px is well below any
+     intentional flick but above capacitive-touch noise. */
+  var WHEEL_MIN_DELTA = 12;
+  /* WHEEL_GESTURE_GAP: gap > this ms = new gesture (wheelGestureStepped resets).
+     400ms is long enough to absorb inertial-burst pauses on Magic Trackpad/
+     Precision Touchpad without letting a genuine second flick sneak through. */
+  var WHEEL_GESTURE_GAP = 400, wheelGestureTs = 0, wheelGestureStepped = false;
   window.addEventListener('wheel', function (e) {
     /* crank mode (mobile): native scroll drives the phases — don't double-step */
     if (window.__mCrank) return;
@@ -2617,6 +2749,8 @@ window.LanternPlaying = false;
     /* inertia from the CTA→hero glide keeps emitting wheel events after scrollY crosses the
        threshold — without this grace window a single hard flick rewound a phase or two */
     if (performance.now() - lastAwayTs < 400) return;
+    /* filter out capacitive noise / accidental brush — only react to intentional flicks */
+    if (Math.abs(e.deltaY) < WHEEL_MIN_DELTA) return;
     /* a scrollable chat body owns its wheel (mirror of the pager's carve-out in lantern-v3.js) */
     var cw = e.target && e.target.closest ? e.target.closest('.cw-body') : null;
     if (cw && cw.scrollHeight > cw.clientHeight + 1) {
@@ -2653,7 +2787,7 @@ window.LanternPlaying = false;
     wheelLock = true; wheelLockStart = performance.now();
     wheelGestureStepped = true;   /* this flick has now spent its single step */
     clearTimeout(wheelLockTimer);
-    wheelLockTimer = setTimeout(function () { wheelLock = false; }, 1500);
+    wheelLockTimer = setTimeout(function () { wheelLock = false; }, 2000);
     if (e.deltaY > 0) {
       if (phase === 0) toP2();
       else if (phase === 1) toP3();
@@ -2879,15 +3013,13 @@ window.LanternPlaying = false;
 
   /* simple version: {lemma} = word from shelf (highlighted if saved) */
   var SIMPLE = [
-    'Before building this ',
-    { lemma: 'route',  text: 'route' },
-    ', engineers studied the ',
-    { lemma: 'rugged', text: 'rugged' },
-    ' ',
-    { lemma: 'coast',  text: 'coast' },
-    ' with care — a ',
-    { lemma: 'remote', text: 'remote' },
-    ' place where storms fought them at every stage.'
+    'She dominated every ',
+    { lemma: 'genre',      text: 'genre' },
+    ' — from country to pop to indie folk — and kept her ',
+    { lemma: 'devoted',    text: 'devoted' },
+    ' fans through every style shift. Critics call it a ',
+    { lemma: 'phenomenon', text: 'phenomenon' },
+    ': no artist had ever crossed so many boundaries without losing the crowd.'
   ];
 
   var simplified = false, busy = false;
@@ -2971,6 +3103,8 @@ window.LanternPlaying = false;
       simplified = true;
       dot.style.animation = 'none';
       para.classList.add('simplified');
+      void dot.offsetHeight;
+      dot.style.animation = '';
       var lvl = ensureLevel();
       lvl.classList.remove('rolled', 'pulse');
       lvl.classList.add('show');                 // badge enters showing C1 (the dense level)
@@ -3062,6 +3196,7 @@ window.LanternPlaying = false;
           solve(exw);
         } else {
           b.classList.add('wrong'); exw.classList.add('wrong');
+          bubble(exw, 'Oops!', 'oops');
           var mi = targets.indexOf(exw);
           if (hxProg && hxProg.children[mi]) hxProg.children[mi].classList.add('miss');   // show the slip on the tracker
           setTimeout(function () { b.classList.remove('wrong'); exw.classList.remove('wrong'); }, 450);

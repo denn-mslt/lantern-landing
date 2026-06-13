@@ -39,6 +39,30 @@
     if (!words.length) return;
     var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    /* The "My vocab" deck cards are built from DICT, but the four hero words
+       (genre·devoted·phenomenon·legacy) live only as inline .hl data — so the deck
+       fell back to genDef and every card read A2 / green / no gloss, mismatching the
+       floating word-cards (B2·B2·B2·C1, in colour, with a translation). Seed DICT from
+       the .hl data so each deck card matches the hero's first state and carries the
+       gloss in the chosen language. Re-run on language change to refresh both DICT and
+       any card already on the rail. */
+    function registerGloss() {
+      if (typeof DICT === 'undefined') return;
+      words.forEach(function (word) {
+        var lemma = word.dataset.w; if (!lemma) return;
+        var base = DICT[lemma] || (typeof genDef === 'function' ? genDef(lemma) : {});
+        DICT[lemma] = Object.assign({}, base, {
+          w: word.dataset.w,
+          cls: 'b-' + (word.dataset.cls || 'green'),
+          lvl: word.dataset.cefr || base.lvl || '',
+          tr: glossFor(word)
+        });
+        var dc = window.Shelf && window.Shelf.cardEl && window.Shelf.cardEl(lemma);
+        if (dc) { var t = dc.querySelector('.wd-tr'); if (t) t.textContent = glossFor(word); }
+      });
+    }
+    registerGloss();
+
     /* mobile rest slots are COLUMN-major (TL, BL, TR, BR) so the save order
        route·coast·rugged·remote lands left-column then right-column — when they
        later morph straight down into the left→right vocab strip, none of the
@@ -85,9 +109,12 @@
       card.className = 'hw-card';
       card.style.setProperty('--cbdur', CARD_DURS[idx % CARD_DURS.length]);
       card.style.setProperty('--cbdel', CARD_DELS[idx % CARD_DELS.length]);
+      var longWord = m.w.length > 8;
+      var wfs = longWord ? 24 : 27;
+      var cardW = MOBILE ? 140 : (longWord ? 248 : 186);
       card.innerHTML =
-        '<div class="wordcard" style="--rot:' + slot.rot + 'deg;width:' + (MOBILE ? 140 : 186) + 'px">' +
-          '<div class="wtop"><span class="w">' + m.w + '</span>' +
+        '<div class="wordcard" style="--rot:' + slot.rot + 'deg;width:' + cardW + 'px">' +
+          '<div class="wtop"><span class="w" style="font-size:' + wfs + 'px">' + m.w + '</span>' +
           '<span class="cefr-b b-' + c + '">' + m.cefr + '</span></div>' +
           '<div class="tr t-' + c + '">' + m.gloss + '</div></div>';
       card.style.left = (slot.xp * hero.offsetWidth) + 'px';
@@ -133,13 +160,24 @@
     // ---- as the reader scrolls off the hero, the big floating cards fold neatly
     //      into the "My vocab" deck (each glides to its deck slot and shrinks in) ----
     var folded = false;
+    /* cursor-demo state, so a scroll mid-demo can snap it to its end instantly */
+    var demoCursor = null, demoTimers = [], onboardEl = null, demoDone = false;
     function foldCardsToDeck(force) {
+      finalizeDemo();                 /* cursor away + snap any un-picked word to its card before folding */
       if (folded || !rested.length) return;
       if (!window.Shelf) return;
       if (!force && window.innerWidth < 1200) return;   // scroll path: deck docks on wide viewports only
       folded = true;
       if (!MOBILE) document.body.classList.add('vocab-on');    // desktop: reveal the hero-docked deck (mobile uses the P2 strip)
-      /* pass 1 — add ALL deck slots first and capture from-rects while the hero
+      /* TRUE MORPH via the View Transitions API when supported: the browser tweens
+         each floating card straight into its deck card — size, position AND a
+         content crossfade — in one pass, no manual scale/flip. The root is
+         EXCLUDED (:root{view-transition-name:none}) so only the cards are
+         snapshotted; the rest of the page keeps animating live underneath instead
+         of being frozen behind a full-page snapshot. */
+      if (!REDUCED && !MOBILE && typeof document.startViewTransition === 'function') { foldViaViewTransition(); return; }
+      /* fallback (Firefox / reduced-motion): the FLIP fly-and-crossfade.
+         pass 1 — add ALL deck slots first and capture from-rects while the hero
          layout is intact.  This is critical on mobile where the deck is a flex
          row: measuring to-rect after only the first Shelf.add() gives width =
          entire deck width, so sc = deck/card > 1 → cards GROW instead of shrink. */
@@ -186,6 +224,55 @@
         setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, delay + 820);
       });
     }
+
+    /* ---- true morph: View Transitions ---- the browser snapshots each named
+       floating card and its deck card and tweens between them (box + content).
+       Root is excluded so the page animates live underneath, not frozen. */
+    function foldViaViewTransition() {
+      var plan = rested.map(function (rc, i) {
+        var lemma = rc.word.dataset.w, name = 'ltw-' + lemma;
+        rc.card.classList.remove('rested');             // stop the idle bob → a stable snapshot
+        rc.card.style.animation = 'none';
+        rc.card.style.viewTransitionName = name;
+        return { card: rc.card, lemma: lemma, name: name, i: i };
+      });
+
+      /* scope the transition to the cards only, stagger each, and don't capture
+         the root (so the live phase morph keeps playing behind the cards) */
+      var st = document.getElementById('lt-vt-style');
+      if (!st) { st = document.createElement('style'); st.id = 'lt-vt-style'; document.head.appendChild(st); }
+      st.textContent =
+        ':root{view-transition-name:none}' +
+        '::view-transition-group(*){animation-duration:.6s;animation-timing-function:cubic-bezier(.33,0,.2,1)}' +
+        plan.map(function (p) { return '::view-transition-group(' + p.name + '){animation-delay:' + (p.i * 65) + 'ms}'; }).join('');
+
+      function cleanup() {
+        plan.forEach(function (p) {
+          var dc = window.Shelf.cardEl ? window.Shelf.cardEl(p.lemma) : null;
+          if (dc) { dc.style.viewTransitionName = ''; dc.style.transition = ''; }
+        });
+        if (st && st.parentNode) st.parentNode.removeChild(st);
+      }
+
+      var vt;
+      try {
+        vt = document.startViewTransition(function () {
+          plan.forEach(function (p) {
+            var deckCard = window.Shelf.add(p.lemma, { preset: true });   // build (or fetch) the destination card
+            if (deckCard) {
+              deckCard.classList.remove('preset');
+              deckCard.classList.add('in');
+              deckCard.style.transition = 'none';                        // settle it instantly for the NEW snapshot
+              deckCard.style.viewTransitionName = p.name;                // same name → morph target
+            }
+            if (p.card.parentNode) p.card.parentNode.removeChild(p.card); // floating card is gone in the NEW state
+          });
+          if (window.Shelf.reveal) window.Shelf.reveal();
+        });
+      } catch (e) { cleanup(); return; }
+      vt.finished.then(cleanup, cleanup);
+    }
+
     var foldRAF = 0;
     window.addEventListener('scroll', function () {
       if (folded || !rested.length) return;
@@ -202,6 +289,7 @@
        deck card takes over underneath. No cross-fade, no blink. */
     window.HeroWords = {
       foldToDeck: function () { foldCardsToDeck(true); },
+      finishDemo: finalizeDemo,            /* snap the cursor demo to its end-state (cursor gone, all 4 saved) */
       pending: function () { return !folded && rested.length > 0; }
     };
 
@@ -372,6 +460,7 @@
       function changeLang(code) {
         if (code === LANG) return;
         LANG = code; persist(LANG);
+        registerGloss();                       // refresh DICT + any live deck card to the new language
         codeEl.textContent = LANG.toUpperCase();
         Array.prototype.forEach.call(wrap.querySelectorAll('.hw-lang-menu button'), function (b) {
           b.classList.toggle('on', b.dataset.l === LANG);
@@ -417,21 +506,45 @@
     function tap(c) { c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); }
 
     function demo() {
+      if (demoDone) return;                  /* visitor already scrolled away → end-state is set */
       var c = MOBILE ? null : makeCursor();
+      demoCursor = c;
       if (!MOBILE) placeCursor(c, words[0]);
       var t = MOBILE ? 300 : 450;
       words.forEach(function (w) {
         (function (word, start) {
           if (MOBILE) {
-            setTimeout(function () { flyCard(word); }, start);
+            demoTimers.push(setTimeout(function () { flyCard(word); }, start));
           } else {
-            setTimeout(function () { moveCursor(c, word); }, start);
-            setTimeout(function () { tap(c); flyCard(word); }, start + 600);
+            demoTimers.push(setTimeout(function () { moveCursor(c, word); }, start));
+            demoTimers.push(setTimeout(function () { tap(c); flyCard(word); }, start + 600));
           }
         })(w, t);
         t += MOBILE ? 950 : 1450;
       });
-      if (!MOBILE) setTimeout(function () { c.classList.add('gone'); }, t + 350);
+      if (!MOBILE) demoTimers.push(setTimeout(function () { c.classList.add('gone'); }, t + 350));
+    }
+
+    /* snap the cursor demo straight to its end-state — used when the visitor
+       scrolls away before it finishes: cancel the pending cursor steps, fade the
+       cursor out now, and rest a card for every word the cursor never reached, so
+       the next screen shows all four saved words instead of a creeping cursor. */
+    function finalizeDemo() {
+      if (demoDone) return;
+      demoDone = true;
+      demoTimers.forEach(function (id) { clearTimeout(id); });
+      demoTimers = [];
+      if (demoCursor) {
+        var dc = demoCursor; demoCursor = null;
+        dc.classList.add('gone');
+        setTimeout(function () { if (dc.parentNode) dc.parentNode.removeChild(dc); }, 420);
+      }
+      if (onboardEl) {                       /* scrolled past the onboarding prompt → dismiss it too */
+        var ob = onboardEl; onboardEl = null;
+        ob.classList.add('gone');
+        setTimeout(function () { if (ob.parentNode) ob.parentNode.removeChild(ob); }, 420);
+      }
+      words.forEach(function (w) { if (!w.dataset.flown) restCard(w); });
     }
 
     // ---- onboarding card (new visitors only) ----
@@ -456,10 +569,13 @@
         '</div>' +
         '<button type="button" class="hw-ob-skip">or watch without translation</button>';
       hero.appendChild(ob);
+      onboardEl = ob;
 
       function startDemo(code) {
         LANG = code;
         if (code !== 'en') persist(code);
+        registerGloss();                       // seed the deck's gloss in the language just picked
+        onboardEl = null;
         ob.classList.add('gone');
         setTimeout(function () { if (ob.parentNode) ob.parentNode.removeChild(ob); }, 600);
         buildPill();
@@ -515,6 +631,17 @@
       attachScatter();
       return;
     }
+
+    /* desktop has no document scroll — leaving the hero is a body-class change.
+       The instant we go past phase 1 (hero-p2…p5 appears), snap the cursor demo
+       to its end: cursor fades out, every un-picked word rests its card. foldToDeck
+       also finalizes, but this also catches a scroll in the first instant — before
+       any card has flown, when pending() is still false and foldToDeck isn't called. */
+    var pastHeroObs = new MutationObserver(function () {
+      if (demoDone) { pastHeroObs.disconnect(); return; }
+      if (/\bhero-p[2-5]\b/.test(document.body.className)) finalizeDemo();
+    });
+    pastHeroObs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
     // returning visitor → auto-demo; new visitor → onboarding prompt
     if (saved()) {

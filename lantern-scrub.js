@@ -42,10 +42,18 @@
     track.appendChild(ball);                       /* keep the bead on top */
 
     var target = LP.get();                         /* where the user pointed */
+    var expected = LP.get();                       /* the phase the scrubber last set itself — any other value means someone else (auto-advance, swipe, programmatic) moved the phase, so adopt it instead of walking back (mirrors lantern-deck.js) */
     var lastStep = 0;
     var lastBusy = 0;                              /* last moment a scene was performing — BREATH measured from here */
     var dragging = false;
     var playing = false;                           /* PLAY owns the chase + drives the runway */
+    var selfStep = false;                          /* true while the scrubber itself drives a phase move — tells notifyPhase to ignore it */
+
+    /* the scrubber's own moves go through these so notifyPhase (fired from the
+       phase controller's setDots) can tell a scrubber-driven step apart from an
+       outside one (scene auto-advance, programmatic jump). */
+    function lpStep(dir) { selfStep = true; try { return LP.step(dir); } finally { selfStep = false; } }
+    function lpJump(n)   { selfStep = true; try { return LP.jump(n);   } finally { selfStep = false; } }
 
     function pct(p) { return (p / (N - 1) * 100) + '%'; }
 
@@ -80,6 +88,16 @@
     function chase() {
       rafId = 0;
       var cur = LP.get();
+      /* a phase change the scrubber didn't make = the discuss→practice auto-advance,
+         a swipe, or a programmatic jump took the wheel → adopt it as the goal
+         instead of walking back. Without this the chat's auto-advance is yanked
+         straight back into the chat (target still points at DISCUSS). */
+      if (!dragging && cur !== expected) {
+        if (playing) stopPlay();
+        target = cur; expected = cur;
+        render();
+        return;
+      }
       if (cur === target) { render(); if (playing) stopPlay(); return; }
       var now = performance.now(), dir = cur < target ? 1 : -1, ready;
       if (playing && dir > 0) {
@@ -89,8 +107,9 @@
       } else {
         ready = (now - lastStep >= DWELL) && !LP.busy();
       }
-      if (ready && LP.step(dir)) {
+      if (ready && lpStep(dir)) {
         lastStep = now; lastBusy = now;
+        expected = LP.get();   /* the scrubber owns this move — record it so the guard above doesn't mistake it for an outside change */
         /* NB: don't scroll the runway here — a leaked scroll event would feed
            back through the crank handler and reset target to the current
            phase, silently halting the reel. The bead shows the phase; the
@@ -144,8 +163,10 @@
       scrub.classList.remove('drag');
       /* tap (no movement) → jump directly; drag → let chase walk there */
       if (!wasDrag && LP.jump) {
-        LP.jump(target);
+        lpJump(target);
+        expected = target;
         render();
+        syncRunway(target);   /* snap the runway under the new phase + suppress feedback, exactly like a swipe — without this the lagging scrollY is read back and drifts the phase */
       } else {
         render();
         kick();
@@ -158,8 +179,9 @@
        in flight, any phase drift came from outside: adopt it as the new goal
        (a swipe mid-chase keeps the chase goal — it'll converge anyway). */
     setInterval(function () {
-      if (dragging) return;
-      if (!rafId && LP.get() !== target) target = LP.get();
+      if (dragging || rafId) return;                 /* mid-chase: it'll converge — don't fight it */
+      var cur = LP.get();
+      if (cur !== target || cur !== expected) { target = cur; expected = cur; }
       render();
     }, 300);
 
@@ -168,17 +190,25 @@
        the same chase engine walks the story there, speed-capped — a full-track
        fling still plays every beat on the way. ── */
     var playBtn = document.getElementById('m-playbtn');
-    var progScroll = false;
     function crankRange() { return Math.max(1, document.documentElement.scrollHeight - window.innerHeight); }
 
     var crank = document.getElementById('m-crank');
     var crankSuppressUntil = 0;
+    /* programmatic scroll: snapping the runway under a phase fires a BURST of
+       scroll events (mobile momentum + smoothing), not one. The old single-shot
+       `progScroll` flag swallowed only the FIRST; the rest were read back as a
+       finger drag and silently re-targeted the phase — that's the 3→2 drift that
+       broke the chat (the runway lagged a phase behind, then pulled it back). A
+       time window swallows the whole burst. */
+    function progScrollTo(y) {
+      crankSuppressUntil = Math.max(crankSuppressUntil, performance.now() + 700);
+      window.scrollTo(0, y);
+    }
     if (crank) {
-      window.__mCrank = true;        /* tells main.html: drive phases here, not via discrete wheel */
+      window.__mCrank = true;        /* tells index.html: drive phases here, not via discrete wheel */
       var lastScrollTs = 0;
       window.addEventListener('scroll', function () {
-        if (progScroll) { progScroll = false; return; }
-        if (performance.now() < crankSuppressUntil) return;   /* a swipe is stepping discretely — ignore its momentum */
+        if (performance.now() < crankSuppressUntil) return;   /* programmatic snap or a discrete swipe — ignore its momentum */
         lastScrollTs = performance.now();
         setTarget(Math.max(0, Math.min(1, window.scrollY / crankRange())));
         kick();
@@ -189,17 +219,35 @@
       window.LanternCrank = {
         syncTo: function (p) {
           var y = Math.round(Math.max(0, Math.min(N - 1, p)) / (N - 1) * crankRange());
-          progScroll = true; window.scrollTo(0, y);
+          progScrollTo(y);
         },
-        suppress: function (ms) { crankSuppressUntil = performance.now() + (ms || 650); }
+        suppress: function (ms) { crankSuppressUntil = Math.max(crankSuppressUntil, performance.now() + (ms || 650)); },
+        /* the phase controller calls this synchronously on EVERY phase change
+           (via setDots). It closes the race that broke the chat: when a scene
+           auto-advances (discuss→practice) or a programmatic jump moves the
+           phase, the runway is still parked at the OLD phase; a stray scroll read
+           that stale position back and walked the phase straight back into the
+           chat. Anchoring the runway here — synchronously, before any scroll can
+           fire — kills that. Scrubber-driven moves (selfStep) and active
+           drag/PLAY are skipped: the scrubber already owns target there. */
+        notifyPhase: function (p) {
+          if (selfStep || dragging || playing) return;
+          target = expected = p;
+          if (performance.now() - lastScrollTs < 700) { render(); return; }  /* user is scrolling the crank — it owns the runway */
+          render();
+          syncRunway(p);
+        }
       };
-      /* phase moved some other way (track tap, CTA back) → quietly bring the
-         scroll position along so the next flick continues from the right spot */
+      /* phase moved some other way (track tap, CTA back, auto-advance) → quietly
+         bring the scroll position along so the next flick continues from the
+         right spot. Guarded by the suppression window so it never fights a snap
+         already in flight. */
       setInterval(function () {
         if (dragging || playing) return;
         if (performance.now() - lastScrollTs < 700) return;
+        if (performance.now() < crankSuppressUntil) return;
         var want = target / (N - 1) * crankRange();
-        if (Math.abs(window.scrollY - want) > 8) { progScroll = true; window.scrollTo(0, want); }
+        if (Math.abs(window.scrollY - want) > 8) progScrollTo(want);
       }, 350);
     }
 
@@ -216,13 +264,14 @@
     function stopPlay() {
       if (!playing) return;
       playing = false; window.LanternPlaying = false;
-      target = LP.get();                          /* freeze on this screen */
+      target = expected = LP.get();               /* freeze on this screen */
       setPlayUI(false);
       render();
       syncRunway(LP.get());                       /* chase is idle now → safe to bring the runway along */
     }
     function startPlay() {
       var cur = LP.get();
+      expected = cur;
       target = (cur >= N - 1) ? 0 : N - 1;         /* at the end → rewind home; else play to the end */
       lastStep = lastBusy = performance.now();     /* first screen gets its full beat */
       playing = true; window.LanternPlaying = true;
