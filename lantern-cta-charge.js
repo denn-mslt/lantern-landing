@@ -42,17 +42,17 @@
   function buildFeats() {
     return [
       { n: 'Save',      c: '#ef8e1c', ic: ICON.bk,    x: 13, y: 18, s: 'l', row: 0,
-        prev: '<span class="dkw"><b>route</b><i>/ruːt/</i><em class="cefr-b b-blue">B1</em></span><span class="dkok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>saved</span>' },
+        prev: '<span class="dkw"><b>genre</b><i>/ˈʒɒn.rə/</i><em class="cefr-b b-red">B2</em></span><span class="dkok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>saved</span>' },
       { n: 'Simplify',  c: '#2f9e5f', ic: DOT, bare: true, x: 87, y: 18, s: 'r', row: 0,
-        prev: '<span class="dksm"><s>exhaustive survey</s><span class="ar">→</span><b>studied with care</b></span>' },
+        prev: '<span class="dksm"><s>unprecedented commercial dominance</s><span class="ar">→</span><b>unmatched music success</b></span>' },
       { n: 'Translate', c: '#3b6fd4', ic: TRANSLATE,  x: 11, y: 50, s: 'l', row: 1,
-        prev: '<span class="dktr"><span class="s">the coast</span><span class="ar">→</span><span class="t">' + gloss('coast', 'узбережжя') + '</span></span>' },
+        prev: '<span class="dktr"><span class="s">devoted</span><span class="ar">→</span><span class="t">' + gloss('devoted', 'відданий') + '</span></span>' },
       { n: 'Discuss',   c: '#7a6f9c', ic: DISCUSS,    x: 89, y: 50, s: 'r', row: 1,
-        prev: '<span class="dkq">Why seven years?</span><span class="dka">The coast gave the crews no shelter…</span>' },
+        prev: '<span class="dkq">Cross-genre run — real or hype?</span><span class="dka">She kept every crowd through every genre shift.</span>' },
       { n: 'Exercises', c: '#d4503b', ic: BOLT,       x: 13, y: 82, s: 'l', row: 2,
-        prev: '<span class="dkcz">one <span class="gap">remote</span> island</span>' },
+        prev: '<span class="dkcz">a cultural <span class="gap">phenomenon</span></span>' },
       { n: 'Practice',  c: '#bd6e0c', ic: TARGET,     x: 87, y: 82, s: 'r', row: 2,
-        prev: '<span class="dkfc"><span class="f">route</span><span class="b">' + gloss('route', 'маршрут') + '</span></span>' }
+        prev: '<span class="dkfc"><span class="f">genre</span><span class="b">' + gloss('genre', 'жанр') + '</span></span>' }
     ];
   }
 
@@ -203,7 +203,9 @@
     const r = it.c.getBoundingClientRect();
     const ex = r.left + r.width / 2 - dr.left;          /* card centre x */
     const ey = (it.above ? r.bottom : r.top) - dr.top;  /* card edge facing the button */
-    const px = bb.left + bb.width * it.bx - dr.left;     /* entry spread across the button */
+    /* enter the button directly above/below the card centre, clamped inside the
+       pill — keeps wires straight (no crossing) for any column count, 2-col or 3 */
+    const px = Math.max(bb.left + 12, Math.min(bb.right - 12, r.left + r.width / 2)) - dr.left;
     const py = (it.above ? bb.top + 8 : bb.bottom - 8) - dr.top;   /* dive 8px under the rim */
     const my = ey + (py - ey) * 0.5;
     it.path.setAttribute('d', 'M ' + ex.toFixed(1) + ' ' + ey.toFixed(1) + ' C ' + ex.toFixed(1) + ' ' + my.toFixed(1) + ' ' + px.toFixed(1) + ' ' + my.toFixed(1) + ' ' + px.toFixed(1) + ' ' + py.toFixed(1));

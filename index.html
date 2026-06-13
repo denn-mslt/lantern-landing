@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Lantern — main (working copy)</title>
+<title>Lantern — The Living Dictionary</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -948,11 +948,18 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   /* compact copy on mobile */
   #hero .hero-copy h1 { font-size: clamp(26px, 7.4vw, 40px) !important; line-height: 1.08; margin-bottom: 6px; }
   #hero .hero-copy .hero-eyebrow { font-size: 10px; letter-spacing: .18em; margin-bottom: 8px; }
+  /* descriptive subhead under each headline — shown on mobile so every screen
+     matches the desktop copy. Practice (p5) keeps its subhead hidden: that screen
+     is intentionally left as-is. Clamped + compact so the browser + cards still fit. */
+  #hero .hero-copy-p5 .p2-sub { display: none; }
   #hero .hero-copy .hsub,
   #hero .hero-copy-p2 .p2-sub,
   #hero .hero-copy-p3 .p2-sub,
-  #hero .hero-copy-p4 .p2-sub,
-  #hero .hero-copy-p5 .p2-sub { display: none; }
+  #hero .hero-copy-p4 .p2-sub {
+    display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+    margin: 9px auto 0 !important; max-width: 32ch;
+    font-size: 13px !important; line-height: 1.45;
+  }
   #hero .hero-copy .hcta { margin-top: 10px; }
   #hero .hero-copy-p2 h2,
   #hero .hero-copy-p3 h2,
@@ -1029,12 +1036,10 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   #hero .browser .page { transition: min-height 1s cubic-bezier(.4,0,.2,1) 0.12s; }
   body.hero-p2 #hero .browser .page { min-height: 330px !important; }
 
-  /* words pre-highlighted on mobile (no interactive demo; show saved state by default) */
-  #hero .browser .hl { border-radius: 4px; padding: 0 2px; }
-  #hero .browser .hl[data-cls="blue"]   { background: #e3edfd; color: #2f6fd6; }
-  #hero .browser .hl[data-cls="green"]  { background: #d8f3e3; color: #1d8348; }
-  #hero .browser .hl[data-cls="red"]    { background: #fde3e3; color: #c0392b; }
-  #hero .browser .hl[data-cls="violet"] { background: #ebe3fd; color: #7d3c98; }
+  /* words pre-highlighted on mobile (no interactive demo; show saved state by default).
+     Match desktop: every saved word uses the one "saved" blue (.hero .hl.saved),
+     not a per-class colour — the per-word colour lives on the cards, like desktop. */
+  #hero .browser .hl { border-radius: 4px; padding: 0 2px; background: #e3edfd; color: #2f6fd6; }
 
   /* the fake article should read like a real page — left-aligned, not centred
      (the marketing headline + CTA stay centred; only the browser content resets) */
@@ -1278,7 +1283,9 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   #ev-close .close-wrap {
     flex: none !important;
     justify-content: flex-start !important;
-    padding-top: clamp(96px, 16vh, 150px) !important;
+    /* tight top: INSTALL now carries headline + streak + 6 example cards + foot,
+       so it can't afford the big centring pad the old icon-only layout used */
+    padding-top: clamp(20px, 4vh, 40px) !important;
   }
 
   /* topbar install pill is useless on mobile (Chrome Web Store rejects it) */
@@ -1316,9 +1323,18 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   /* push Everywhere content below the fixed topbar */
   #finale { padding-top: calc(var(--nav, 72px) + 16px) !important; }
 
-  /* the day-streak echo row (1 · 2 · 3 … 10) only makes sense next to the
-     install button — hide it on mobile where the button is already hidden */
-  #ev-close .d1-echo { display: none !important; }
+  /* the day-streak echo row, shown on mobile too (matches desktop's lit end-state).
+     It rides right under the "Day one…" headline — day 1 lit as a static start, the
+     rest of the week ahead. No charge animation on mobile, so day 1 is lit by CSS. */
+  #ev-close .d1-echo {
+    display: flex !important; align-items: center; justify-content: center;
+    flex-wrap: nowrap; gap: 7px; max-width: 100%; overflow: hidden;
+    margin: 0 0 8px; padding: 0 16px;
+  }
+  #ev-close .d1-echo .d1-echo-lab { margin-right: 6px; }
+  #ev-close .d1-echo .d1-daycell { width: 26px; height: 26px; border-radius: 8px; font-size: 11px; flex: none; }
+  #ev-close .d1-echo .d1-daycell.day1 { background: var(--amber); border-color: var(--amber); color: #fff; }
+  #ev-close .d1-futures { gap: 7px; }
 
   /* hide nav on CTA — full vertical space for the 3+3+button layout */
   body.ph-cta .topbar { opacity: 0 !important; pointer-events: none !important; transition: opacity .3s; }
@@ -1469,8 +1485,8 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
      then .m-cta-foot (email + reassurance) last */
   #ev-close .cta-dock {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px 8px;
+    grid-template-columns: repeat(2, 1fr);   /* 2-col so each card fits its live example, like desktop */
+    gap: 9px 10px;
     position: relative !important;     /* anchors the .ev-wires overlay */
     inset: auto !important;
     width: 100%;
@@ -1485,10 +1501,14 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     position: relative; z-index: 4;
     pointer-events: auto;
     display: flex !important;
-    flex-direction: column; align-items: center; gap: 11px;
+    flex-direction: column; align-items: center; gap: 9px;
     text-align: center;
-    margin: 2px 0 22px;
+    margin: 0 0 8px;
   }
+  /* INSTALL must hold the headline + streak + 6 example cards + foot in one screen:
+     trim the giant close headline and the gaps on phones */
+  #ev-close .d1-headline { font-size: clamp(30px, 8.6vw, 42px) !important; line-height: 1.06; margin: 0 0 3px !important; }
+  #ev-close .d1-kick { margin-bottom: 6px; }
   #ev-close .m-close-cta .m-close-note {
     margin: 0; font-size: 12.5px; line-height: 1.45;
     color: var(--ink-45, rgba(26,23,20,.5));
@@ -1522,10 +1542,10 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     animation: dkfloatM var(--fd, 8s) ease-in-out var(--fdelay, 0s) infinite;
   }
   @media (prefers-reduced-motion: reduce) { #ev-close .dk-card.in { animation: none; } }
-  /* compact: icon + label only */
-  #ev-close .dk-in  { padding: 10px 10px 8px; }
-  #ev-close .dk-top { margin-bottom: 0; }
-  #ev-close .dk-prev { display: none; }
+  /* show the live mini-example under the label, like desktop (2-col fits it) */
+  #ev-close .dk-in  { padding: 8px 9px 9px; }
+  #ev-close .dk-top { margin-bottom: 6px; }
+  #ev-close .dk-prev { display: flex; font-size: 10px; line-height: 1.3; min-height: 0; padding: 6px 7px; gap: 4px; }
 
   /* the REAL wires: the desktop SVG bead engine, vertical geometry —
      absolute overlay across the whole 3+button+3 grid */
@@ -2057,22 +2077,6 @@ window.LanternPlaying = false;
       de: "Taylor Swift wechselte vom Country über Pop zum Folk, ohne ihre treuen Fans zu verlieren — ein kulturelles Phänomen, das ein Erbe hinterließ, das niemand vorhergesagt hatte.",
       pt: "Taylor Swift passou do country ao pop e ao folk sem perder seus fãs devotados — um fenômeno cultural que deixou um legado que ninguém havia previsto."
     },
-    s2: {
-      en: "Every autumn, storms drive waves across the roadway — sometimes shutting the road for days.",
-      uk: "Щовосені шторми заганяють хвилі на дорогу — іноді перекриваючи рух на кілька днів.",
-      es: "Cada otoño, las tormentas impulsan las olas sobre la calzada, a veces cerrando la carretera por días.",
-      fr: "Chaque automne, les tempêtes projettent les vagues sur la chaussée, parfois fermant la route plusieurs jours.",
-      de: "Jeden Herbst treiben Stürme Wellen über die Fahrbahn — manchmal tagelang gesperrt.",
-      pt: "Todo outono, tempestades empurram ondas sobre a pista — às vezes fechando a estrada por dias."
-    },
-    s3: {
-      en: "Engineers spent seven years building this remote crossing, fighting the open sea at every stage.",
-      uk: "Інженери витратили сім років на будівництво цього переходу, воюючи з морем на кожному етапі.",
-      es: "Los ingenieros tardaron siete años en construir este cruce remoto, luchando contra el mar en cada etapa.",
-      fr: "Les ingénieurs ont mis sept ans à construire ce passage, luttant contre la mer à chaque étape.",
-      de: "Die Ingenieure brauchten sieben Jahre für diesen Übergang und kämpften an jedem Abschnitt gegen das Meer.",
-      pt: "Os engenheiros levaram sete anos para construir esta travessia, lutando contra o mar em cada etapa."
-    },
     s4: {
       en: "Her unprecedented commercial dominance — spanning every genre from country to pop to indie folk — has left critics asking whether today's music industry can even accommodate a phenomenon of her scale.",
       uk: "Її безпрецедентне комерційне домінування — у кожному жанрі від кантрі до попу та інді-фолку — змусило критиків запитати, чи взагалі може сучасна музична індустрія вмістити явище такого масштабу.",
@@ -2333,8 +2337,10 @@ window.LanternPlaying = false;
   document.querySelectorAll('#hero .tr-page .sel').forEach(function (sel) {
     sel.addEventListener('click', function () {
       if (phase !== 2) return;
-      if (matchMedia('(min-width: 921px)').matches) { playTranslate(sel); }
-      else { mobTranslateReset(); mobTranslate(sel, false); }
+      /* one Translate treatment on every width now: the pop-out card next to the
+         sentence (mobile used to lift the sentence inline — desktop's card reads
+         clearer and keeps the two versions in sync) */
+      playTranslate(sel);
     });
   });
 
@@ -2522,10 +2528,9 @@ window.LanternPlaying = false;
       /* auto-translate: scroll already = "look at this" — show it automatically.
          fires once the phase-entry animation has landed, and clears wheelLock so
          the next scroll advances to P4.
-         desktop: a compact card pops out next to the sentence, translation fading in.
-         mobile:  the sentence lifts off the page and morphs in place. */
-      if (matchMedia('(min-width: 921px)').matches) { playTranslate(first); }
-      else { mobTranslate(first, false); }
+         a compact card pops out next to the sentence, translation fading in —
+         same on desktop and mobile. */
+      playTranslate(first);
       wheelLock = false;
       clearTimeout(wheelLockTimer);
     }, 1000);

@@ -1585,6 +1585,7 @@ body.tx-off .close-flame,body.tx-off.close-lit footer .lmark::before{animation:n
 .hw-ob-btn:hover{background:var(--amber);border-color:var(--amber);color:#3a2402;transform:translateY(-2px);box-shadow:0 8px 20px -8px rgba(239,142,28,.5)}
 .hw-ob-skip{display:block;margin:16px auto 0;font-size:12px;color:var(--ink-45);cursor:pointer;background:none;border:none;font-family:var(--sans);text-decoration:underline;text-underline-offset:2px;padding:0}
 .hw-ob-skip:hover{color:var(--ink)}
+@media(min-width:1001px){.hw-onboard{left:calc(50% + 140px)}}
 @media(max-width:1000px){.hw-onboard{display:none}}
 
 /* hero — demo cursor that taps the words */
