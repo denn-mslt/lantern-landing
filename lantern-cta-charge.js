@@ -24,14 +24,16 @@
   const TRANSLATE = NAV_ICON.translate;   /* swap-arrows mark from the nav menu */
   const DISCUSS = NAV_ICON.discuss;       /* speech bubble from the nav */
   const BOLT = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
-  const TARGET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>';
+  /* immersion = read the whole article in your language: the ↻ flip mark from
+     the hero immersion fab, so the card reads the same as that screen */
+  const ROTATE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/><path d="M19.4 9a7.5 7.5 0 0 0-12.5-2.8L3 8"/><path d="M4.6 15a7.5 7.5 0 0 0 12.5 2.8L21 16"/></svg>';
   /* simplify reduces to the essence — a bare orange dot, no icon plate */
   const DOT = '<svg viewBox="0 0 24 24" fill="#ef8e1c"><circle cx="12" cy="12" r="6"/></svg>';
 
   /* ---- the visitor's own session feeds the previews ---- */
   function userLang() {
-    try { var l = localStorage.getItem('lantern.gloss'); return (l && l !== 'en') ? l : 'uk'; }
-    catch (e) { return 'uk'; }
+    try { var l = localStorage.getItem('lantern.gloss'); return (l && l !== 'en') ? l : 'fr'; }
+    catch (e) { return 'fr'; }
   }
   function gloss(w, fallback) {
     const hl = document.querySelector('#hero .hl[data-w="' + w + '"]');
@@ -51,8 +53,8 @@
         prev: '<span class="dkq">Cross-genre run — real or hype?</span><span class="dka">She kept every crowd through every genre shift.</span>' },
       { n: 'Exercises', c: '#d4503b', ic: BOLT,       x: 13, y: 82, s: 'l', row: 2,
         prev: '<span class="dkcz">a cultural <span class="gap">phenomenon</span></span>' },
-      { n: 'Practice',  c: '#bd6e0c', ic: TARGET,     x: 87, y: 82, s: 'r', row: 2,
-        prev: '<span class="dkfc"><span class="f">genre</span><span class="b">' + gloss('genre', 'жанр') + '</span></span>' }
+      { n: 'Immerse',   c: '#7b46cf', ic: ROTATE,     x: 87, y: 82, s: 'r', row: 2,
+        prev: '<span class="dkim">a <b>' + gloss('genre', 'жанр') + '</b>-defining run of pure <b>' + gloss('devoted', 'відданість') + '</b></span>' }
     ];
   }
 

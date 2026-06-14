@@ -14,8 +14,8 @@
    inline wheel handler (which stopImmediatePropagation()s).
    ============================================================ */
 (function () {
-  var N = 7;
-  var NAMES = ['HOME', 'SIMPLIFY', 'TRANSLATE', 'DISCUSS', 'PRACTICE', 'EVERYWHERE', 'INSTALL'];
+  var N = 8;
+  var NAMES = ['HOME', 'SIMPLIFY', 'TRANSLATE', 'IMMERSE', 'DISCUSS', 'PRACTICE', 'EVERYWHERE', 'INSTALL'];
   var DWELL = 1150;                 /* manual drag/keyboard speed cap per phase */
   var BREATH = 600;                 /* PLAY: beat after a scene finishes before the next — reads as cinema */
   var MAX_SCENE = 18000;            /* PLAY: safety cap so a scene that forgets to clear can't hang the reel */

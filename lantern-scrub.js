@@ -9,11 +9,11 @@
    Needs window.LanternPhases (main.html inline) + .m-scrub styles.
    ============================================================ */
 (function () {
-  var N = 7;                       /* phases 0..6 */
+  var N = 8;                       /* phases 0..7 */
   var DWELL = 1150;                /* manual drag/tap speed cap between phase steps */
   var BREATH = 600;               /* PLAY: beat after a scene finishes before the next */
   var MAX_SCENE = 18000;          /* PLAY: safety cap so a stuck scene can't hang the reel */
-  var NAMES = ['HOME', 'SIMPLIFY', 'TRANSLATE', 'DISCUSS', 'PRACTICE', 'EVERYWHERE', 'INSTALL'];
+  var NAMES = ['HOME', 'SIMPLIFY', 'TRANSLATE', 'IMMERSE', 'DISCUSS', 'PRACTICE', 'EVERYWHERE', 'INSTALL'];
 
   function init() {
     var scrub = document.getElementById('m-scrub');
@@ -201,7 +201,7 @@
        broke the chat (the runway lagged a phase behind, then pulled it back). A
        time window swallows the whole burst. */
     function progScrollTo(y) {
-      crankSuppressUntil = Math.max(crankSuppressUntil, performance.now() + 700);
+      crankSuppressUntil = Math.max(crankSuppressUntil, performance.now() + 1000);
       window.scrollTo(0, y);
     }
     if (crank) {

@@ -69,6 +69,7 @@
     setTimeout(function () {
       pages.forEach(function (p) { p.style.transition = ''; p.style.opacity = ''; p.parentNode.style.zIndex = ''; });
       ev.classList.remove('ev-splitting');                 // bob resumes
+      // startSimplifyCascade();                           // auto-cascade disabled: hover only down to your level
     }, done + 80);
     setTimeout(function () { if (cue) cue.classList.add('in'); }, HOLD + n * STEP + 240);
   }
@@ -230,6 +231,7 @@
       if (cue) cue.classList.add('in');
       requestAnimationFrame(function () { pages.forEach(function (p) { p.style.transition = ''; }); });
       morphing = false;
+      // startSimplifyCascade();                        /* auto-cascade disabled: hover onlyes down to your level */
     });
   }
 
@@ -284,13 +286,23 @@
   addEventListener('resize', function () { clearTimeout(rzT); rzT = setTimeout(reserveHeights, 150); });
 
   /* ── hover → typewrite the plain text in, amber tint fades in (once per card) ── */
+  /* the reading-level badge ticks from its hard level (C1/C2) down to your
+     level (the data-easy A2/B1/B2) as the card simplifies */
+  function morphBadge(pg) {
+    var badge = pg.querySelector('.pg-cefr');
+    if (!badge) return;
+    var lv = badge.getAttribute('data-easy');
+    if (lv) badge.textContent = lv;
+    badge.classList.remove('morph'); void badge.offsetWidth; badge.classList.add('morph');
+  }
   function rewriteCard(pg) {
     if (pg.dataset.done) return;
     pg.dataset.done = '1';
     var easy = pg.querySelector('.t-easy');
     var txt  = easy.getAttribute('data-text') || '';
-    if (REDUCED) { easy.textContent = txt; pg.classList.add('rewritten'); return; }
+    if (REDUCED) { easy.textContent = txt; pg.classList.add('rewritten'); morphBadge(pg); return; }
     pg.classList.add('rewriting');
+    morphBadge(pg);
     easy.classList.add('typing');
     easy.textContent = '';
     var dur = Math.min(900, 240 + txt.length * 10), t0 = performance.now();
@@ -305,6 +317,18 @@
       pg.classList.add('rewritten');
     }
     requestAnimationFrame(type);
+  }
+
+  /* ── chaotic auto-simplify: once the six cards have landed, each one rewrites
+     itself (text + level badge C1/C2 → A2/B1/B2) at its own staggered, jittered
+     beat — so the whole wall ripples down to your level, never in lockstep ── */
+  var cascaded = false;
+  function startSimplifyCascade() {
+    if (cascaded) return; cascaded = true;
+    pages.forEach(function (p, k) {
+      var delay = 650 + k * 320 + Math.floor(Math.random() * 1000);   // staggered + jittered
+      setTimeout(function () { rewriteCard(p); }, delay);
+    });
   }
 
   /* ── hover: nudge neighbours away from the focused card ── */
@@ -330,7 +354,7 @@
         place, no scroll. #ev-close (ph-cta) is an overlay in this same viewport;
         the fixed flip-clones mask the overlay swap. ──
         finale order: bbc, reddit, wiki, arxiv, atlantic, youtube
-        → dock slots: Save, Translate, Simplify, Exercises, Discuss, Practice */
+        → dock slots: Save, Translate, Simplify, Exercises, Discuss, Immerse */
   var FLIP_MAP = [0, 2, 1, 4, 3, 5];
   var docked = false;
 

@@ -15,15 +15,12 @@
   function persist(v) { try { localStorage.setItem(STORE, v); } catch (e) {} }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
+  /* default gloss language is French unless the visitor has explicitly picked another
+     (which is persisted). Mirrors index.html's userLang() so the gloss popups, the
+     immersion flip and the translate card all open in the same language. */
   function resolveLang() {
     var s = saved();
-    if (s) return s;
-    var navs = navigator.languages || [navigator.language || ''];
-    for (var i = 0; i < navs.length; i++) {
-      var l = (navs[i] || '').slice(0, 2).toLowerCase();
-      if (SUP.indexOf(l) >= 0) return l;
-    }
-    return 'en';
+    return (s && s !== 'en') ? s : 'fr';
   }
 
   var LANG = resolveLang();
@@ -471,6 +468,8 @@
             setTimeout(function () { tr.textContent = glossFor(rc.word); tr.style.opacity = '1'; }, 170);
           }, i * 120);
         });
+        /* let the page react — Immersion re-renders the article into the new language live */
+        try { window.dispatchEvent(new CustomEvent('lantern:gloss', { detail: code })); } catch (e) {}
       }
     }
 
@@ -522,6 +521,11 @@
         t += MOBILE ? 950 : 1450;
       });
       if (!MOBILE) demoTimers.push(setTimeout(function () { c.classList.add('gone'); }, t + 350));
+      /* demo done → raise the hero's "Next: Save & Simplify" cue (desktop only;
+         the pill is hidden under 920px, and showHomeNext no-ops off phase 0) */
+      if (!MOBILE) demoTimers.push(setTimeout(function () {
+        if (window._heroShowHomeNext) window._heroShowHomeNext();
+      }, t + 650));
     }
 
     /* snap the cursor demo straight to its end-state — used when the visitor

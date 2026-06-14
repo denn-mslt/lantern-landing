@@ -68,7 +68,7 @@ body.hero-p2 #hero .hw-onboard { opacity: 0; pointer-events: none; }
    hero phase, not only P3, so a returning visitor can always re-pick the gloss
    language. margin-left:auto pulls it out of the centre and groups it with the
    install pill on the right (logo alone left, controls clustered right). */
-.topbar .hw-lang { position: static; margin-left: auto; margin-right: clamp(14px, 2vw, 26px); opacity: 1; pointer-events: auto; transition: opacity 0.3s ease; }
+.topbar .hw-lang { position: relative; margin-left: auto; margin-right: clamp(14px, 2vw, 26px); opacity: 1; pointer-events: auto; transition: opacity 0.3s ease; }
 .topbar { pointer-events: none; }
 .topbar .brand, .topbar .hw-lang, .topbar .pill { pointer-events: auto; }
 
@@ -281,31 +281,25 @@ body.hero-p2.at-hero .pill {
   }
 }
 
-/* hero simplify dot: fade in after text is visible */
-#hero-simp-dot { opacity: 0; pointer-events: none; transition: opacity 0.35s ease 1s; }
+/* hero simplify dot: fade in after text is visible; on hover it eases up a touch
+   (smooth, no bounce). transform MUST be in this transition list — this id rule
+   overrides .simp-dot's own transform transition from lantern-v3.css, so without
+   it the hover scale would snap instantly. */
+#hero-simp-dot {
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease 1s,
+              transform 0.3s cubic-bezier(.25,.8,.35,1),
+              box-shadow 0.3s ease, background 0.3s ease;
+}
 body.hero-p2 #hero-simp-dot { opacity: 1; pointer-events: auto; }
 /* …but never in P3/P4 (hero-p2 stays on body there): the dot is invisible yet an explicit
    pointer-events:auto re-enables hit-testing through the page-en's pointer-events:none */
 body.hero-p3 #hero-simp-dot { pointer-events: none !important; }
-/* hover the dot → light amber wash hints "this paragraph will simplify" */
+/* hover the dot → light amber wash hints "this paragraph will simplify",
+   and the dot itself scales up smoothly */
 #hero .sv-para.simp { border-radius: 9px; transition: background 0.25s ease; }
 #hero .sv-para.simp:has(#hero-simp-dot:hover) { background: rgba(239,142,28,0.10); }
-
-/* "simplify ↓" hint lives inside .url — pushes right, fades in on P2 entry, out before tap */
-.bbar-simp-hint {
-  font-family: var(--mono,'JetBrains Mono',monospace);
-  font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--amber-deep, #c96b00); white-space: nowrap;
-  margin-left: auto; opacity: 0; pointer-events: none;
-}
-body.hero-p2 .bbar-simp-hint { animation: simpHintFade 4.5s ease 1.3s forwards; }
-body.hero-simp .bbar-simp-hint,
-body.hero-p3 .bbar-simp-hint { opacity: 0 !important; animation: none !important; }
-@keyframes simpHintFade {
-  0%,100% { opacity: 0; }
-  18% { opacity: 1; }
-  72% { opacity: 1; }
-}
+#hero-simp-dot:hover { transform: translate(-50%,-50%) scale(1.35); }
 
 /* reading-level badge — a single chip pinned to the toolbar's top-right CORNER.
    It pops in showing C1 (the dense level), then the card FLIPS over to reveal B2.
@@ -314,7 +308,7 @@ body.hero-p3 .bbar-simp-hint { opacity: 0 !important; animation: none !important
 .browser .url { position: relative; }
 .browser .bbar { position: relative; }
 .browser .simp-level {
-  position: absolute; right: 14px; top: 50%; left: auto; bottom: auto;
+  position: absolute; right: 24px; top: 50%; left: auto; bottom: auto;
   display: block; width: 34px; height: 22px;
   transform-origin: right center;
   opacity: 0; transform: translateY(-50%) scale(.5);
@@ -336,7 +330,7 @@ body.hero-p3 .bbar-simp-hint { opacity: 0 !important; animation: none !important
   display: flex; align-items: center; justify-content: center;
   font-family: var(--mono,'JetBrains Mono',monospace);
   font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
-  border-radius: 99px;
+  border-radius: 7px;                 /* rounded-rect corners, matching the CEFR chips on the MY VOCAB cards */
   backface-visibility: hidden; -webkit-backface-visibility: hidden;
 }
 /* front = C1 (dense), amber */
@@ -433,6 +427,9 @@ body.hero-p3 #hero .floatwrap { animation: none !important; transform: none !imp
   transition: opacity 0.2s ease, transform 0.44s cubic-bezier(.2,1.05,.3,1), height 0.42s cubic-bezier(.3,.82,.32,1);
 }
 .tcard.show .tc-pop { opacity: 1; transform: none; }
+/* the demo pointer that flies in to "click" the sentence open — viewport-fixed so
+   it tracks the live sentence rect (reuses .hw-cursor visuals; hidden ≤1000px) */
+.hw-cursor.tr-cursor { position: fixed; z-index: 62; }
 /* switching sentences: the card glides to the new spot (and stretches its height
    in JS) instead of fade-repopping */
 .tcard.tc-gliding { transition: left 0.42s cubic-bezier(.3,.82,.32,1), top 0.42s cubic-bezier(.3,.82,.32,1); }
@@ -511,7 +508,78 @@ body.hero-p3 #hero .floatwrap { animation: none !important; transform: none !imp
 @media (prefers-reduced-motion: reduce) { .tc-next.show { animation: none; } }
 /* the chat is tall on phones — its "next" cue would land in the bottom cards +
    scrubber. Mobile already walks on via the scrubber, so hide it there. */
-@media (max-width: 920px) { #hero-disc-next { display: none !important; } }
+@media (max-width: 920px) { #hero-disc-next, #hero-home-next, #hero-prac-next { display: none !important; } }
+
+/* ===== HERO PHASE 3.5 — Immersion (read the whole article in your language) =====
+   Builds on the Translate browser. The article is a 3D flip card: the front face
+   is English with our saved words in blue; the ↻ control flips it once and the
+   back face shows the same article in the chosen gloss language, our words in
+   violet. The article "stays English" everywhere else — this is the one screen
+   that reads it through. */
+#hero .imm-page {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 26px 32px; perspective: 1400px;
+  opacity: 0; pointer-events: none; transition: opacity 0.28s ease;
+}
+body.hero-imm #hero .imm-page { opacity: 1; pointer-events: auto; }
+/* immersion owns the article surface — the translate layer steps aside */
+body.hero-imm #hero .tr-page { opacity: 0 !important; pointer-events: none; }
+
+#hero .imm-surface {
+  position: relative; transform-style: preserve-3d; min-height: 196px;
+  transition: transform 1s cubic-bezier(.52,0,.18,1); will-change: transform;
+}
+body.imm-flipped #hero .imm-surface { transform: rotateY(180deg); }
+#hero .imm-face { top: 0; left: 0; right: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+#hero .imm-front { position: relative; }                 /* in flow → defines the card height */
+#hero .imm-back  { position: absolute; transform: rotateY(180deg); }
+#hero .imm-title { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 21px; margin: 0 0 14px; text-align: center; }
+#hero .imm-p  { margin: 0; }
+#hero .imm-p.imm-p2 { margin: 18px 0 0; }
+/* our saved words, marked on both faces — blue in English, violet once translated */
+#hero .imm-w { border-radius: 4px; padding: 0 3px; transition: background .25s, color .25s; }
+#hero .imm-front .imm-w { background: #e3edfd; color: #2f6fd6; }
+#hero .imm-back  .imm-w { background: #efe4fb; color: #7b46cf; }
+
+/* ↻ flip control — reuses the in-browser pill; bottom-right like Discuss */
+#hero-imm-fab {
+  opacity: 0; transform: translateY(10px); pointer-events: none; z-index: 6;
+  transition: opacity 0.3s ease, transform 0.38s cubic-bezier(.2,.85,.25,1);
+  border-radius: 999px;
+}
+#hero-imm-fab.show { opacity: 1; transform: none; pointer-events: auto; }
+#hero-imm-fab.press { transform: scale(.93); transition: transform 0.12s ease; }
+#hero-imm-fab.gone  { opacity: 0; transform: scale(.9); pointer-events: none; transition: opacity 0.22s ease, transform 0.25s ease; }
+#hero-imm-fab .dc-ico { color: var(--amber-deep, #c96b00); }
+/* the icon spins with the page each way it swaps (forward into your language,
+   back into English) */
+#hero-imm-fab .dc-ico svg { transition: transform 1s cubic-bezier(.52,0,.18,1); }
+body.imm-flipped #hero-imm-fab .dc-ico svg { transform: rotate(360deg); }
+
+/* Immersion copy — slides in from the right like the other phase copies */
+#hero .hero-copy-imm {
+  grid-column: 1; grid-row: 1; align-self: center; min-width: 0; max-width: 420px;
+  opacity: 0; transform: translateX(120px); pointer-events: none;
+  transition: opacity 0.6s ease 0.12s, transform 0.72s cubic-bezier(.4,0,.2,1) 0.08s;
+}
+body.hero-imm #hero .hero-copy-imm { opacity: 1; transform: none; pointer-events: auto; }
+body.hero-imm #hero .hero-copy-p3  { opacity: 0; transform: translateX(-120px); pointer-events: none; }
+#hero .hero-copy-imm .p2-eyebrow {
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+  font-size: 12px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--amber-deep, #c96b00); margin-bottom: 22px;
+}
+#hero .hero-copy-imm h2 { font-weight: 700; letter-spacing: -.035em; font-size: clamp(32px, 3.5vw, 50px); line-height: 1.04; margin: 0 0 26px; }
+#hero .hero-copy-imm .p2-sub { font-size: clamp(15px, 1.5vw, 18px); color: var(--ink-70, rgba(26,23,20,.7)); line-height: 1.58; max-width: 36ch; margin: 0; }
+
+@media (max-width: 920px) {
+  #hero .hero-copy-imm { grid-column: 1 !important; grid-row: 1 !important; padding: 0 16px; min-width: 0; max-width: none; align-self: start; transform: none; }
+  body.hero-imm #hero .hero-copy-imm { transform: translateY(-12px); }
+  #hero .hero-copy-imm h2 { display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: clamp(24px, 7vw, 38px) !important; margin-bottom: 0; line-height: 1.1; }
+  #hero .hero-copy-imm .p2-eyebrow { font-size: 10px; letter-spacing: .18em; margin-bottom: 8px; }
+  #hero .hero-copy-imm .p2-sub { display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin: 9px auto 0 !important; max-width: 32ch; font-size: 13px !important; line-height: 1.45; }
+  #hero-imm-next { display: none !important; }
+}
 
 /* ===== HERO PHASE 4 — Discuss (the page talks back) =====
    The floating tilted chat is retired: a side panel docks INSIDE the browser
@@ -1659,6 +1727,10 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     <span class="m-nav-slot"><span class="m-dot"></span><svg class="m-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 8 6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22 17 12l-5 10"/><path d="M14 18h6"/></svg></span>
     <span class="m-dot-lbl">Translate</span>
   </button>
+  <button class="m-dot-wrap" id="m-dot-imm" aria-label="Immerse">
+    <span class="m-nav-slot"><span class="m-dot"></span><svg class="m-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/><path d="M19.4 9a7.5 7.5 0 0 0-12.5-2.8L3 8"/><path d="M4.6 15a7.5 7.5 0 0 0 12.5 2.8L21 16"/></svg></span>
+    <span class="m-dot-lbl">Immerse</span>
+  </button>
   <button class="m-dot-wrap" id="m-dot-4" aria-label="Discuss">
     <span class="m-nav-slot"><span class="m-dot"></span><svg class="m-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
     <span class="m-dot-lbl">Discuss</span>
@@ -1699,7 +1771,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
       <div class="float" data-speed="-0.08" style="top:8%;left:-2%;z-index:1">
         <div class="floatwrap" style="--dur:8s;--del:0s">
           <div class="browser" style="box-shadow:0 72px 124px -46px rgba(58,36,2,.22),0 18px 38px -20px rgba(26,23,20,.16)">
-            <div class="bbar"><div class="bdots"><i></i><i></i><i></i></div><div class="url">rollingstone.com<span class="bbar-simp-hint" aria-hidden="true">simplify ↓</span></div></div>
+            <div class="bbar"><div class="bdots"><i></i><i></i><i></i></div><div class="url">rollingstone.com</div></div>
             <div class="page" style="font-size:16.5px;line-height:1.72;position:relative">
               <!-- English content — Phase 1 & 2 -->
               <div class="page-en" style="padding:26px 32px">
@@ -1709,7 +1781,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
                 <div class="hero-extra">
                   <p class="sv-para simp" id="hero-simp-para" style="margin:18px 0 0">
                     <button class="simp-dot" id="hero-simp-dot" aria-label="Simplify this paragraph"><span class="sd-core"></span></button>
-                    <span class="simp-body" id="hero-simp-body">Her commercial dominance — spanning every genre from country to pop to indie folk — has left critics asking whether today's music industry can accommodate a phenomenon of her scale.</span>
+                    <span class="simp-body" id="hero-simp-body">Her commercial dominance spans every genre, from country to pop to indie folk. It has left critics asking whether today's music industry can accommodate a phenomenon of her scale.</span>
                   </p>
                 </div>
               </div>
@@ -1719,29 +1791,52 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
                 <!-- same text as page-en, sentence-wrapped — the P2→P3 swap changes
                      the affordance (words → sentences), never the text position -->
                 <p style="margin:0"><span class="sel" data-tr="s1" tabindex="0" role="button">Few musicians branch out across so many genre walls and keep every audience.</span> <span class="sel" data-tr="s1b" tabindex="0" role="button">Taylor Swift moved from country to pop to folk without losing her devoted fans — a cultural phenomenon who left a legacy no one had predicted.</span></p>
-                <!-- para 2 carries the SIMPLIFIED text forward from Simplify (P2) — the
-                     screen lives one life: once you simplify it, it stays simplified -->
-                <p style="margin:18px 0 0"><span class="sel" data-tr="s4" tabindex="0" role="button">She dominated every genre — from country to pop to folk — and kept her devoted fans.</span> <span class="sel" data-tr="s4b" tabindex="0" role="button">Critics call it a phenomenon: no other artist had crossed so many boundaries.</span></p>
+                <!-- para 2 = the ORIGINAL dense sentence. Simplify (P2) previews the
+                     easier version then reverts, so the dense text is what carries here -->
+                <p style="margin:18px 0 0"><span class="sel" data-tr="s2" tabindex="0" role="button">Her commercial dominance spans every genre, from country to pop to indie folk. It has left critics asking whether today's music industry can accommodate a phenomenon of her scale.</span></p>
               </div>
-              <!-- Phase 5 — same text, exercise gaps instead of sentence-selects -->
+              <!-- Phase 3.5 — Immersion: the article flips into the reader's language.
+                   Front = English, our vocab in blue; flip the ↻ control and the page
+                   spins once to the chosen gloss language, our vocab now in violet. -->
+              <div class="imm-page" aria-hidden="true">
+                <div class="imm-surface" id="imm-surface">
+                  <div class="imm-face imm-front">
+                    <p class="imm-title">The Eras Tour</p>
+                    <p class="imm-p"  id="imm-front-p1"></p>
+                    <p class="imm-p imm-p2" id="imm-front-p2"></p>
+                  </div>
+                  <div class="imm-face imm-back" aria-hidden="true">
+                    <p class="imm-title">The Eras Tour</p>
+                    <p class="imm-p"  id="imm-back-p1"></p>
+                    <p class="imm-p imm-p2" id="imm-back-p2"></p>
+                  </div>
+                </div>
+              </div>
+              <!-- Phase 5 — same full article, exercise gaps instead of sentence-selects.
+                   Four gaps in reading order: genre (word), an ARTICLE choice
+                   (a/the/Ø — exercise #2), phenomenon (word), legacy (word). -->
               <div class="ex-page" style="padding:26px 32px">
                 <p style="font-family:'General Sans',sans-serif;font-weight:700;font-size:21px;margin:0 0 14px;text-align:center">The Eras Tour</p>
-                <p style="margin:0">Every show felt like <span class="art-gap" data-a="a"><button class="art-pill" data-v="The" type="button">The</button><button class="art-pill" data-v="Ø" type="button">Ø</button><button class="art-pill" data-v="a" type="button">a</button></span> whole life lived in a single night.</p>
-                <p style="margin:14px 0 0">She crossed from country to pop to folk, without losing her <span class="exw" data-a="devoted" data-o="devoted|casual|loyal">devoted</span> fans.</p>
+                <p style="margin:0">Few musicians branch out across so many <span class="exw" data-a="genre" data-o="genre|style|trend">genre</span> walls and keep every audience. Taylor Swift moved from country to pop to folk without losing her devoted fans — <span class="art-gap" data-a="a"><button class="art-pill" data-v="The" type="button">The</button><button class="art-pill" data-v="Ø" type="button">Ø</button><button class="art-pill" data-v="a" type="button">a</button></span> cultural <span class="exw" data-a="phenomenon" data-o="phenomenon|event|talent">phenomenon</span> who left a <span class="exw" data-a="legacy" data-o="legacy|career|record">legacy</span> no one had predicted.</p>
+                <p style="margin:14px 0 0">Every show ran for more than three hours — long enough to feel like a whole life lived in a single night.</p>
               </div>
             </div>
 
             <!-- Phase 5 — HUD with "Turn into exercises" button -->
             <div class="inq-hud hx-hud" id="hx-hud">
               <div class="hud-activate">
-                <span class="ha-text"><span class="ha-dot"></span>2 exercises hidden in this page</span>
+                <span class="ha-text"><span class="ha-dot"></span>4 exercises hidden in this page</span>
                 <button class="ha-go" id="hx-toggle" type="button"><span class="lmark"></span>Turn into exercises</button>
               </div>
               <div class="hud-track">
-                <div class="hud-main"><span class="hud-cue" id="hx-cue">Choose the right article or word</span><span class="hud-count" id="hx-count"><b>0</b> / 2</span></div>
+                <div class="hud-main"><span class="hud-cue" id="hx-cue">Choose the right article or word</span><span class="hud-count" id="hx-count"><b>0</b> / 4</span></div>
                 <div class="hud-prog" id="hx-prog"></div>
               </div>
             </div>
+
+            <!-- Phase 3.5 — Immersion: the ↻ control flips the whole article into the
+                 reader's chosen language (the gloss language) -->
+            <button class="disc-fab imm-fab" id="hero-imm-fab" type="button" aria-hidden="true" tabindex="-1"><span class="dc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/><path d="M19.4 9a7.5 7.5 0 0 0-12.5-2.8L3 8"/><path d="M4.6 15a7.5 7.5 0 0 0 12.5 2.8L21 16"/></svg></span><span class="imm-fab-lbl">Read in your language</span></button>
 
             <!-- Phase 4 — "Discuss the article" pill + side panel docked inside the
                  browser frame, the way the real extension opens -->
@@ -1788,11 +1883,20 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
           <div class="tc-foot"><span class="tc-lang" id="hero-tp-lang">EN → UK</span></div>
         </div>
       </div>
+      <!-- "go next" pill for Simplify — fades in under the browser once the
+           simplify preview has played and the text has reverted to the original -->
+      <button class="tc-next" id="hero-simp-next" type="button" aria-hidden="true" tabindex="-1">Next: Translate <span class="arr" aria-hidden="true">→</span></button>
       <!-- "go next" pill — fades in under the translate card once the translation
            has played; reparented to <body> in JS (viewport-fixed, like the card) -->
-      <button class="tc-next" id="hero-tc-next" type="button" aria-hidden="true" tabindex="-1">Next: Discuss <span class="arr" aria-hidden="true">→</span></button>
+      <button class="tc-next" id="hero-tc-next" type="button" aria-hidden="true" tabindex="-1">Next: Immerse <span class="arr" aria-hidden="true">→</span></button>
+      <!-- "go next" pill for Immersion — fades in under the browser once it has flipped -->
+      <button class="tc-next" id="hero-imm-next" type="button" aria-hidden="true" tabindex="-1">Next: Discuss <span class="arr" aria-hidden="true">→</span></button>
       <!-- same "go next" pill for Discuss — fades in under the chat once it has played -->
       <button class="tc-next" id="hero-disc-next" type="button" aria-hidden="true" tabindex="-1">Next: Practice <span class="arr" aria-hidden="true">→</span></button>
+      <!-- "go next" pill for Home — fades in once the "save a word" demo has played -->
+      <button class="tc-next" id="hero-home-next" type="button" aria-hidden="true" tabindex="-1">Next: Save &amp; Simplify <span class="arr" aria-hidden="true">→</span></button>
+      <!-- "go next" pill for Practice — fades in once the exercise autoplay finishes -->
+      <button class="tc-next" id="hero-prac-next" type="button" aria-hidden="true" tabindex="-1">Next: Everywhere <span class="arr" aria-hidden="true">→</span></button>
 
     </div>
 
@@ -1817,6 +1921,13 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
       <div class="p2-eyebrow">Translate</div>
       <h2>Click a sentence.<br>Read it in yours.</h2>
       <p class="p2-sub">Lantern translates in context — whole thoughts, not word by word. Your language, right in the page.</p>
+    </div>
+
+    <!-- PHASE 3.5 COPY — Immersion -->
+    <div class="hero-copy-imm">
+      <div class="p2-eyebrow">Immerse</div>
+      <h2>Flip the page.<br>Read it all in yours.</h2>
+      <p class="p2-sub">One tap turns the whole article into your language — your saved words stay marked, so you read fluently and still see what you're learning.</p>
     </div>
 
     <!-- PHASE 4 COPY — Discuss -->
@@ -2114,6 +2225,7 @@ window.LanternPlaying = false;
   var dot1        = document.getElementById('m-dot-1');
   var dot2        = document.getElementById('m-dot-2');
   var dot3        = document.getElementById('m-dot-3');
+  var dotImm      = document.getElementById('m-dot-imm');
   var dot4        = document.getElementById('m-dot-4');
   var dot5        = document.getElementById('m-dot-5');
   var dot6        = document.getElementById('m-dot-6');
@@ -2142,16 +2254,28 @@ window.LanternPlaying = false;
   if (heroTcNext && heroTcNext.parentNode !== document.body) document.body.appendChild(heroTcNext);
   var heroDiscNext = document.getElementById('hero-disc-next');
   if (heroDiscNext && heroDiscNext.parentNode !== document.body) document.body.appendChild(heroDiscNext);
+  /* ---- simplify (phase 1) "next" pill ---- */
+  var simpNext = document.getElementById('hero-simp-next');
+  if (simpNext && simpNext.parentNode !== document.body) document.body.appendChild(simpNext);
+  /* ---- home (phase 0) + practice (phase 5) "next" pills ---- */
+  var homeNext = document.getElementById('hero-home-next');
+  if (homeNext && homeNext.parentNode !== document.body) document.body.appendChild(homeNext);
+  var pracNext = document.getElementById('hero-prac-next');
+  if (pracNext && pracNext.parentNode !== document.body) document.body.appendChild(pracNext);
+  /* ---- immersion (phase 3) ---- */
+  var immFab     = document.getElementById('hero-imm-fab');
+  var immNext    = document.getElementById('hero-imm-next');
+  if (immNext && immNext.parentNode !== document.body) document.body.appendChild(immNext);
   var heroTpSrc   = document.getElementById('hero-tp-src');
   var heroTpTgt   = document.getElementById('hero-tp-tgt');
   var heroTpClose = document.getElementById('hero-tp-close');
   var heroTpPin   = document.getElementById('hero-tp-pin');
   var activeSel   = null;
 
-  /* reads user's chosen gloss language; falls back to 'uk' when 'en' or unset */
+  /* reads user's chosen gloss language; falls back to 'fr' when 'en' or unset */
   function userLang() {
-    try { var l = localStorage.getItem('lantern.gloss'); return (l && l !== 'en') ? l : 'uk'; }
-    catch (e) { return 'uk'; }
+    try { var l = localStorage.getItem('lantern.gloss'); return (l && l !== 'en') ? l : 'fr'; }
+    catch (e) { return 'fr'; }
   }
 
   var TR = {
@@ -2171,23 +2295,218 @@ window.LanternPlaying = false;
       de: "Taylor Swift wechselte vom Country über Pop zum Folk, ohne ihre treuen Fans zu verlieren — ein kulturelles Phänomen, das ein Erbe hinterließ, das niemand vorhergesagt hatte.",
       pt: "Taylor Swift passou do country ao pop e ao folk sem perder seus fãs devotados — um fenômeno cultural que deixou um legado que ninguém havia previsto."
     },
-    s4: {
-      en: "She dominated every genre — from country to pop to folk — and kept her devoted fans.",
-      uk: "Вона домінувала в кожному жанрі — від кантрі до попу та фолку — і зберегла відданих шанувальників.",
-      es: "Dominó cada género — del country al pop y al folk — y mantuvo a sus fans devotos.",
-      fr: "Elle a dominé chaque genre — du country à la pop et au folk — et a gardé ses fans dévoués.",
-      de: "Sie dominierte jedes Genre — von Country über Pop bis Folk — und behielt ihre treuen Fans.",
-      pt: "Ela dominou cada gênero — do country ao pop e ao folk — e manteve seus fãs devotados."
-    },
-    s4b: {
-      en: "Critics call it a phenomenon: no other artist had crossed so many boundaries.",
-      uk: "Критики називають це явищем: жоден інший артист не перетнув стільки меж.",
-      es: "Los críticos lo llaman un fenómeno: ningún otro artista había cruzado tantas fronteras.",
-      fr: "Les critiques parlent d'un phénomène : aucun autre artiste n'avait franchi autant de frontières.",
-      de: "Kritiker nennen es ein Phänomen: kein anderer Künstler hatte so viele Grenzen überschritten.",
-      pt: "Os críticos chamam isso de fenômeno: nenhum outro artista havia cruzado tantas fronteiras."
+    /* para 2 — the ORIGINAL dense sentence (the simplify on P2 is a preview that
+       reverts; the dense text is what carries into Translate / Immerse) */
+    s2: {
+      en: "Her commercial dominance spans every genre, from country to pop to indie folk. It has left critics asking whether today's music industry can accommodate a phenomenon of her scale.",
+      uk: "Її комерційне домінування — що охоплює кожен жанр від кантрі до попу та інді-фолку — змусило критиків замислитися, чи здатна сучасна музична індустрія вмістити явище такого масштабу.",
+      es: "Su dominio comercial — que abarca todos los géneros, del country al pop y al folk indie — ha llevado a los críticos a preguntarse si la industria musical actual puede albergar un fenómeno de su magnitud.",
+      fr: "Sa domination commerciale — qui couvre tous les genres, du country à la pop au folk indé — a conduit les critiques à se demander si l'industrie musicale actuelle peut accueillir un phénomène de son ampleur.",
+      de: "Ihre kommerzielle Dominanz — die jedes Genre von Country über Pop bis Indie-Folk umspannt — lässt Kritiker fragen, ob die heutige Musikindustrie ein Phänomen ihres Ausmaßes fassen kann.",
+      pt: "Seu domínio comercial — abrangendo todos os gêneros, do country ao pop ao folk indie — fez os críticos questionarem se a indústria musical atual consegue acomodar um fenômeno de sua magnitude."
     }
   };
+
+  /* ============================================================
+     Immersion (phase 3) — the article flips into the reader's language,
+     but the saved vocab stays ENGLISH. Front = full English (saved words
+     blue). The ↻ control flips it once; the back face is the SAME article
+     with only the connective text translated into the chosen gloss
+     language — the saved words remain English, highlighted violet, so you
+     read comfortably in your language yet keep meeting your target words.
+     [[word]] marks a saved word; it carries the English token on every
+     face, so es/fr/de/uk/pt below keep genre/devoted/phenomenon/legacy in
+     English inside the translated sentence. Re-renders live on lang change. */
+  var IMM = {
+    en: {
+      p1: "Few musicians branch out across so many [[genre]] walls and keep every audience. Taylor Swift moved from country to pop to folk without losing her [[devoted]] fans — a cultural [[phenomenon]] who left a [[legacy]] no one had predicted.",
+      p2: "Her commercial dominance spans every [[genre]], from country to pop to indie folk. It has left critics asking whether today's music industry can accommodate a [[phenomenon]] of her scale."
+    },
+    es: {
+      p1: "Pocos músicos se ramifican entre tantos muros de [[genre]] y conservan a cada público. Taylor Swift pasó del country al pop y al folk sin perder a sus fans [[devoted]] — un [[phenomenon]] cultural que dejó un [[legacy]] que nadie había predicho.",
+      p2: "Su dominio comercial — que abarca cada [[genre]], del country al pop y al folk indie — ha llevado a los críticos a preguntarse si la industria musical actual puede albergar un [[phenomenon]] de su magnitud."
+    },
+    fr: {
+      p1: "Peu de musiciens s'aventurent à travers autant de murs de [[genre]] tout en gardant chaque public. Taylor Swift est passée du country à la pop puis au folk sans perdre ses fans [[devoted]] — un [[phenomenon]] culturel qui a laissé un [[legacy]] que personne n'avait prévu.",
+      p2: "Sa domination commerciale — qui couvre chaque [[genre]], du country à la pop au folk indé — a conduit les critiques à se demander si l'industrie musicale actuelle peut accueillir un [[phenomenon]] de son ampleur."
+    },
+    de: {
+      p1: "Nur wenige Musiker verzweigen sich über so viele [[genre]]-Grenzen und behalten dabei jedes Publikum. Taylor Swift wechselte vom Country über Pop zum Folk, ohne ihre [[devoted]] Fans zu verlieren — ein kulturelles [[phenomenon]], das ein [[legacy]] hinterließ, das niemand vorhergesagt hatte.",
+      p2: "Ihre kommerzielle Dominanz — die jedes [[genre]] von Country über Pop bis Indie-Folk umspannt — lässt Kritiker fragen, ob die heutige Musikindustrie ein [[phenomenon]] ihres Ausmaßes fassen kann."
+    },
+    uk: {
+      p1: "Небагато музикантів долають стільки меж [[genre]] і зберігають кожну аудиторію. Тейлор Свіфт перейшла від кантрі до попу та фолку, не втративши своїх [[devoted]] шанувальників — культурний [[phenomenon]], що залишив [[legacy]], якого ніхто не очікував.",
+      p2: "Її комерційне домінування — що охоплює кожен [[genre]] від кантрі до попу та інді-фолку — змусило критиків замислитися, чи здатна сучасна музична індустрія вмістити [[phenomenon]] такого масштабу."
+    },
+    pt: {
+      p1: "Poucos músicos se ramificam por tantas barreiras de [[genre]] e mantêm cada público. Taylor Swift passou do country ao pop e ao folk sem perder seus fãs [[devoted]] — um [[phenomenon]] cultural que deixou um [[legacy]] que ninguém havia previsto.",
+      p2: "Seu domínio comercial — abrangendo cada [[genre]], do country ao pop ao folk indie — fez os críticos questionarem se a indústria musical atual consegue acomodar um [[phenomenon]] de sua magnitude."
+    }
+  };
+
+  /* [[word]] -> highlighted vocab span (colour comes from the face: blue front, violet back) */
+  function immRender(str) {
+    return str.split(' ').map(function (w) {
+      var m = w.match(/^\[\[([\s\S]+?)\]\]([\s\S]*)$/);
+      if (m) return '<span class="imm-w">' + m[1] + '</span>' + m[2];
+      return w;
+    }).join(' ');
+  }
+  function immFill() {
+    var back = IMM[userLang()] || IMM.uk;
+    var f1 = document.getElementById('imm-front-p1'), f2 = document.getElementById('imm-front-p2');
+    var b1 = document.getElementById('imm-back-p1'),  b2 = document.getElementById('imm-back-p2');
+    if (f1) f1.innerHTML = immRender(IMM.en.p1);
+    if (f2) f2.innerHTML = immRender(IMM.en.p2);
+    if (b1) b1.innerHTML = immRender(back.p1);
+    if (b2) b2.innerHTML = immRender(back.p2);
+  }
+  function showImmFab() {
+    if (!immFab) return;
+    immFab.setAttribute('aria-hidden', 'false'); immFab.tabIndex = 0;
+    immFab.classList.remove('gone'); immFab.classList.add('show');
+    if (!RM) immFab.classList.add('beckon');
+  }
+  function hideImmFab() {
+    if (!immFab) return;
+    immFab.classList.remove('show', 'beckon');
+    immFab.setAttribute('aria-hidden', 'true'); immFab.tabIndex = -1;
+  }
+  function placeImmNext() {
+    var br = document.querySelector('#hero .browser');
+    if (!immNext || !br) return;
+    var r = br.getBoundingClientRect(), pw = immNext.offsetWidth || 150;
+    immNext.style.left = Math.round(r.left + r.width / 2 - pw / 2) + 'px';
+    immNext.style.top  = Math.round(r.bottom + 14) + 'px';
+  }
+  function showImmNext() {
+    if (!immNext) return;
+    immNext.setAttribute('aria-hidden', 'false'); immNext.tabIndex = 0;
+    placeImmNext();
+    requestAnimationFrame(function () { placeImmNext(); immNext.classList.add('show'); });
+  }
+  function hideImmNext() {
+    if (!immNext) return;
+    immNext.classList.remove('show');
+    immNext.setAttribute('aria-hidden', 'true'); immNext.tabIndex = -1;
+  }
+  var immGen = 0;
+  /* reset to the English front each time the screen is (re)entered — the gloss
+     language may have changed, so refill the back too */
+  function immReset() {
+    immGen++;
+    document.body.classList.remove('imm-flipped');
+    setImmFabLabel(false);
+    immFill();
+    hideImmNext();
+    showImmFab();
+  }
+  /* the fab is a persistent swap: it flips the article front (English) ⇄ back
+     (your language) and stays put, so you can read it either way as many times
+     as you like. The first flip into your language unlocks the "next" pill. */
+  function setImmFabLabel(flipped) {
+    if (!immFab) return;
+    var lbl = immFab.querySelector('.imm-fab-lbl');
+    if (lbl) lbl.textContent = flipped ? 'Read in English' : 'Read in your language';
+  }
+  function immFlip() {
+    if (phase !== 3) return;
+    var toBack = !document.body.classList.contains('imm-flipped');   /* English → your language, or back */
+    if (immFab) { immFab.classList.remove('beckon'); immFab.classList.add('press'); setTimeout(function () { if (immFab) immFab.classList.remove('press'); }, 140); }
+    document.body.classList.toggle('imm-flipped', toBack);
+    setImmFabLabel(toBack);                          /* now offers the reverse swap */
+    var gen = ++immGen;
+    window.LanternBusy.set('immerse', true);
+    setTimeout(function () {
+      if (phase !== 3 || gen !== immGen) return;
+      if (toBack) showImmNext();                     /* reaching your language unlocks Discuss */
+      window.LanternBusy.set('immerse', false);
+    }, RM ? 0 : 1150);
+  }
+  if (immFab) immFab.addEventListener('click', function (e) { e.stopPropagation(); immFlip(); });
+  if (immNext) immNext.addEventListener('click', function () { if (phase === 3) { hideImmNext(); toP4(); } });
+  /* changing the gloss language re-immerses the article live — the translated body
+     re-renders into the new language while your saved words stay English. Fires
+     even off-screen (cheap innerHTML); if flipped, the back updates in place. */
+  window.addEventListener('lantern:gloss', function () {
+    if (!IMM[userLang()]) return;
+    immFill();
+  });
+
+  /* ── Simplify (phase 1) "next" pill: the simplify scene plays its preview, the
+     text reverts to the original, then this pill invites Translate. Centred under
+     the browser like the Immerse pill; exposed to the simplify IIFE via globals. ── */
+  function placeSimpNext() {
+    var br = document.querySelector('#hero .browser');
+    if (!simpNext || !br) return;
+    var r = br.getBoundingClientRect(), pw = simpNext.offsetWidth || 150;
+    simpNext.style.left = Math.round(r.left + r.width / 2 - pw / 2) + 'px';
+    simpNext.style.top  = Math.round(r.bottom + 14) + 'px';
+  }
+  function showSimpNext() {
+    if (!simpNext || phase !== 1) return;
+    simpNext.setAttribute('aria-hidden', 'false'); simpNext.tabIndex = 0;
+    placeSimpNext();
+    requestAnimationFrame(function () { placeSimpNext(); simpNext.classList.add('show'); });
+  }
+  function hideSimpNext() {
+    if (!simpNext) return;
+    simpNext.classList.remove('show');
+    simpNext.setAttribute('aria-hidden', 'true'); simpNext.tabIndex = -1;
+  }
+  window._heroShowSimpNext = showSimpNext;
+  window._heroHideSimpNext = hideSimpNext;
+  if (simpNext) simpNext.addEventListener('click', function () { if (phase === 1) { hideSimpNext(); toP3(); } });
+
+  /* ── Home (phase 0) "next" pill: the "save a word" demo plays its four saves,
+     then this pill invites the Save & Simplify screen. Centred under the browser
+     like the other cues; raised by lantern-hero-words.js when the demo finishes,
+     and by toP1() when the visitor walks back to Home. ── */
+  function placeHomeNext() {
+    var br = document.querySelector('#hero .browser');
+    if (!homeNext || !br) return;
+    var r = br.getBoundingClientRect(), pw = homeNext.offsetWidth || 150;
+    homeNext.style.left = Math.round(r.left + r.width / 2 - pw / 2) + 'px';
+    homeNext.style.top  = Math.round(r.bottom + 14) + 'px';
+  }
+  function showHomeNext() {
+    if (!homeNext || phase !== 0) return;
+    homeNext.setAttribute('aria-hidden', 'false'); homeNext.tabIndex = 0;
+    placeHomeNext();
+    requestAnimationFrame(function () { placeHomeNext(); homeNext.classList.add('show'); });
+  }
+  function hideHomeNext() {
+    if (!homeNext) return;
+    homeNext.classList.remove('show');
+    homeNext.setAttribute('aria-hidden', 'true'); homeNext.tabIndex = -1;
+  }
+  window._heroShowHomeNext = showHomeNext;
+  window._heroHideHomeNext = hideHomeNext;
+  if (homeNext) homeNext.addEventListener('click', function () { if (phase === 0) { hideHomeNext(); toP2(); } });
+
+  /* ── Practice (phase 5) "next" pill: the cursor-guided exercise plays through,
+     the success card is seen, then this pill invites the Everywhere wall. ── */
+  function placePracNext() {
+    var br = document.querySelector('#hero .browser');
+    if (!pracNext || !br) return;
+    var r = br.getBoundingClientRect(), pw = pracNext.offsetWidth || 150;
+    pracNext.style.left = Math.round(r.left + r.width / 2 - pw / 2) + 'px';
+    pracNext.style.top  = Math.round(r.bottom + 14) + 'px';
+  }
+  function showPracNext() {
+    if (!pracNext || phase !== 5) return;
+    pracNext.setAttribute('aria-hidden', 'false'); pracNext.tabIndex = 0;
+    placePracNext();
+    requestAnimationFrame(function () { placePracNext(); pracNext.classList.add('show'); });
+  }
+  function hidePracNext() {
+    if (!pracNext) return;
+    pracNext.classList.remove('show');
+    pracNext.setAttribute('aria-hidden', 'true'); pracNext.tabIndex = -1;
+  }
+  window._heroShowPracNext = showPracNext;
+  window._heroHidePracNext = hidePracNext;
+  if (pracNext) pracNext.addEventListener('click', function () { if (phase === 5) { hidePracNext(); toEverywhere(); } });
 
   function closeTPanel() {
     if (activeSel) activeSel.classList.remove('on');
@@ -2233,7 +2552,7 @@ window.LanternPlaying = false;
     heroTcNext.tabIndex = -1;
   }
   if (heroTcNext) heroTcNext.addEventListener('click', function () {
-    if (phase === 2) { hideNextPill(); toP4(); }
+    if (phase === 2) { hideNextPill(); toImmersion(); }
   });
 
   /* the same "go next" pill for Discuss — sits under the chat once it has played,
@@ -2260,7 +2579,7 @@ window.LanternPlaying = false;
     heroDiscNext.tabIndex = -1;
   }
   if (heroDiscNext) heroDiscNext.addEventListener('click', function () {
-    if (phase === 3) { hideDiscNext(); toP5(); }
+    if (phase === 4) { hideDiscNext(); toP5(); }
   });
 
   /* ── mobile P3: no side panel — the sentence ITSELF lifts off the page
@@ -2485,11 +2804,49 @@ window.LanternPlaying = false;
     hideNextPill();
     var fadeMs = openTPanel(sel) || 1200;
     window.LanternBusy.set('translate', true);
+    setTimeout(function () { if (g === tpGen && phase === 2) showNextPill(); }, 240);   /* cue shows AS the card opens — no waiting for the whole fade */
     setTimeout(function () {
       if (g !== tpGen || phase !== 2) return;
-      showNextPill();                               /* "go next" cue once it has played */
-      window.LanternBusy.set('translate', false);
+      window.LanternBusy.set('translate', false);   /* translation played → PLAY may walk on */
     }, fadeMs + 650);
+  }
+
+  /* cursor-led open: when you SCROLL/scrub into Translate, a pointer flies to the
+     first sentence and "clicks" it open. PLAY (and mobile / reduced-motion) open
+     bare; clicking a sentence yourself also opens bare — you already did it. */
+  function makeTrCursor() {
+    var c = document.createElement('div');
+    c.className = 'hw-cursor tr-cursor';
+    c.innerHTML = '<span class="hwc-ico"><svg viewBox="0 0 24 24" width="25" height="25"><path d="M3 2 L3 18.6 L7.3 14.6 L10.3 21 L13 19.8 L10 13.5 L16.2 13.5 Z" fill="#1a1714" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span class="hwc-ring"></span>';
+    document.body.appendChild(c);
+    return c;
+  }
+  function trCursorAt(c, sel, atStart) {
+    var r = sel.getBoundingClientRect();
+    var x = atStart ? (r.right - 24) : (r.left + Math.min(r.width * 0.5, 130));
+    var y = atStart ? (r.bottom + 92) : (r.top + r.height * 0.62);
+    if (atStart) { c.style.transition = 'none'; c.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)'; void c.offsetWidth; c.style.transition = ''; }
+    else { c.classList.add('show'); c.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)'; }
+  }
+  function playTranslateWithCursor(sel) {
+    if (!heroTpanel) return;
+    var g = ++tpGen;
+    hideNextPill();
+    window.LanternBusy.set('translate', true);
+    var cur = makeTrCursor();
+    trCursorAt(cur, sel, true);                      /* park at the fly-in start (lower-right) */
+    requestAnimationFrame(function () { trCursorAt(cur, sel, false); });   /* glide to the sentence */
+    setTimeout(function () {
+      if (g !== tpGen || phase !== 2) { if (cur.parentNode) cur.remove(); return; }
+      cur.classList.add('tap');                     /* the click */
+      var fadeMs = openTPanel(sel) || 1200;         /* the card opens on the click */
+      setTimeout(function () { if (g === tpGen && phase === 2) showNextPill(); }, 240);   /* cue right away, as the card opens */
+      setTimeout(function () { cur.classList.add('gone'); setTimeout(function () { if (cur.parentNode) cur.remove(); }, 420); }, 360);
+      setTimeout(function () {
+        if (g !== tpGen || phase !== 2) return;
+        window.LanternBusy.set('translate', false);
+      }, fadeMs + 650);
+    }, 760);                                         /* cursor travel (~.6s) + a beat */
   }
 
   if (heroTpClose) heroTpClose.addEventListener('click', closeTPanel);
@@ -2511,16 +2868,17 @@ window.LanternPlaying = false;
   });
 
   /* ---- dots ---- */
-  var M_PHASE_NAMES = ['HOME', 'SIMPLIFY', 'TRANSLATE', 'DISCUSS', 'PRACTICE', 'EVERYWHERE', 'INSTALL'];
+  var M_PHASE_NAMES = ['HOME', 'SIMPLIFY', 'TRANSLATE', 'IMMERSE', 'DISCUSS', 'PRACTICE', 'EVERYWHERE', 'INSTALL'];
   var mCaption = document.getElementById('m-phase-caption');
   function setDots(p) {
-    if (dot1)  dot1.classList.toggle('on', p === 0);
-    if (dot2)  dot2.classList.toggle('on', p === 1);
-    if (dot3)  dot3.classList.toggle('on', p === 2);
-    if (dot4)  dot4.classList.toggle('on', p === 3);
-    if (dot5)  dot5.classList.toggle('on', p === 4);
-    if (dotEv) dotEv.classList.toggle('on', p === 5);   /* Everywhere */
-    if (dot6)  dot6.classList.toggle('on', p === 6);    /* Install / CTA */
+    if (dot1)   dot1.classList.toggle('on', p === 0);
+    if (dot2)   dot2.classList.toggle('on', p === 1);
+    if (dot3)   dot3.classList.toggle('on', p === 2);
+    if (dotImm) dotImm.classList.toggle('on', p === 3);  /* Immerse */
+    if (dot4)   dot4.classList.toggle('on', p === 4);
+    if (dot5)   dot5.classList.toggle('on', p === 5);
+    if (dotEv)  dotEv.classList.toggle('on', p === 6);   /* Everywhere */
+    if (dot6)   dot6.classList.toggle('on', p === 7);    /* Install / CTA */
     /* mobile rail: uniform dots — colour-only states, no size jump */
     document.querySelectorAll('#m-progress .m-progress-dot').forEach(function (d, i) {
       d.classList.toggle('on', i === p);
@@ -2547,8 +2905,16 @@ window.LanternPlaying = false;
   function clearScenes() {
     window.LanternBusy.set('simp', false);
     window.LanternBusy.set('translate', false);
+    window.LanternBusy.set('immerse', false);
     window.LanternBusy.set('discuss', false);
     window.LanternBusy.set('practice', false);
+    /* immersion is a scene too — drop its flip state + ↻/next controls */
+    document.body.classList.remove('imm-flipped');
+    hideImmFab();
+    hideImmNext();
+    hideSimpNext();
+    hideHomeNext();
+    hidePracNext();
   }
 
   /* leaving phases 5/6 back to a hero phase: drop the overlays, restore the wall */
@@ -2557,30 +2923,30 @@ window.LanternPlaying = false;
     document.body.classList.remove('ph-ev', 'ph-cta');
   }
 
-  function toEverywhere() {            /* phase 5 */
-    if (phase === 5) return;
+  function toEverywhere() {            /* phase 6 */
+    if (phase === 6) return;
     clearScenes();                     /* the morph itself reports through LE().busy() */
-    var fromCTA = (phase === 6);
-    phase = 5;
+    var fromCTA = (phase === 7);
+    phase = 6;
     closeTPanel(); leaveDiscuss();
     var le = LE(); if (le && le.backToWall) le.backToWall();   /* clears ph-cta + restores wall visibility */
     document.body.classList.add('ph-ev');
-    setDots(5);
+    setDots(6);
     if (!fromCTA && le && le.morphFromWindow) le.morphFromWindow(document.querySelector('#hero .browser'));
   }
 
-  function toCTA() {                   /* phase 6 */
-    if (phase === 6) return;
+  function toCTA() {                   /* phase 7 */
+    if (phase === 7) return;
     clearScenes();
-    phase = 6;
+    phase = 7;
     document.body.classList.add('ph-cta');
-    setDots(6);
+    setDots(7);
     var le = LE(); if (le && le.toCTA) le.toCTA();
   }
 
-  function backToHero() {              /* phase 5 → 4: the six articles fly home and
+  function backToHero() {              /* phase 6 → 5: the six articles fly home and
                                           flip back into the window — it reassembles */
-    if (phase !== 5) return;
+    if (phase !== 6) return;
     var le = LE(), win = document.querySelector('#hero .browser');
     if (le && le.morphToWindow) {
       le.morphToWindow(win, function () {
@@ -2639,8 +3005,11 @@ window.LanternPlaying = false;
     leaveDiscuss();
     if (window._heroSimpReset) window._heroSimpReset();
     document.querySelectorAll('#hero .sel').forEach(function (s) { s.classList.remove('on', 'cand-pulse'); });
-    document.body.classList.remove('hero-p2', 'hero-p3', 'hero-p4', 'hero-p5', 'hero-simp');
+    document.body.classList.remove('hero-p2', 'hero-p3', 'hero-imm', 'hero-p4', 'hero-p5', 'hero-simp');
     setDots(0);
+    /* the cards are already saved on a walk-back — no demo to wait on, so raise the
+       "next" cue once they've settled back into place (cardsIn runs at 500ms) */
+    setTimeout(function () { showHomeNext(); }, 760);
   }
 
   function toP2() {
@@ -2651,7 +3020,7 @@ window.LanternPlaying = false;
     phase = 1;
     exitOverlays();
     document.body.classList.add('hero-p2');
-    document.body.classList.remove('hero-p3', 'hero-p4', 'hero-p5', 'hero-simp');
+    document.body.classList.remove('hero-p3', 'hero-imm', 'hero-p4', 'hero-p5', 'hero-simp');
     leaveDiscuss();
     if (wasAbove) {
       closeTPanel();
@@ -2672,6 +3041,7 @@ window.LanternPlaying = false;
     } else if (needWords) {
       setTimeout(populateShelf, 400);
     }
+    if (window._heroLevelRest) window._heroLevelRest();   // C1 badge rests in the corner, awaiting the tap
     setDots(1);
   }
 
@@ -2683,7 +3053,7 @@ window.LanternPlaying = false;
     phase = 2;
     exitOverlays();
     document.body.classList.add('hero-p2', 'hero-p3');
-    document.body.classList.remove('hero-p4', 'hero-p5', 'hero-simp');
+    document.body.classList.remove('hero-imm', 'hero-p4', 'hero-p5', 'hero-simp');
     closeTPanel();
     leaveDiscuss();
     setDots(2);
@@ -2691,45 +3061,70 @@ window.LanternPlaying = false;
       if (phase !== 2) return;
       var first = document.querySelector('#hero .tr-page .sel');
       if (!first) return;
-      /* auto-translate: scroll already = "look at this" — show it automatically.
-         fires once the phase-entry animation has landed, and clears wheelLock so
-         the next scroll advances to P4.
-         a compact card pops out next to the sentence, translation fading in —
-         same on desktop and mobile. */
-      playTranslate(first);
+      /* auto-translate: fires once the phase-entry animation has landed, and clears
+         wheelLock so the next scroll advances to P4.
+         - scrolled/scrubbed in (desktop, not the PLAY reel): a pointer flies out
+           and clicks the first sentence open;
+         - the PLAY reel, mobile, or reduced-motion: the card just opens. */
+      var deskMotion = matchMedia('(min-width: 921px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (deskMotion && !window.LanternPlaying) playTranslateWithCursor(first);
+      else playTranslate(first);
       wheelLock = false;
       clearTimeout(wheelLockTimer);
     }, 1000);
   }
 
-  function toP4() {
+  function toImmersion() {            /* phase 3 — the article flips into the reader's language */
     if (phase === 3) return;
     fastExitCurrent();
     clearScenes();
-    window.LanternBusy.set('discuss', true);     /* held across the whole scripted chat */
     phase = 3;
     exitOverlays();
+    document.body.classList.add('hero-p2', 'hero-p3', 'hero-imm');
+    document.body.classList.remove('hero-p4', 'hero-p5', 'hero-simp');
+    closeTPanel();
+    leaveDiscuss();
+    document.querySelectorAll('#hero .sel').forEach(function (s) { s.classList.remove('on', 'cand-pulse'); });
+    immReset();                                  /* English front, our words blue, ↻ armed */
+    setDots(3);
+    /* auto-demonstrate the flip a beat after entry (scroll-in / PLAY) — unless the
+       visitor turns it themselves first (immFlip bumps immGen, voiding this) */
+    window.LanternBusy.set('immerse', true);
+    var gen = immGen;
+    setTimeout(function () {
+      if (phase !== 3 || gen !== immGen) return;
+      immFlip();
+    }, RM ? 0 : 1100);
+  }
+
+  function toP4() {
+    if (phase === 4) return;
+    fastExitCurrent();
+    clearScenes();
+    window.LanternBusy.set('discuss', true);     /* held across the whole scripted chat */
+    phase = 4;
+    exitOverlays();
     document.body.classList.add('hero-p2', 'hero-p3', 'hero-p4');
-    document.body.classList.remove('hero-p5', 'hero-simp');
+    document.body.classList.remove('hero-imm', 'hero-p5', 'hero-simp');
     closeTPanel();
     document.querySelectorAll('#hero .sel').forEach(function (s) { s.classList.remove('on', 'cand-pulse'); });
-    setDots(3);
+    setDots(4);
     runDiscuss();
   }
 
   function toP5() {
-    if (phase === 4) return;
+    if (phase === 5) return;
     fastExitCurrent();
     clearScenes();
     window.LanternBusy.set('practice', true);    /* held across the cursor-guided exercise autoplay */
-    phase = 4;
+    phase = 5;
     exitOverlays();
     document.body.classList.add('hero-p2', 'hero-p3', 'hero-p5');
-    document.body.classList.remove('hero-p4', 'hero-simp');
+    document.body.classList.remove('hero-imm', 'hero-p4', 'hero-simp');
     closeTPanel();
     leaveDiscuss();
     if (window.Shelf && !window.Shelf.has('genre')) setTimeout(populateShelf, 400);
-    setDots(4);
+    setDots(5);
     if (window._heroExOnEnter) window._heroExOnEnter();
   }
 
@@ -2747,7 +3142,7 @@ window.LanternPlaying = false;
   };
   var BOT_FOLLOW = {
     text: 'Exactly. The article puts it plain — crossing every [[genre]] boundary, leaving a [[legacy]] no other artist has matched.',
-    cite: 's4'
+    cite: 's2'
   };
 
   function wait(ms) { return new Promise(function (r) { setTimeout(r, RM ? 0 : ms); }); }
@@ -2971,7 +3366,7 @@ window.LanternPlaying = false;
 
   /* user beats the script to the button — same flow, immediately */
   if (discFab) discFab.addEventListener('click', function () {
-    if (phase !== 3 || !dock || dock.classList.contains('show')) return;
+    if (phase !== 4 || !dock || dock.classList.contains('show')) return;
     var gen = ++dockGen;            /* cancels the scripted pre-roll */
     dockBusy = false;
     discFab.classList.remove('beckon');
@@ -3025,10 +3420,11 @@ window.LanternPlaying = false;
   if (dot1) dot1.addEventListener('click', toP1);
   if (dot2) dot2.addEventListener('click', toP2);
   if (dot3) dot3.addEventListener('click', toP3);
+  if (dotImm) dotImm.addEventListener('click', toImmersion);                     /* phase 3 */
   if (dot4) dot4.addEventListener('click', toP4);
   if (dot5) dot5.addEventListener('click', toP5);
-  if (dotEv) dotEv.addEventListener('click', function () { toEverywhere(); });   /* phase 5 */
-  if (dot6)  dot6.addEventListener('click', function () { toCTA(); });           /* phase 6 */
+  if (dotEv) dotEv.addEventListener('click', function () { toEverywhere(); });   /* phase 6 */
+  if (dot6)  dot6.addEventListener('click', function () { toCTA(); });           /* phase 7 */
   if (navHome)     navHome.addEventListener('click', function (e) { e.preventDefault(); toP1(); });
   if (navSimplify) navSimplify.addEventListener('click', function (e) { e.preventDefault(); toP2(); });
 
@@ -3042,6 +3438,7 @@ window.LanternPlaying = false;
       var cur  = userLang();
       var next = LANG_CYCLE[(LANG_CYCLE.indexOf(cur) + 1) % LANG_CYCLE.length];
       try { localStorage.setItem('lantern.gloss', next); } catch (e) {}
+      try { window.dispatchEvent(new CustomEvent('lantern:gloss', { detail: next })); } catch (e) {}
       if (activeSel) openTPanel(activeSel);
     });
   }
@@ -3140,15 +3537,17 @@ window.LanternPlaying = false;
     if (e.deltaY > 0) {
       if (phase === 0) toP2();
       else if (phase === 1) toP3();
-      else if (phase === 2) toP4();
-      else if (phase === 3) toP5();
-      else if (phase === 4) toEverywhere();
-      else if (phase === 5) toCTA();
-      /* phase 6 (CTA): the end — nothing further */
+      else if (phase === 2) toImmersion();
+      else if (phase === 3) toP4();
+      else if (phase === 4) toP5();
+      else if (phase === 5) toEverywhere();
+      else if (phase === 6) toCTA();
+      /* phase 7 (CTA): the end — nothing further */
     } else {
-      if (phase === 6) toEverywhere();   /* CTA → Everywhere (overlay back, no re-flip) */
-      else if (phase === 5) backToHero();
-      else if (phase === 4) toP4();
+      if (phase === 7) toEverywhere();   /* CTA → Everywhere (overlay back, no re-flip) */
+      else if (phase === 6) backToHero();
+      else if (phase === 5) toP4();
+      else if (phase === 4) toImmersion();
       else if (phase === 3) toP3();
       else if (phase === 2) toP2();
       else toP1();
@@ -3160,14 +3559,14 @@ window.LanternPlaying = false;
   function onScroll() { setDots(phase); }
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  /* ── mobile: populate progress dots (7 phases) ─────────────────────────────
+  /* ── mobile: populate progress dots (8 phases) ─────────────────────────────
      lantern-v3.js also touches #m-progress on mobile (section pager for
-     index.html); clear whatever it added, then build our 7-phase dots. */
+     index.html); clear whatever it added, then build our 8-phase dots. */
   (function () {
     var nav = document.getElementById('m-progress');
     if (!nav) return;
     while (nav.firstChild) nav.removeChild(nav.firstChild);
-    for (var i = 0; i < 7; i++) {
+    for (var i = 0; i < 8; i++) {
       var d = document.createElement('div');
       d.className = 'm-progress-dot';
       nav.appendChild(d);
@@ -3225,14 +3624,16 @@ window.LanternPlaying = false;
     if (dy > 0) {
       if (phase === 0) toP2();
       else if (phase === 1) toP3();
-      else if (phase === 2) toP4();
-      else if (phase === 3) toP5();
-      else if (phase === 4) toEverywhere();
-      else if (phase === 5) toCTA();
+      else if (phase === 2) toImmersion();
+      else if (phase === 3) toP4();
+      else if (phase === 4) toP5();
+      else if (phase === 5) toEverywhere();
+      else if (phase === 6) toCTA();
     } else {
-      if (phase === 6) toEverywhere();
-      else if (phase === 5) backToHero();
-      else if (phase === 4) toP4();
+      if (phase === 7) toEverywhere();
+      else if (phase === 6) backToHero();
+      else if (phase === 5) toP4();
+      else if (phase === 4) toImmersion();
       else if (phase === 3) toP3();
       else if (phase === 2) toP2();
       else toP1();
@@ -3262,15 +3663,17 @@ window.LanternPlaying = false;
       if (dir > 0) {
         if (phase === 0) toP2();
         else if (phase === 1) toP3();
-        else if (phase === 2) toP4();
-        else if (phase === 3) toP5();
-        else if (phase === 4) toEverywhere();
-        else if (phase === 5) toCTA();
+        else if (phase === 2) toImmersion();
+        else if (phase === 3) toP4();
+        else if (phase === 4) toP5();
+        else if (phase === 5) toEverywhere();
+        else if (phase === 6) toCTA();
         else return false;
       } else {
-        if (phase === 6) toEverywhere();
-        else if (phase === 5) backToHero();
-        else if (phase === 4) toP4();
+        if (phase === 7) toEverywhere();
+        else if (phase === 6) backToHero();
+        else if (phase === 5) toP4();
+        else if (phase === 4) toImmersion();
         else if (phase === 3) toP3();
         else if (phase === 2) toP2();
         else if (phase === 1) toP1();
@@ -3279,7 +3682,7 @@ window.LanternPlaying = false;
       return true;
     },
     jump: function (n) {
-      var fns = [toP1, toP2, toP3, toP4, toP5, toEverywhere, toCTA];
+      var fns = [toP1, toP2, toP3, toImmersion, toP4, toP5, toEverywhere, toCTA];
       if (n >= 0 && n < fns.length) { fns[n](); return true; }
       return false;
     }
@@ -3472,6 +3875,7 @@ window.LanternPlaying = false;
 
     if (!simplified) {
       var g = simpGen;
+      window.LanternBusy.set('simp', true);      // hold PLAY across the whole preview + revert
       /* save original nodes before first swap */
       if (!origNodes) origNodes = Array.prototype.slice.call(body.childNodes);
       simplified = true;
@@ -3495,6 +3899,26 @@ window.LanternPlaying = false;
       await wait(280);
       if (g !== simpGen) { busy = false; return; }
       await swapIn(spans);
+      if (g !== simpGen) { busy = false; return; }
+      /* hold on the easy (B2) version so the simplify is read… */
+      await wait(1150);
+      if (g !== simpGen) { busy = false; return; }
+      /* …then revert to the ORIGINAL dense text. The simplify is a preview — the
+         dense version is what Translate / Immerse carry forward (not the simplified
+         one), so it eases back to C1 here. */
+      simplified = false;
+      para.classList.remove('simplified');
+      unfitPage();                               // shrink the frame back to baseline
+      if (levelEl) levelEl.classList.remove('rolled', 'pulse');   // badge rolls back to C1 (dense)
+      body.classList.add('fade');
+      await wait(230);
+      if (g !== simpGen) { busy = false; return; }
+      while (body.firstChild) body.removeChild(body.firstChild);
+      if (origNodes) origNodes.forEach(function (n) { body.appendChild(n); });
+      body.classList.remove('fade');
+      await wait(120);
+      if (g !== simpGen) { busy = false; return; }
+      if (window._heroShowSimpNext) window._heroShowSimpNext();   // raise the "Next: Translate" cue
     } else {
       simplified = false;
       para.classList.remove('simplified');
@@ -3518,15 +3942,24 @@ window.LanternPlaying = false;
      to P2 never shows simplified text desynced from the left copy */
   window._heroSimpReset = function () {
     simpGen++;                        /* abort any in-flight word stream */
+    if (levelEl) levelEl.classList.remove('show', 'rolled', 'pulse');  /* badge → hidden (even if it was only resting at C1) */
     if (!simplified) return;
     simplified = false; busy = false; /* force-release: swapIn saw the gen bump and bailed */
     para.classList.remove('simplified');
     unfitPage();
     dot.style.animation = '';
-    if (levelEl) levelEl.classList.remove('show', 'rolled', 'pulse');
     body.classList.remove('fade');
     while (body.firstChild) body.removeChild(body.firstChild);
     if (origNodes) origNodes.forEach(function (n) { body.appendChild(n); });
+  };
+
+  /* resting state on the Simplify screen: the C1 badge sits in the corner BEFORE
+     any tap, then the dot click flips it to B2. Called on every entry into P2. */
+  window._heroLevelRest = function () {
+    if (simplified) return;           // already flipped to B2 — leave it
+    var l = ensureLevel();
+    l.classList.remove('rolled', 'pulse');
+    l.classList.add('show');
   };
 })();
 
@@ -3541,10 +3974,11 @@ window.LanternPlaying = false;
   var hxProg   = document.getElementById('hx-prog');
   if (!hxHud) return;
 
-  var WORDS   = ['route', 'coast', 'rugged', 'remote'];
-  var targets = [];
+  var WORDS   = ['genre', 'phenomenon', 'legacy'];
+  var gaps    = [];   /* every gap (word + article) in reading order — drives progress + autoplay */
+  var targets = [];   /* word gaps only (.exw) — the ones that "form" with a flying card */
   var solved  = 0;
-  var totalEx = 2;
+  var totalEx = 4;
   var enabled = false;
   var RM      = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -3575,7 +4009,7 @@ window.LanternPlaying = false;
         } else {
           b.classList.add('wrong'); exw.classList.add('wrong');
           bubble(exw, 'Oops!', 'oops');
-          var mi = targets.indexOf(exw);
+          var mi = gaps.indexOf(exw);
           if (hxProg && hxProg.children[mi]) hxProg.children[mi].classList.add('miss');   // show the slip on the tracker
           setTimeout(function () { b.classList.remove('wrong'); exw.classList.remove('wrong'); }, 450);
         }
@@ -3590,7 +4024,7 @@ window.LanternPlaying = false;
     exw.dataset.done = '1';
     exw.classList.remove('open');
     solved++;
-    var i = targets.indexOf(exw);
+    var i = gaps.indexOf(exw);
     if (hxProg && hxProg.children[i]) { hxProg.children[i].classList.remove('miss'); hxProg.children[i].classList.add('on'); }
     var m = exw.querySelector('.menu');
     if (m) m.remove();
@@ -3611,8 +4045,8 @@ window.LanternPlaying = false;
     gap.classList.add('done');
     pill.classList.add('chosen');
     solved++;
-    var artIdx = 0;   /* art-gap is always progress slot 0 */
-    if (hxProg && hxProg.children[artIdx]) hxProg.children[artIdx].classList.add('on');
+    var i = gaps.indexOf(gap);   /* article gap progress slot = its reading-order position */
+    if (hxProg && hxProg.children[i]) hxProg.children[i].classList.add('on');
     if (hxCount) { var b = hxCount.querySelector('b'); if (b) b.textContent = solved; }
     if (solved >= totalEx) {
       hxHud.classList.add('done');
@@ -3633,33 +4067,30 @@ window.LanternPlaying = false;
     }
     var exPage = document.querySelector('#hero .ex-page');
     if (!exPage) return;
-    /* art-gap: add progress slot first (slot 0), then wire click handlers */
-    var artGap = exPage.querySelector('.art-gap');
-    if (artGap && hxProg) { var artSeg = document.createElement('i'); hxProg.appendChild(artSeg); }
-    if (artGap) {
-      artGap.querySelectorAll('.art-pill').forEach(function (pill) {
+    /* collect every gap (word + article) in reading order — progress + autoplay follow this */
+    gaps    = Array.prototype.slice.call(exPage.querySelectorAll('.exw, .art-gap'));
+    targets = gaps.filter(function (g) { return g.classList.contains('exw'); });
+    totalEx = gaps.length;
+    /* one progress segment per gap, in reading order */
+    if (hxProg) gaps.forEach(function () { hxProg.appendChild(document.createElement('i')); });
+    /* wire article gaps: pick the right pill, slip on a wrong one */
+    gaps.forEach(function (g) {
+      if (!g.classList.contains('art-gap')) return;
+      g.querySelectorAll('.art-pill').forEach(function (pill) {
         pill.addEventListener('click', function (e) {
           e.stopPropagation();
-          if (artGap.dataset.done) return;
-          if (pill.dataset.v === artGap.dataset.a) {
-            solveArt(artGap, pill);
+          if (g.dataset.done) return;
+          if (pill.dataset.v === g.dataset.a) {
+            solveArt(g, pill);
           } else {
             pill.classList.add('wrong');
-            bubble(artGap, 'Oops!', 'oops');
+            bubble(g, 'Oops!', 'oops');
             setTimeout(function () { pill.classList.remove('wrong'); }, 450);
           }
         });
       });
-    }
-    targets = Array.prototype.slice.call(exPage.querySelectorAll('.exw'));
+    });
     targets.forEach(function (exw) { buildGap(exw); });
-    totalEx = targets.length + (artGap ? 1 : 0);
-    if (hxProg) {
-      targets.forEach(function () {
-        var seg = document.createElement('i');
-        hxProg.appendChild(seg);
-      });
-    }
     var delay = 0;
     targets.forEach(function (exw) {
       (function (e, d) {
@@ -3702,7 +4133,7 @@ window.LanternPlaying = false;
     w.className = 'ex-success';
     w.innerHTML =
       '<div class="exs-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>' +
-      '<div class="exs-h">2 / 2</div>' +
+      '<div class="exs-h">' + totalEx + ' / ' + totalEx + '</div>' +
       '<div class="exs-sub">Your words, locked in.</div>';
     document.body.appendChild(w);
     requestAnimationFrame(function () { w.classList.add('show'); });
@@ -3792,30 +4223,49 @@ window.LanternPlaying = false;
     step(400,  function () { moveTo(hxToggle); });
     step(400,  function () { tap(); if (hxToggle) hxToggle.click(); });
 
-    /* art-gap: cursor sweeps left → right over The / Ø / a, then selects "a" */
-    var artGap  = document.querySelector('#hero .ex-page .art-gap');
-    var pills   = artGap ? Array.prototype.slice.call(artGap.querySelectorAll('.art-pill')) : [];
-    step(1100, function () { moveTo(pills[0]); pills[0] && pills[0].classList.add('hover'); });
-    step(480,  function () { pills[0] && pills[0].classList.remove('hover'); moveTo(pills[1]); pills[1] && pills[1].classList.add('hover'); });
-    step(480,  function () { pills[1] && pills[1].classList.remove('hover'); moveTo(pills[2]); pills[2] && pills[2].classList.add('hover'); });
-    step(380,  function () { pills[2] && pills[2].classList.remove('hover'); tap(); pills[2] && pills[2].click(); });
+    /* gaps form: stagger ~220ms × 3 + card flights ≈ 1400ms */
 
-    /* gap 0 — the one word exercise (devoted) */
-    step(900,  function () { var g = targets[0]; moveTo(g && (g.querySelector('.gt') || g)); });
+    /* gap 0 — word (genre) */
+    step(1500, function () { var g = targets[0]; moveTo(g && (g.querySelector('.gt') || g)); });
     step(350,  function () { tap(); open(0); });
     step(550,  function () { moveTo(findBtn(0, true)); });
     step(280,  function () { tap(); pick(0, true); });
 
+    /* exercise 2 — ARTICLE: cursor sweeps left → right over The / Ø / a, then selects "a" */
+    var artGap = document.querySelector('#hero .ex-page .art-gap');
+    var pills  = artGap ? Array.prototype.slice.call(artGap.querySelectorAll('.art-pill')) : [];
+    var artHit = pills.filter(function (p) { return artGap && p.dataset.v === artGap.dataset.a; })[0] || pills[pills.length - 1];
+    step(800,  function () { moveTo(pills[0]); pills[0] && pills[0].classList.add('hover'); });
+    step(480,  function () { pills[0] && pills[0].classList.remove('hover'); moveTo(pills[1]); pills[1] && pills[1].classList.add('hover'); });
+    step(480,  function () { pills[1] && pills[1].classList.remove('hover'); moveTo(artHit); artHit && artHit.classList.add('hover'); });
+    step(380,  function () { artHit && artHit.classList.remove('hover'); tap(); artHit && artHit.click(); });
+
+    /* gap 1 — word (phenomenon): WRONG first (menu stays open via stopPropagation), then corrected */
+    step(800,  function () { var g = targets[1]; moveTo(g && (g.querySelector('.gt') || g)); });
+    step(350,  function () { tap(); open(1); });
+    step(500,  function () { moveTo(findBtn(1, false)); });
+    step(280,  function () { tap(); pick(1, false); });
+    step(1150, function () { moveTo(findBtn(1, true)); });
+    step(350,  function () { tap(); pick(1, true); });
+
+    /* gap 2 — word (legacy) */
+    step(800,  function () { var g = targets[2]; moveTo(g && (g.querySelector('.gt') || g)); });
+    step(350,  function () { tap(); open(2); });
+    step(500,  function () { moveTo(findBtn(2, true)); });
+    step(280,  function () { tap(); pick(2, true); });
+
     step(950,  function () { hideCur(); if (solved >= totalEx) successWin(); });
-    step(1900, function () { window.LanternBusy.set('practice', false); });   /* success card seen → PLAY may advance */
+    step(1900, function () { window.LanternBusy.set('practice', false); if (window._heroShowPracNext) window._heroShowPracNext(); });   /* success card seen → PLAY may advance, "next" cue rises */
   }
 
+  function raisePracNext() { if (window._heroShowPracNext) window._heroShowPracNext(); }
+
   window._heroExOnEnter = function () {
-    if (enabled) { window.LanternBusy.set('practice', false); return; }   /* already played → don't block PLAY */
+    if (enabled) { window.LanternBusy.set('practice', false); raisePracNext(); return; }   /* already played → don't block PLAY; cue is available right away */
     /* show the text for 1.2s so the viewer sees it as normal — then cursor-guided demo */
     setTimeout(function () {
       if (enabled || !document.body.classList.contains('hero-p5')) { window.LanternBusy.set('practice', false); return; }
-      if (RM) { enable(); window.LanternBusy.set('practice', false); return; }   /* reduced motion: no autoplay to wait on */
+      if (RM) { enable(); window.LanternBusy.set('practice', false); raisePracNext(); return; }   /* reduced motion: no autoplay to wait on */
       autoplay();
     }, 1200);
   };

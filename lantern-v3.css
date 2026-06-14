@@ -2,6 +2,9 @@
 @font-face{font-family:'GS Fallback';src:local('Arial'),local('Helvetica Neue'),local('Helvetica');size-adjust:97%}
 html.fonts-loading body{opacity:0}
 html.fonts-ready body{opacity:1;transition:opacity .45s ease}
+/* keep the #bg colour-glow hidden through the intro fade, then ease it in once the
+   content has settled — stops the amber hero tint flashing before the page paints */
+html.fonts-ready #bg{opacity:1}
 
 :root{
   --paper:#f7f6f3; --paper-2:#eeedea; --card:#ffffff;
@@ -28,7 +31,7 @@ img{max-width:100%;display:block}
 .srccard:focus-visible{outline-offset:4px}
 .sel:focus-visible{outline-offset:1px}
 
-#bg{position:fixed;inset:0;z-index:-1;transition:background .12s linear;will-change:background}
+#bg{position:fixed;inset:0;z-index:-1;opacity:0;transition:background .12s linear,opacity .6s ease .45s;will-change:background,opacity}
 
 /* ---------- nav: a normal block at the top of the hero only (scrolls away) ---------- */
 .topbar{position:fixed;top:0;left:0;right:0;z-index:80;display:flex;align-items:center;justify-content:space-between;padding:18px var(--gut);background:rgba(242,239,233,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(26,23,20,.05);transition:background .4s ease,box-shadow .4s ease,backdrop-filter .4s ease,opacity .4s ease,transform .4s ease}
@@ -45,9 +48,8 @@ body.at-hero .topbar .nav-links{opacity:0;pointer-events:none}
 .dc-ava .lmark::after,.evt-attach .lmark::after{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjMwIDE4IDQ4IDY0Ij48cGF0aCBkPSJNMzAgMTggSDUwIFY2MiBINzggVjgyIEgzMCBaIiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+")}
 /* hover (nav lockup): the two L's slide apart */
 .brand{cursor:pointer}
-.brand:hover .lmark::before{transform:translate(46%,38%)}
-.brand:hover .lmark::after{transform:translate(-10%,-8%)}
-.brand .en{color:var(--amber-deep)}
+.brand:hover .lmark::before{transform:translate(calc(18% + 1px),calc(18% + 1px))}
+.brand:hover .lmark::after{transform:translate(-1px,-1px)}
 .nav-links{display:flex;gap:32px;font-size:14.5px;color:var(--ink-70)}
 .nav-links a:hover{color:var(--ink)}
 .pill{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;font-weight:600;font-size:14px;padding:11px 19px;border-radius:999px;cursor:pointer;border:none;transition:background .2s,box-shadow .2s,opacity .25s,visibility .25s}
@@ -65,8 +67,9 @@ body.at-hero .pill{opacity:0;visibility:hidden;pointer-events:none}
 .btn-ghost{background:#fff;border-color:var(--line);color:var(--ink)}
 .btn-ghost:hover{border-color:var(--ink)}
 /* hero install button */
-.btn-install{display:inline-flex;align-items:center;gap:13px;background:var(--ink);color:#fff;border:none;border-radius:14px;padding:12px 22px 12px 16px;cursor:pointer;font-family:inherit;transition:background .2s}
-.btn-install:hover{background:#000}
+.btn-install{display:inline-flex;align-items:center;gap:13px;background:var(--ink);color:#fff;border:none;border-radius:14px;padding:12px 22px 12px 16px;cursor:pointer;font-family:inherit;transition:background .2s,transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s ease}
+.btn-install:hover{background:#111;transform:translateY(-3px) scale(1.025);box-shadow:0 16px 38px -10px rgba(26,23,20,.45),0 0 0 1.5px rgba(239,142,28,.35)}
+.btn-install:active{transform:translateY(-1px) scale(1.01);transition-duration:.08s}
 .btn-install .g-ico{width:26px;height:26px}.btn-install .g-ico::after{inset:8px}
 .btn-install .il{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
 .btn-install .t1{font-weight:600;font-size:16px;letter-spacing:-.01em}
@@ -965,15 +968,19 @@ body.ev-active #worddeck,body.at-hero #worddeck,body.at-close #worddeck{opacity:
   0%,100%{transform:translateX(var(--cdx,0px)) rotate(var(--crot,0deg)) translateY(0px)}
   50%    {transform:translateX(var(--cdx,0px)) rotate(var(--crot,0deg)) translateY(-5px)}
 }
-.wd-card.in{opacity:1;transform:translateX(var(--cdx,0px)) rotate(var(--crot,0deg));animation:cardFloat var(--fdur,4s) ease-in-out var(--fdel,0s) infinite}
+/* docked deck cards rest still (no per-card float bob) — the live bob lives on the
+   hero word-cards. A static deck means hover lift never fights a running keyframe
+   animation, so the lift in/out is buttery in both directions. */
+.wd-card.in{opacity:1;transform:translateX(var(--cdx,0px)) rotate(var(--crot,0deg));
+  transition:opacity .5s ease,transform .5s cubic-bezier(.2,.85,.25,1),box-shadow .42s ease}
 /* preset: holds slot silently so the flying word lands exactly on it */
 .wd-card.preset{transform:translateX(var(--cdx,0px)) rotate(var(--crot,0deg));transition:opacity .34s ease;animation:none}
 /* hover: card lifts above its neighbours for a clear preview */
 .wd-card.in:hover{
   transform:translateX(var(--cdx,0px)) rotate(var(--crot,0deg)) translateY(-10px) scale(1.04);
   box-shadow:0 30px 52px -18px rgba(26,23,20,.46),0 4px 12px -4px rgba(26,23,20,.14);
-  z-index:10;animation:none;
-  transition:transform .22s cubic-bezier(.2,.85,.25,1),box-shadow .22s ease;
+  z-index:10;
+  transition:transform .26s cubic-bezier(.2,.85,.25,1),box-shadow .26s ease;
   max-height:none
 }
 /* oldest cards collapse away smoothly past the cap (no jump) */
@@ -1046,7 +1053,7 @@ body.ev-active #worddeck,body.at-hero #worddeck,body.at-close #worddeck{opacity:
 .simp-w.on{animation:simpword .55s cubic-bezier(.2,.7,.2,1) forwards}
 @keyframes simpword{0%{opacity:0;filter:blur(2px);transform:translateY(2px)}100%{opacity:1;filter:blur(0);transform:none}}
 /* ONLY saved words are marked — same green underline as a saved word in normal text */
-.simp-w.saved{box-shadow:inset 0 -2px 0 var(--green);border-radius:2px}
+.simp-w.saved{box-shadow:inset 0 -2px 0 var(--blue);border-radius:2px}
 
 /* ---- "same-block settle": BEFORE ghosts in place behind the live rewrite ---- */
 .simp-body{position:relative;z-index:1}
@@ -1207,9 +1214,9 @@ body.at-hero.vocab-on #worddeck{display:block!important;opacity:1;pointer-events
 #disc-chat{position:absolute;left:50%;top:50%;transform:translate(-50%,calc(-50% + 16px)) scale(.97);opacity:0;pointer-events:none;transition:opacity .55s ease,transform .6s cubic-bezier(.2,.85,.25,1)}
 #disc-chat.show{opacity:1;transform:translate(-50%,-50%);pointer-events:auto}
 /* a saved word, woven back into the answer — pops in after its card flies over; tappable */
-.cw-saved{display:inline-block;font-weight:600;border-radius:2px;box-shadow:inset 0 -2px 0 var(--green);padding:0 1px;cursor:pointer;opacity:0;transform:translateY(3px);transition:opacity .35s ease,transform .42s cubic-bezier(.2,.85,.25,1),background .15s ease}
+.cw-saved{display:inline-block;font-weight:600;border-radius:2px;box-shadow:inset 0 -2px 0 var(--blue);padding:0 1px;cursor:pointer;opacity:0;transform:translateY(3px);transition:opacity .35s ease,transform .42s cubic-bezier(.2,.85,.25,1),background .15s ease}
 .cw-saved.on{opacity:1;transform:none}
-.cw-saved:hover{background:rgba(47,158,95,.14)}
+.cw-saved:hover{background:rgba(59,111,212,.14)}
 .disc-popup{z-index:60}
 /* answer streams in word-by-word — opacity-only fade so text never reflows/shifts */
 .cw-bot .cw-w{opacity:0;transition:opacity .42s ease}
@@ -1406,6 +1413,8 @@ body.at-hero.vocab-on #worddeck{display:block!important;opacity:1;pointer-events
 .dkfc{display:flex;align-items:center;gap:9px;font-size:12px}
 .dkfc .f{font-weight:600;padding-right:9px;border-right:1px solid var(--line)}
 .dkfc .b{color:var(--violet);font-weight:500}
+.dkim{font-size:11.5px;color:var(--ink-70);line-height:1.55}
+.dkim b{font-weight:600;color:var(--violet);background:#efe4fb;border-radius:5px;padding:0 5px}
 
 .ev-cta{position:relative;display:flex;flex-direction:column;align-items:center;gap:13px;margin-top:64px;padding-bottom:48px}
 .cta-go{position:relative;display:inline-flex;align-items:center;gap:14px;background:var(--ink);color:#fff;border:none;border-radius:16px;padding:13px 22px 13px 14px;cursor:pointer;font-family:inherit;overflow:hidden;box-shadow:0 20px 44px -18px rgba(26,23,20,.65);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background .2s}
@@ -1609,7 +1618,7 @@ body.tx-off .close-flame,body.tx-off.close-lit footer .lmark::before{animation:n
 .hw-lang.open .hwl-car{transform:rotate(180deg)}
 .hw-lang.pulse .hw-lang-pill{animation:hwlPulse 1.5s ease 2}
 @keyframes hwlPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,142,28,0)}50%{box-shadow:0 0 0 6px rgba(239,142,28,.28)}}
-.hw-lang-menu{position:absolute;top:calc(100% + 9px);right:0;min-width:182px;background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:0 26px 50px -20px rgba(26,23,20,.4);padding:6px;display:none;z-index:9}
+.hw-lang-menu{position:absolute;top:calc(100% + 9px);right:0;width:248px;background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:0 26px 50px -20px rgba(26,23,20,.4);padding:6px;display:none;z-index:9}
 .hw-lang.open .hw-lang-menu{display:block;animation:hwlMenu .16s ease}
 @keyframes hwlMenu{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .hw-lang-menu button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;background:none;border:none;border-radius:9px;padding:9px 11px;font-family:var(--sans);font-size:13.5px;color:var(--ink);cursor:pointer;text-align:left;transition:background .15s}
@@ -1618,7 +1627,7 @@ body.tx-off .close-flame,body.tx-off.close-lit footer .lmark::before{animation:n
 .hw-lang-menu .code{font-family:var(--mono);font-size:11px;color:var(--ink-45);letter-spacing:.05em}
 .hw-lang-note{margin:5px 6px 2px;padding:8px 5px 2px;border-top:1px solid var(--line);font-family:var(--sans);font-size:11px;line-height:1.45;color:var(--ink-45)}
 .hw-card .tr{transition:opacity .18s ease}
-@media(max-width:1000px){.hw-lang{position:static;display:flex}.hw-lang-label{display:none}}
+@media(max-width:1000px){.hw-lang{position:relative;display:flex}.hw-lang-label{display:none}.hw-lang-menu{min-width:0;width:240px;max-width:76vw}}
 
 /* ===== HERO PHASE 2 ===== */
 /* hide page dotnav on hero — m-dotnav takes over */
@@ -1679,8 +1688,17 @@ body:not(.at-hero) .m-dotnav{display:none}
 .pg-fav{width:19px;height:19px;border-radius:5px;flex-shrink:0;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .pg-url{font-family:var(--mono);font-size:11px;color:var(--ink-45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pg-kind{margin-left:auto;flex-shrink:0;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-45)}
+/* reading-level badge in the card's right corner: starts hard (C1/C2, amber),
+   morphs to your level (A2/B1/B2, green) when the card simplifies */
+.pg-cefr{margin-left:auto;flex-shrink:0;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.04em;line-height:1.3;
+  padding:2px 7px;border-radius:99px;
+  color:var(--amber-deep,#c96b00);background:rgba(176,106,44,.10);border:1px solid rgba(176,106,44,.3);
+  transition:background .45s ease,color .45s ease,border-color .45s ease}
+.pg.rewriting .pg-cefr,.pg.rewritten .pg-cefr{color:#fff;background:var(--green,#5a9e5f);border-color:var(--green,#5a9e5f)}
+@keyframes cefrPop{0%{transform:scale(1)}42%{transform:scale(1.24)}100%{transform:scale(1)}}
+.pg-cefr.morph{animation:cefrPop .52s cubic-bezier(.3,1,.4,1)}
 .pg-body{position:relative;padding:16px 18px 18px}
-.pg-head{font-weight:700;font-size:16.5px;letter-spacing:-.018em;line-height:1.24;margin-bottom:10px;color:var(--ink);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.pg-head{font-weight:700;font-size:16.5px;letter-spacing:-.018em;line-height:1.24;margin-bottom:10px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pg-stack{position:relative;display:grid}
 .pg-stack>p{grid-area:1/1;font-size:13px;line-height:1.58;margin:0}
 .t-hard{color:var(--ink-70);transition:opacity .3s ease}
