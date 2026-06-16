@@ -830,6 +830,7 @@ body.hero-simp .hero-copy-simp .sc-h { animation: board-in 0.3s cubic-bezier(.2,
 
 .hero-copy-simp .sc-h {
   margin: 0; white-space: nowrap; text-align: center;
+  box-sizing: border-box;                 /* so JS min-width (= measured width) maps 1:1 */
   font-weight: 700; letter-spacing: -.02em;
   font-size: clamp(17px, 1.5vw, 23px); line-height: 1.1;
   color: var(--ink, #1a1714);
@@ -2936,6 +2937,55 @@ window.LanternPlaying = false;
   window._heroHideSimpNext = hideSimpNext;
   if (simpNext) simpNext.addEventListener('click', function () { if (phase === 1) pressThenNav(simpNext, function () { hideSimpNext(); toP3(); }); });
 
+  /* TRUE seamless morph: the payoff ribbon physically becomes the "Next: Translate"
+     pill — one continuous gesture, not a crossfade. Uses the View Transitions API
+     (the same mechanism as the card-fold's foldViaViewTransition): the ribbon and the
+     pill share one view-transition-name, so the browser tweens box + position AND
+     crossfades content in a single pass. Root is excluded so the live hero keeps
+     animating underneath. Falls back to the plain show on Firefox / reduced-motion /
+     mobile (no pill there — the crank is the nav). */
+  var SIMP_VT = !matchMedia('(prefers-reduced-motion: reduce)').matches
+             && typeof document.startViewTransition === 'function';
+  function morphSimpToNext() {
+    var canMorph = SIMP_VT && simpNext && simpRibbon && phase === 1 && window.innerWidth > 920;
+    if (!canMorph) {                                   // fallback: drop the ribbon, raise the pill
+      document.body.classList.remove('hero-simp');
+      showSimpNext();
+      return;
+    }
+    var NAME = 'simp-morph';
+    var st = document.getElementById('simp-morph-style');
+    if (!st) { st = document.createElement('style'); st.id = 'simp-morph-style'; document.head.appendChild(st); }
+    st.textContent =
+      ':root{view-transition-name:none}' +
+      '::view-transition-group(' + NAME + '){animation-duration:.52s;animation-timing-function:cubic-bezier(.33,0,.2,1)}' +
+      '::view-transition-old(' + NAME + '),::view-transition-new(' + NAME + '){animation-duration:.4s}';
+    simpRibbon.style.viewTransitionName = NAME;        // OLD snapshot: the ribbon carries the name
+    function cleanup() {
+      simpRibbon.style.viewTransitionName = '';
+      simpRibbon.style.opacity = ''; simpRibbon.style.transition = '';
+      simpNext.style.viewTransitionName = '';
+      if (st && st.parentNode) st.parentNode.removeChild(st);
+    }
+    var vt;
+    try {
+      vt = document.startViewTransition(function () {
+        /* NEW state — all synchronous so it's captured in one snapshot:
+           the ribbon is gone, the pill is its morph target. */
+        document.body.classList.remove('hero-simp');
+        simpRibbon.style.transition = 'none';          // hide instantly (no ghost fading beside the morph)
+        simpRibbon.style.opacity = '0';
+        simpRibbon.style.viewTransitionName = '';
+        simpNext.setAttribute('aria-hidden', 'false'); simpNext.tabIndex = 0;
+        placeSimpNext();
+        simpNext.classList.add('show');
+        simpNext.style.viewTransitionName = NAME;       // NEW snapshot: the pill carries the name
+      });
+    } catch (e) { cleanup(); document.body.classList.remove('hero-simp'); showSimpNext(); return; }
+    vt.finished.then(function () { cleanup(); autoPressNext(simpNext); }, cleanup);
+  }
+  window._heroMorphSimpToNext = morphSimpToNext;
+
   /* ── Home (phase 0) "next" pill: the "save a word" demo plays its four saves,
      then this pill invites the Simplify screen. Centred under the browser
      like the other cues; raised by lantern-hero-words.js when the demo finishes,
@@ -3697,15 +3747,16 @@ window.LanternPlaying = false;
       setDots(6);
       return;
     }
-    /* ── B (council): coming from Discuss on desktop → run the mastery reveal
-       (grow the "phenomenon" card → hold → crack into six). Detected BEFORE
-       leaveDiscuss so the chat stays put under the growing card. ── */
+    /* ── B (council): coming from Discuss → run the mastery reveal (grow the
+       "phenomenon" card → hold → crack into six). Detected BEFORE leaveDiscuss
+       so the chat stays put under the growing card. Mobile parity: the same
+       reveal runs there — masteryReveal centres on the viewport and morphFromCard
+       cracks into the wall's own grid (2×3 on mobile, 3×2 on desktop). ── */
     var leMR  = LE();
     var winMR = document.querySelector('#hero .browser');
     var phMR  = window.Shelf ? window.Shelf.cardEl('phenomenon') : null;
     if (!fromCTA &&
-        phMR && phMR.getBoundingClientRect().width > 2 &&
-        window.matchMedia('(min-width: 981px)').matches && !RM &&
+        phMR && phMR.getBoundingClientRect().width > 2 && !RM &&
         winMR && leMR && leMR.morphFromCard) {
       setDots(6);
       masteryReveal(phMR, winMR, leMR);
@@ -4276,6 +4327,18 @@ window.LanternPlaying = false;
     var gen = 0;
     function start() {
       var g = ++gen;
+      /* pre-size the pill to the WIDER "invented" state so the made → invented flip
+         doesn't grow the box (the pill window would otherwise visibly jump). "made"
+         then sits centred in the reserved width; the flip changes only the text. */
+      var hv = document.querySelector('.hero-copy-simp .sc-verb');
+      var hp = hv && hv.closest('.sc-h');
+      if (hv && hp) {
+        var was = hv.textContent;
+        hv.textContent = ' invented';   /* nbsp matches the real flip text exactly */
+        hp.style.minWidth = '';
+        hp.style.minWidth = Math.ceil(hp.getBoundingClientRect().width) + 'px';
+        hv.textContent = was;
+      }
       setTimeout(function () {
         if (g !== gen) return;
         var v = document.querySelector('.hero-copy-simp .sc-verb');
@@ -4840,8 +4903,10 @@ window.LanternPlaying = false;
       if (window._heroToP3) window._heroToP3();                   // ribbon fades in + verb cycle
       await wait(2800);                                          // dwell: read payoff, made→invented lands
       if (g !== simpGen) { busy = false; return; }
-      document.body.classList.remove('hero-simp');               // ribbon fades out…
-      if (window._heroShowSimpNext) window._heroShowSimpNext();  // …crossfading into the Next pill
+      /* TRUE morph: the ribbon physically becomes the "Next: Translate" pill (View
+         Transitions). Fallback inside _heroMorphSimpToNext drops to a plain show. */
+      if (window._heroMorphSimpToNext) window._heroMorphSimpToNext();
+      else { document.body.classList.remove('hero-simp'); if (window._heroShowSimpNext) window._heroShowSimpNext(); }
       /* reading dwell — hold ~1.5s before releasing the 'simp' gate, so PLAY/autoplay
          doesn't step on to Translate the instant the pill lands. Scroll/manual is
          unaffected: the visitor paces it and the B2 text stays put. */

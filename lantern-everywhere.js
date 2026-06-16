@@ -468,7 +468,7 @@
   }
   function morphFromCard(srcCard) {
     if (morphing) return;
-    if (REDUCED || innerWidth < 980 || pages.length !== 6 || !srcCard || revealed) {
+    if (REDUCED || pages.length !== 6 || !srcCard || revealed) {
       revealed = true;
       pages.forEach(function (p) { p.classList.add('in'); p.style.visibility = ''; });
       if (cue) cue.classList.add('in');
@@ -477,10 +477,14 @@
     }
     morphing = true; revealed = true;
 
+    /* the crack follows the wall's OWN grid: desktop lays the six pages 3-across ×
+       2-down, mobile stacks them 2-across × 3-down. Reading cols/rows off the live
+       layout (not a fixed 3×2) keeps every shard landing on a real slot. */
+    var COLS = (innerWidth < 980) ? 2 : 3, ROWS = pages.length / COLS;
     var cr = srcCard.getBoundingClientRect();             /* the grown (scaled) footprint */
     var cardW = srcCard.offsetWidth, cardH = srcCard.offsetHeight;   /* natural, pre-scale */
     var k  = cr.width / cardW;
-    var tw = cr.width / 3, th = cr.height / 2;
+    var tw = cr.width / COLS, th = cr.height / ROWS;
     /* the held card's ON-SCREEN corner radius (its css radius scaled by k) — the
        shards start here so the corners match the soft floating card exactly */
     var R0 = (parseFloat(getComputedStyle(srcCard).borderTopLeftRadius) || 15) * k;
@@ -490,7 +494,7 @@
     void ev.offsetWidth;
     var pgW = pages[0].getBoundingClientRect().width;
     var items = pages.map(function (pg, i) {
-      var col = i % 3, row = (i / 3) | 0;
+      var col = i % COLS, row = (i / COLS) | 0;
       var r  = pg.getBoundingClientRect();
       var it = buildCardShard(srcCard, cardW, cardH, k, col, row, tw, th, pgW, pg, 1200 + i);
       it.tx = cr.left + col * tw; it.ty = cr.top + row * th; it.tw = tw; it.th = th;
@@ -500,8 +504,8 @@
       it.sx = r.left; it.sy = r.top;
       it.dly = i * 22;                                     /* very tight stagger — reads as ONE card splitting */
       it.r0 = R0;                                          /* soft held-card corner radius to start from */
-      it.cTL = (col === 0 && row === 0); it.cTR = (col === 2 && row === 0);   /* which corners are the card's OUTER silhouette */
-      it.cBR = (col === 2 && row === 1); it.cBL = (col === 0 && row === 1);
+      it.cTL = (col === 0 && row === 0); it.cTR = (col === COLS - 1 && row === 0);   /* which corners are the card's OUTER silhouette */
+      it.cBR = (col === COLS - 1 && row === ROWS - 1); it.cBL = (col === 0 && row === ROWS - 1);
       cardShardAt(it, 0);                                  /* joined == the grown card (content shown, media hidden) */
       return it;
     });
