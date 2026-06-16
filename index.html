@@ -1235,11 +1235,12 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   }
 
   /* compact copy on mobile */
-  /* Home title rides on ONE line ("Every word you actually use") — drop the desktop
-     <br> (the trailing space stays), leave the -webkit-box clamp, and size it to fit
-     the 90vw box down to 320px. */
+  /* Home title rides on ONE line ("Every word you actually use"). reveal-lines splits
+     it into two block .ln spans on the desktop <br>; collapse those to inline here (the
+     trailing space inside line 1 survives) and size it to fit the 90vw box down to 320px. */
   #hero .hero-copy h1 { display: block !important; font-size: clamp(23px, 7vw, 36px) !important; line-height: 1.08; margin-bottom: 6px; white-space: nowrap; }
-  #hero .hero-copy h1 br.hero-h1-brk { display: none; }
+  #hero .hero-copy h1 .ln,
+  #hero .hero-copy h1 .ln > .i { display: inline !important; transform: none !important; overflow: visible; }
   #hero .hero-copy .hero-eyebrow { font-size: 10px; letter-spacing: .18em; margin-bottom: 8px; }
   /* descriptive subhead under each headline — shown on mobile so every screen
      matches the desktop copy (Practice/p5 included). Clamped + compact so the
