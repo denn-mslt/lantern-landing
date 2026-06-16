@@ -4336,7 +4336,10 @@ window.LanternPlaying = false;
         var was = hv.textContent;
         hv.textContent = ' invented';   /* nbsp matches the real flip text exactly */
         hp.style.minWidth = '';
-        hp.style.minWidth = Math.ceil(hp.getBoundingClientRect().width) + 'px';
+        /* reserve the WIDEST ("invented") width + a small buffer, so the pill is a
+           touch larger from the start and the made → invented flip can never lengthen
+           it (zero reflow even if the measure is a sub-pixel off) */
+        hp.style.minWidth = (Math.ceil(hp.getBoundingClientRect().width) + 16) + 'px';
         hv.textContent = was;
       }
       setTimeout(function () {
