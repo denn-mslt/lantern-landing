@@ -135,6 +135,7 @@
     FEATS.forEach(function (f, k) {
       const c = document.createElement('div');
       c.className = 'dk-card ' + f.s;
+      c.dataset.feat = f.n.toLowerCase();
       c.style.setProperty('--fc', f.c);
       c.style.setProperty('--x', f.x + '%');
       c.style.setProperty('--y', f.y + '%');

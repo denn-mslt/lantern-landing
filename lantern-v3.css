@@ -19,13 +19,6 @@ html.fonts-ready #bg{opacity:1}
   --maxw:1200px; --gut:48px; --nav:72px;
   --sans:'General Sans','GS Fallback',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --mono:'JetBrains Mono',ui-monospace,'SF Mono','Cascadia Mono','Roboto Mono',Menlo,Consolas,monospace;
-  /* ── fluid type tokens (rem-anchored so they survive browser/OS zoom — WCAG 1.4.4;
-        every step keeps max ≤ 2.5×min; interpolated across the desktop band 1280→1920).
-        Use these for genuinely-fixed live UI text instead of hard px. ── */
-  --fs-xs:   clamp(.6875rem, .53rem + .23vw, .8125rem);   /* 11 → 13 */
-  --fs-sm:   clamp(.8125rem, .65rem + .23vw, .9375rem);   /* 13 → 15 */
-  --fs-body: clamp(.9375rem, .56rem + .47vw, 1.125rem);   /* 15 → 18 */
-  --fs-lg:   clamp(1.0625rem, .73rem + .55vw, 1.375rem);  /* 17 → 22 */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;background:#f7f6f3}
@@ -128,8 +121,7 @@ body.at-hero .pill{opacity:0;visibility:hidden;pointer-events:none}
       the stage + trim vertical padding so every phase clears it. Mirrors the finale's
       own max-height treatment. Desktop-only; mobile keeps its own scrubber. ── */
 @media(min-width:921px) and (max-height:760px){
-  .hero{padding-top:84px;padding-bottom:64px}
-  .hero-stage{height:clamp(400px,52vh,460px)}
+  .hero{padding-top:72px;padding-bottom:150px}
 }
 
 /* floating word cards — tiltable on hover */
@@ -689,6 +681,7 @@ footer .fm .fm-priv:hover{color:var(--ink-70)}
   .hero-copy h1{font-size:clamp(46px,9vw,72px)}
   .hero-copy .hsub{margin-left:auto;margin-right:auto}
   .hero-copy .hcta{justify-content:center}
+  .hero{min-height:auto;padding:100px 0 64px}
   .hero-stage{display:none}
   #popup .feat-stage,#translate .feat-stage,#inquiz .feat-stage{perspective:none}
   .tilt{transform:none!important}
