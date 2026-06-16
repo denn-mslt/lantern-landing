@@ -4,14 +4,42 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Lantern — Learn Languages While You Read</title>
-<meta name="description" content="Lantern is your reading tutor for the real web. It turns anything you read — news, threads, papers — into a language lesson: hard words glossed, passages simplified, the page itself talks back, and every word is quizzed until it sticks." />
+<meta name="description" content="Lantern turns any page you read into a language lesson — hard words glossed, passages simplified, the page talks back, every word quizzed until it sticks." />
+<link rel="canonical" href="https://withlantern.ai/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="theme-color" content="#f5f0e8" />
+<!-- Open Graph -->
 <meta property="og:type" content="website" />
+<meta property="og:url" content="https://withlantern.ai/" />
+<meta property="og:site_name" content="Lantern" />
+<meta property="og:locale" content="en_US" />
 <meta property="og:title" content="Lantern — Learn Languages While You Read" />
 <meta property="og:description" content="Your reading tutor for the real web — turn any page into a language lesson. Glossed, simplified, translated, discussed, and quizzed until the words stick." />
-<meta name="twitter:card" content="summary" />
+<meta property="og:image" content="https://withlantern.ai/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Lantern reading a web article — hard words glossed into your language as you read." />
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Lantern — Learn Languages While You Read" />
 <meta name="twitter:description" content="Your reading tutor for the real web — every page becomes a language lesson." />
+<meta name="twitter:image" content="https://withlantern.ai/og-image.png" />
+<meta name="twitter:image:alt" content="Lantern reading a web article — hard words glossed into your language as you read." />
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<!-- Structured data: Chrome extension is a SoftwareApplication -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Lantern",
+  "applicationCategory": "EducationalApplication",
+  "operatingSystem": "Chrome",
+  "browserRequirements": "Requires Google Chrome",
+  "url": "https://withlantern.ai/",
+  "description": "Lantern is a Chrome extension that turns any page you read into a language lesson — hard words glossed, passages simplified, the page talks back, and every word is quizzed until it sticks.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
@@ -1152,6 +1180,10 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 @media (max-width: 920px) {
   .m-only { display: block; }
   .d-only { display: none; }
+  /* inline-safe mobile hide: stays inline on desktop (no rule there), drops out
+     on phones. Used to shorten dense in-article prose so the Practice window
+     doesn't overflow — and to spare learners the hardest (C1) trailing clauses. */
+  .m-hide { display: none !important; }
 
   /* un-hide stage (lantern-v3.css sets display:none at 920px) */
   #hero .hero-stage {
@@ -1339,12 +1371,15 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     grid-column: unset !important; grid-row: unset !important;
     margin: 0 !important; display: block; transition: opacity 0.4s ease;
   }
-  /* compact word cards on mobile */
-  #hero .hw-card .wordcard { padding: 9px 11px !important; }
-  #hero .hw-card .wordcard .w { font-size: 16px !important; }
-  #hero .hw-card .wordcard .ph { font-size: 10px !important; margin-top: 2px !important; }
-  #hero .hw-card .wordcard .tr { font-size: 13px !important; margin-top: 5px !important; }
-  #hero .hw-card .wordcard .cefr-b { font-size: 10px !important; padding: 2px 6px !important; }
+  /* compact word cards on mobile — small like the vocab strip, two rows:
+     row 1 = EN word alone (font set inline per word so long ones fit);
+     row 2 = translation + CEFR level badge, translation eased down a step
+     (the desktop 20px gloss was oversized on a phone). */
+  #hero .hw-card .wordcard.wordcard-m { padding: 7px 9px !important; border-radius: 13px !important; }
+  #hero .hw-card .wordcard-m .w { line-height: 1.05 !important; }
+  #hero .hw-card .wordcard-m .wbot { display: flex !important; align-items: center; justify-content: space-between; gap: 6px; margin-top: 5px !important; }
+  #hero .hw-card .wordcard-m .tr { font-size: 11px !important; margin-top: 0 !important; }
+  #hero .hw-card .wordcard-m .cefr-b { font-size: 9px !important; padding: 2px 5px !important; flex: none; }
   /* leaving screen 1, the cards MORPH into the vocab strip (JS FLIP in
      lantern-hero-words.js, fired from toP2). The fold lifts each card OUT of
      #hero to fixed coords, so this opacity:0 only catches the fallback case
@@ -1963,7 +1998,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     <div class="hero-copy">
       <div class="hero-eyebrow">The living dictionary</div>
       <h1 class="disp reveal-lines">Every word<br />you actually use</h1>
-      <p class="hsub">Save words as you read. Lantern weaves them back into the next thing you read — until they stick.</p>
+      <p class="hsub" data-m="Save words as you read. Lantern brings them back in the next thing you read — until they stick.">Save words as you read. Lantern weaves them back into the next thing you read — until they stick.</p>
       <div class="hcta">
         <button class="btn-install">
           <svg width="22" height="22" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="24" cy="24" r="12" fill="#fff"/><path d="M24 12h20.78A23.993 23.993 0 0 0 3.217 12.003L13.608 30l.009-.002A11.985 11.985 0 0 1 24 12z" fill="#EA4335"/><circle cx="24" cy="24" r="9.5" fill="#1a73e8"/><path d="M34.39 30.003 24.001 48A23.994 23.994 0 0 0 44.78 12.003H23.999l-.003.009A11.985 11.985 0 0 1 34.39 30.003z" fill="#FBBC04"/><path d="M13.609 30.003 3.218 12.006A23.994 23.994 0 0 0 24.003 48L34.393 30.003l-.007-.007a11.985 11.985 0 0 1-20.778.007z" fill="#34A853"/></svg>
@@ -2024,7 +2059,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
               <div class="ex-page" style="padding:26px 32px">
                 <p style="font-family:'General Sans',sans-serif;font-weight:700;font-size:21px;margin:0 0 14px;text-align:center">The Eras Tour</p>
                 <p style="margin:0">Few musicians branch out across so many <span class="exw gap-first" data-a="genre" data-o="genre|style|trend">genre</span> walls and keep every audience. Taylor Swift moved from country to pop to folk without losing her devoted fans — <span class="art-gap" data-a="a"><span class="art-rest">a</span><span class="art-choices" aria-hidden="true"><span class="art-br">[</span><button class="art-pill" data-v="The" type="button">The</button><span class="art-sep">|</span><button class="art-pill" data-v="Ø" type="button">Ø</button><span class="art-sep">|</span><button class="art-pill" data-v="a" type="button">a</button><span class="art-br">]</span></span></span> cultural <span class="exw" data-a="phenomenon" data-o="phenomenon|event|talent">phenomenon</span> who left a legacy no one had predicted.</p>
-                <p style="margin:18px 0 0">Her unprecedented commercial trajectory <span class="art-gap" data-a="has"><span class="art-rest">has</span><span class="art-choices" aria-hidden="true"><span class="art-br">[</span><button class="art-pill" data-v="have" type="button">have</button><span class="art-sep">|</span><button class="art-pill" data-v="had" type="button">had</button><span class="art-sep">|</span><button class="art-pill" data-v="has" type="button">has</button><span class="art-br">]</span></span></span> eclipsed every prior touring benchmark, drawing scrutiny over whether the industry can sustain such pervasive saturation. The revenue disparity between her and her contemporaries signals a structural shift.</p>
+                <p style="margin:18px 0 0">Her unprecedented commercial trajectory <span class="art-gap" data-a="has"><span class="art-rest">has</span><span class="art-choices" aria-hidden="true"><span class="art-br">[</span><button class="art-pill" data-v="have" type="button">have</button><span class="art-sep">|</span><button class="art-pill" data-v="had" type="button">had</button><span class="art-sep">|</span><button class="art-pill" data-v="has" type="button">has</button><span class="art-br">]</span></span></span> eclipsed every prior touring benchmark<span class="m-hide">, drawing scrutiny over whether the industry can sustain such pervasive saturation. The revenue disparity between her and her contemporaries signals a structural shift</span>.</p>
               </div>
             </div>
 
@@ -2119,28 +2154,28 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     <div class="hero-copy-p2">
       <div class="p2-eyebrow">Simplify</div>
       <h2>Too dense?<br>Read it at your level.</h2>
-      <p class="p2-sub">Hit the orange dot and a heavy paragraph rewrites to exactly your level — weaving the words you’ve saved back in, so they resurface as you read.</p>
+      <p class="p2-sub" data-m="Tap the orange dot and a hard paragraph rewrites to your level — with your saved words woven back in.">Hit the orange dot and a heavy paragraph rewrites to exactly your level — weaving the words you’ve saved back in, so they resurface as you read.</p>
     </div>
 
     <!-- PHASE 3 COPY — Translate -->
     <div class="hero-copy-p3">
       <div class="p2-eyebrow">Translate</div>
       <h2>Click a sentence.<br>Read it in yours.</h2>
-      <p class="p2-sub">Lantern translates in context — whole thoughts, not word by word. Your language, right in the page.</p>
+      <p class="p2-sub" data-m="Lantern translates whole thoughts in context, not word by word — right in the page.">Lantern translates in context — whole thoughts, not word by word. Your language, right in the page.</p>
     </div>
 
     <!-- PHASE 3.5 COPY — Immersion -->
     <div class="hero-copy-imm">
       <div class="p2-eyebrow">Everywhere</div>
       <h2>Your words follow you<br>into your language.</h2>
-      <p class="p2-sub">Switch to your native language and the words you're building still glow violet — on any site, wherever they naturally appear. Read the news at home. Your vocabulary doesn't leave.</p>
+      <p class="p2-sub" data-m="Switch to your language and the words you're learning still glow violet — on any site. Your vocabulary stays with you.">Switch to your native language and the words you're building still glow violet — on any site, wherever they naturally appear. Read the news at home. Your vocabulary doesn't leave.</p>
     </div>
 
     <!-- PHASE 4 COPY — Analysis -->
     <div class="hero-copy-p4">
       <div class="p2-eyebrow">Discuss</div>
       <h2>Click Discuss.<br>The page talks back.</h2>
-      <p class="p2-sub">One click and Lantern has read the whole article. You get a short summary at your level — then ask about any fact on the page, with your saved words woven back in.</p>
+      <p class="p2-sub" data-m="One click and Lantern reads the whole article — a short summary at your level, then ask it anything on the page.">One click and Lantern has read the whole article. You get a short summary at your level — then ask about any fact on the page, with your saved words woven back in.</p>
     </div>
 
     <!-- PHASE 5 COPY — Practice -->
@@ -5159,5 +5194,28 @@ window.LanternPlaying = false;
 </script>
 <script src="lantern-scrub.js"></script>
 <script src="lantern-deck.js"></script>
+<script>
+/* MOBILE COPY — shorter, ≤B2 phrasings for the hero subheads so the text fits
+   the narrow phone layout without clipping. Desktop is left untouched: the swap
+   only fires at ≤920px and restores the original copy if the viewport widens.
+   Any element with data-m gets its text swapped (all targets are plain text). */
+(function () {
+  var mq = matchMedia('(max-width: 920px)');
+  var nodes = document.querySelectorAll('[data-m]');
+  function apply() {
+    nodes.forEach(function (n) {
+      if (mq.matches) {
+        if (n.dataset.dOrig == null) n.dataset.dOrig = n.textContent;
+        if (n.textContent !== n.dataset.m) n.textContent = n.dataset.m;
+      } else if (n.dataset.dOrig != null) {
+        n.textContent = n.dataset.dOrig;
+      }
+    });
+  }
+  apply();
+  if (mq.addEventListener) mq.addEventListener('change', apply);
+  else if (mq.addListener) mq.addListener(apply);
+})();
+</script>
 </body>
 </html>

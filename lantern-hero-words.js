@@ -75,11 +75,14 @@
        route·coast·rugged·remote lands left-column then right-column — when they
        later morph straight down into the left→right vocab strip, none of the
        flight paths cross (row-major made coast & rugged swap sides mid-air). */
+    /* mobile: small cards laid out in ONE left→right row (no overlap), in save
+       order — so they read like the vocab strip and morph straight down into it
+       without any flight path crossing. Slot 3 (phenomenon) is the wide one. */
     var slots = MOBILE ? [
-      { xp: 0.02,  yp: 8,   rot: 2  },
-      { xp: 0.255, yp: 13,  rot: -2 },
-      { xp: 0.49,  yp: 6,   rot: 3  },
-      { xp: 0.62,  yp: 11,  rot: -2 }
+      { xp: 0.015, yp: 8,  rot: 2    },
+      { xp: 0.249, yp: 16, rot: -1.5 },
+      { xp: 0.482, yp: 6,  rot: 2    },
+      { xp: 0.772, yp: 14, rot: -1.5 }
     ] : [
       { xp: 0.820, yp: 0.150, rot: 7 },
       { xp: 0.862, yp: 0.470, rot: -6 },
@@ -134,13 +137,29 @@
       card.style.setProperty('--cbdur', CARD_DURS[idx % CARD_DURS.length]);
       card.style.setProperty('--cbdel', CARD_DELS[idx % CARD_DELS.length]);
       var longWord = m.w.length > 8;
-      var wfs = longWord ? 24 : 27;
-      var cardW = MOBILE ? 140 : (longWord ? 248 : 186);
-      card.innerHTML =
-        '<div class="wordcard" style="--rot:' + slot.rot + 'deg;width:' + cardW + 'px">' +
-          '<div class="wtop"><span class="w" style="font-size:' + wfs + 'px">' + m.w + '</span>' +
-          '<span class="cefr-b b-' + c + '">' + m.cefr + '</span></div>' +
-          '<div class="tr t-' + c + '">' + m.gloss + '</div></div>';
+      var wfs, cardW;
+      if (MOBILE) {
+        /* small like the vocab strip, two rows:
+           row 1 = the EN word ALONE (full card width — long words like
+           "phenomenon" no longer compete with the badge, so they fit; the card
+           just grows a touch wider and the font eases down a step);
+           row 2 = translation + the CEFR level badge. */
+        cardW = longWord ? 106 : 84;
+        wfs   = longWord ? 15  : 17;
+        card.innerHTML =
+          '<div class="wordcard wordcard-m" style="--rot:' + slot.rot + 'deg;width:' + cardW + 'px">' +
+            '<div class="wtop"><span class="w" style="font-size:' + wfs + 'px">' + m.w + '</span></div>' +
+            '<div class="wbot"><span class="tr t-' + c + '">' + m.gloss + '</span>' +
+            '<span class="cefr-b b-' + c + '">' + m.cefr + '</span></div></div>';
+      } else {
+        wfs = longWord ? 24 : 27;
+        cardW = longWord ? 248 : 186;
+        card.innerHTML =
+          '<div class="wordcard" style="--rot:' + slot.rot + 'deg;width:' + cardW + 'px">' +
+            '<div class="wtop"><span class="w" style="font-size:' + wfs + 'px">' + m.w + '</span>' +
+            '<span class="cefr-b b-' + c + '">' + m.cefr + '</span></div>' +
+            '<div class="tr t-' + c + '">' + m.gloss + '</div></div>';
+      }
       card.style.left = (slot.xp * hero.offsetWidth) + 'px';
       card.style.top = slotTop(slot) + 'px';
       hero.appendChild(card);
