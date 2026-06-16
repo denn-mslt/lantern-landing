@@ -776,13 +776,14 @@
       return { wrap: wrap, rot: rot, back: back, cx: cx, cy: cy, tx: cx, ty: cy };
     });
     hideWall();
-    document.body.classList.add('ph-cta');
+    document.body.classList.add('ph-cta');   /* m-cta-flip (the chrome-fade stagger) is armed by the toCTA caller BEFORE ph-cta, so its timing wins the transition start */
 
     requestAnimationFrame(function () {
       var slots = LC.slotsMobile();
       if (!slots || slots.length !== 6) {                 /* safety: snap to a clean docked state */
         clones.forEach(function (c) { c.wrap.remove(); });
         if (LC.armDockedMobile) LC.armDockedMobile();
+        document.body.classList.remove('m-cta-flip');
         flaming = false; return;
       }
       clones.forEach(function (c, i) {
@@ -802,6 +803,7 @@
         if (p < 1) { requestAnimationFrame(step); return; }
         if (LC.armDockedMobile) LC.armDockedMobile();     /* real cards reveal, wires + beads fire */
         clones.forEach(function (c) { c.wrap.remove(); });
+        document.body.classList.remove('m-cta-flip');     /* flip landed → restore the plain fade for back-nav */
         flaming = false;
       }
       requestAnimationFrame(step);
