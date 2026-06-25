@@ -1,25 +1,32 @@
 /* ============================================================
-   Lantern Landing — DESKTOP bottom deck  (council verdict B)
-   The side dot-rail retires; navigation moves to a bottom
-   media-player: caption + scrubber + PLAY, driven entirely
-   through window.LanternPhases. The desktop page is ONE screen
-   (no document scroll) — every phase is a morph in place — so
-   the deck just reads and drives phases, no scroll to sync.
+   Lantern Landing — DESKTOP left chapter-index rail
+   (council verdict "The Wick", 7-persona vote)
 
-   Mouse-native: grab the bead, click anywhere on the track to
-   walk there, real focusable role="slider" with arrow keys.
-   PLAY walks the whole story; any phase change the deck didn't
-   make (a user wheel via the inline handler) hands control back
-   — detected by an "expected phase" guard, so we never fight the
-   inline wheel handler (which stopImmediatePropagation()s).
+   The bottom media-player retires; navigation becomes a LEFT
+   vertical table-of-contents: all 8 chapters stacked top->bottom,
+   threaded by an amber "wick" whose lit bead rides to the current
+   screen. PLAY auto-walks the whole story; click any chapter to
+   jump; arrow keys walk it. Driven entirely through
+   window.LanternPhases — the desktop page is ONE screen (no
+   document scroll), every phase is a morph in place, so the rail
+   just reads and drives phases.
+
+   Why a named list (6/7): the owner's complaint is "people don't
+   realize they can move." A hidden bead conceals the other screens;
+   showing all 8 named chapters makes the depth self-evident.
    ============================================================ */
 (function () {
   var N = 8;
+  /* NAMES indexed by INTERNAL phase; VIS_PHASE maps visual pos -> internal
+     phase (Practice/Discuss swapped), matching LanternPhases.pos()/jump(). */
   var NAMES = ['HOME', 'SIMPLIFY', 'TRANSLATE', 'IMMERSE', 'DISCUSS', 'PRACTICE', 'EVERYWHERE', 'INSTALL'];
-  var VIS_PHASE = [0,1,2,3,5,4,6,7]; /* visual pos → internal phase (Practice/Discuss swapped) */
-  var DWELL = 1150;                 /* manual drag/keyboard speed cap per phase */
-  var BREATH = 600;                 /* PLAY: beat after a scene finishes before the next — reads as cinema */
-  var MAX_SCENE = 18000;            /* PLAY: safety cap so a scene that forgets to clear can't hang the reel */
+  var VIS_PHASE = [0, 1, 2, 3, 5, 4, 6, 7];
+  var DWELL = 1150;                 /* manual walk speed cap per phase */
+  var BREATH = 600;                 /* PLAY: beat after a scene finishes before the next */
+  var MAX_SCENE = 18000;            /* PLAY: safety cap so a stuck scene can't hang the reel */
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function visName(vis) { return NAMES[VIS_PHASE[vis]] || NAMES[vis]; }
 
   function init() {
     if (window.innerWidth <= 920) return;        /* desktop only; mobile uses .m-navcluster */
@@ -28,101 +35,112 @@
 
     var deck = document.createElement('div');
     deck.id = 'd-deck';
+
+    var rows = '';
+    for (var i = 0; i < N; i++) {
+      rows +=
+        '<button class="d-chap" type="button" data-vis="' + i + '" ' +
+                'aria-label="Go to screen ' + (i + 1) + ': ' + visName(i) + '">' +
+          '<i class="d-chap-num">' + pad(i + 1) + '</i>' +
+          '<span class="d-chap-name">' + visName(i) + '</span>' +
+        '</button>';
+    }
+
     deck.innerHTML =
-      '<div class="d-deck-cap" id="d-cap" aria-live="polite">01 · HOME</div>' +
-      '<div class="d-deck-row">' +
+      '<div class="d-head">' +
         '<button class="d-playbtn" id="d-play" type="button" aria-label="Play the story">' +
           '<svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>' +
           '<svg class="ic-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg>' +
         '</button>' +
-        '<div class="d-scrub" id="d-scrub" role="slider" tabindex="0" aria-label="Story phase" ' +
-             'aria-valuemin="1" aria-valuemax="7" aria-valuenow="1" aria-valuetext="01 · HOME">' +
-          '<div class="d-track">' +
-            '<div class="d-fill"></div>' +
-            '<div class="d-goal"></div>' +
-            '<div class="d-ball"></div>' +
-          '</div>' +
-        '</div>' +
+        '<div class="d-count" aria-hidden="true"><span class="d-cn" id="d-cn">01</span><span>/ ' + pad(N) + '</span></div>' +
       '</div>' +
-      /* council (unanimous): first-timers don't know the page is scrollytelling.
-         One quiet line tells them how to move — shown on HOME, fades once they go. */
-      '<div class="d-deck-hint" id="d-hint" aria-hidden="true">Scroll to explore — or press play</div>';
+      '<nav class="d-rail" id="d-rail" aria-label="Story chapters">' +
+        '<div class="d-wick" aria-hidden="true"></div>' +
+        '<div class="d-wick-fill" id="d-fill" aria-hidden="true"></div>' +
+        '<div class="d-bead" id="d-bead" aria-hidden="true"></div>' +
+        rows +
+        /* council (unanimous, 7/7): first-timers don't know the page is scrollytelling.
+           A bobbing down-chevron — sat on the wick just under the lit bead — tells them
+           the story keeps going down. No label: the arrow says it. Shown on HOME, fades
+           once they go. */
+        '<div class="d-hint" id="d-hint" aria-hidden="true">' +
+          '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' +
+        '</div>' +
+      '</nav>' +
+      '<div class="d-live" id="d-live" aria-live="polite" ' +
+           'style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></div>';
     document.body.appendChild(deck);
 
-    var scrub   = deck.querySelector('#d-scrub');
-    var track   = deck.querySelector('.d-track');
-    var fill    = deck.querySelector('.d-fill');
-    var ball    = deck.querySelector('.d-ball');
-    var goal    = deck.querySelector('.d-goal');
-    var cap     = deck.querySelector('#d-cap');
+    var chaps   = [].slice.call(deck.querySelectorAll('.d-chap'));
+    var fillEl  = deck.querySelector('#d-fill');
+    var beadEl  = deck.querySelector('#d-bead');
+    var cnEl    = deck.querySelector('#d-cn');
     var playBtn = deck.querySelector('#d-play');
     var hint    = deck.querySelector('#d-hint');
+    var live    = deck.querySelector('#d-live');
+    var rail    = deck.querySelector('#d-rail');
 
-    var ticks = [];
-    for (var i = 0; i < N; i++) {
-      var t = document.createElement('div');
-      t.className = 'd-tick';
-      t.style.left = (i / (N - 1) * 100) + '%';
-      track.appendChild(t);
-      ticks.push(t);
+    var target   = LP.pos();          /* where the user pointed (visual pos) */
+    var expected = LP.get();          /* the internal phase the rail last set itself */
+    var lastStep = 0, lastBusy = 0;
+    var playing  = false, rafId = 0;
+    var lastVis  = -1;
+
+    /* place the lit bead at the active row's centre + fill the wick down to it.
+       Measured in px from real geometry, so gaps/clamps never drift it. */
+    function positionBead() {
+      var vis = LP.pos();
+      var c = chaps[vis]; if (!c) return;
+      var top = c.offsetTop + c.offsetHeight / 2;   /* relative to .d-rail */
+      beadEl.style.top = top + 'px';
+      fillEl.style.height = Math.max(0, top - 6) + 'px';
+      /* park the Scroll cue just under the active row, in the empty name column */
+      if (hint) hint.style.top = (c.offsetTop + c.offsetHeight + 6) + 'px';
     }
-    track.appendChild(goal);
-    track.appendChild(ball);            /* keep bead + goal on top of the ticks */
-
-    var target   = LP.get();            /* where the user pointed */
-    var expected = LP.get();            /* the phase the deck last set itself */
-    var lastStep = 0;
-    var lastBusy = 0;                   /* last moment a scene was still performing — BREATH is measured from here */
-    var dragging = false;
-    var playing  = false;
-    var rafId    = 0;
-
-    function pct(p)   { return (p / (N - 1) * 100) + '%'; }
-    /* label() is called with visual position (during drag) */
-    function label(vis) { return ('0' + (vis + 1)) + ' · ' + (NAMES[VIS_PHASE[vis]] || NAMES[vis]); }
 
     function render() {
       var vis = LP.pos();
-      if (!dragging) { ball.style.left = pct(vis); fill.style.width = pct(vis); }
-      ticks.forEach(function (t, i) { t.classList.toggle('passed', i <= vis); });
-      var chasing = (vis !== target);
-      scrub.classList.toggle('chasing', chasing);
-      if (chasing) goal.style.left = pct(target);
-      var capText = ('0' + (vis + 1)) + ' · ' + NAMES[LP.get()];
-      cap.textContent = capText;
-      scrub.setAttribute('aria-valuenow', vis + 1);
-      scrub.setAttribute('aria-valuetext', capText);
+      for (var i = 0; i < chaps.length; i++) {
+        chaps[i].classList.toggle('on', i === vis);
+        chaps[i].classList.toggle('passed', i < vis);
+      }
+      positionBead();
+
+      /* odometer counter — the number rolls up on every change */
+      var txt = pad(vis + 1);
+      if (cnEl.textContent !== txt) {
+        cnEl.textContent = txt;
+        cnEl.classList.remove('roll'); void cnEl.offsetWidth; cnEl.classList.add('roll');
+      }
+
       if (hint) hint.classList.toggle('show', LP.get() === 0);
+
+      if (vis !== lastVis) {
+        lastVis = vis;
+        if (live) live.textContent = 'Screen ' + (vis + 1) + ' of ' + N + ': ' + visName(vis);
+      }
     }
 
-    /* one walk engine for drag / click / keyboard / play, but two cadences:
-       - PLAY forward = cinema: step only once the current phase's scripted
-         scene has played to the end (LP.actionPlaying() clears), then a BREATH;
-         a safety cap steps anyway if a scene forgets to release.
-       - manual drag / keyboard / rewind = snappy: DWELL-capped, only gated by
-         busy() (a window-split / dock morph in flight must not be cut). */
+    /* one walk engine for PLAY / keyboard, two cadences:
+       - PLAY forward = cinema: step only once the phase's scripted scene has
+         played out (actionPlaying clears), then a BREATH; a safety cap steps
+         anyway if a scene forgets to release.
+       - keyboard / rewind = snappy: DWELL-capped, gated only by busy(). */
     function walk() {
       rafId = 0;
       var cur = LP.get();
       var vis = LP.pos();
 
-      /* a phase change the deck didn't make = the user took the wheel → hand
-         control straight back (scenes no longer self-advance under PLAY, so any
-         unexpected move is a real gesture). Manual always wins. */
-      if (!dragging && cur !== expected) {
+      /* a phase change the rail didn't make = the user took the wheel → hand
+         control straight back. Manual always wins. */
+      if (cur !== expected) {
         if (playing) stopPlay();
-        target = vis; expected = cur;
-        render();
-        return;
+        target = vis; expected = cur; render(); return;
       }
-
       if (vis === target) { render(); if (playing) stopPlay(); return; }
 
       var now = performance.now(), dir = vis < target ? 1 : -1, ready;
       if (playing && dir > 0) {
-        /* PLAY forward: while the scene performs, keep resetting the breath
-           clock; step a BREATH after it releases. The safety cap fires even
-           mid-scene, so a scene that forgets to release can't hang the reel. */
         if (now - lastStep >= MAX_SCENE) ready = true;
         else if (LP.busy() || LP.actionPlaying()) { lastBusy = now; ready = false; }
         else ready = (now - lastBusy >= BREATH);
@@ -134,57 +152,22 @@
       rafId = requestAnimationFrame(walk);
     }
     function kick() { if (!rafId) rafId = requestAnimationFrame(walk); }
+    function setTarget(p) { target = Math.max(0, Math.min(N - 1, p)); }
 
-    function setTarget(p) {
-      p = Math.max(0, Math.min(N - 1, p));
-      if (p !== target) { target = p; cap.textContent = label(p); }
-    }
-
-    function frac(e) {
-      var r = track.getBoundingClientRect();
-      return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-    }
-    function phaseAt(e) { return Math.round(frac(e) * (N - 1)); }
-
-    /* ── drag / click on the track (mouse-native) ── */
-    var downX = 0, moved = false;
-    scrub.addEventListener('pointerdown', function (e) {
-      stopPlay();
-      dragging = true; downX = e.clientX; moved = false;
-      scrub.classList.add('drag');
-      try { scrub.setPointerCapture(e.pointerId); } catch (err) {}
-      var f = frac(e);
-      ball.style.left = (f * 100) + '%'; fill.style.width = (f * 100) + '%';
-      setTarget(phaseAt(e)); kick();
-      scrub.focus();
-      e.preventDefault();
+    /* ── click a chapter → jump straight there (no story walk-through) ── */
+    chaps.forEach(function (c) {
+      c.addEventListener('click', function () {
+        stopPlay();
+        var p = parseInt(c.getAttribute('data-vis'), 10);
+        if (LP.jump) { LP.jump(p); target = LP.pos(); expected = LP.get(); render(); }
+      });
     });
-    scrub.addEventListener('pointermove', function (e) {
-      if (!dragging) return;
-      if (Math.abs(e.clientX - downX) > 3) moved = true;
-      var f = frac(e);
-      ball.style.left = (f * 100) + '%'; fill.style.width = (f * 100) + '%';
-      setTarget(phaseAt(e)); kick();
-    });
-    function release(e) {
-      if (!dragging) return;
-      dragging = false; scrub.classList.remove('drag');
-      scrub.blur();
-      if (!moved && LP.jump) {
-        /* click (no drag): jump directly — no story walk-through */
-        LP.jump(target); expected = LP.get(); render();
-      } else {
-        render(); kick();              /* drag: walk the story to target */
-      }
-    }
-    scrub.addEventListener('pointerup', release);
-    scrub.addEventListener('pointercancel', release);
 
-    /* ── keyboard (a real slider; owns its arrows so the page pager can't eat them) ── */
-    scrub.addEventListener('keydown', function (e) {
+    /* ── keyboard: Up/Down (and Left/Right) walk the story; owns its arrows ── */
+    rail.addEventListener('keydown', function (e) {
       var vis = LP.pos(), handled = true;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') setTarget(vis + 1);
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') setTarget(vis - 1);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') setTarget(vis + 1);
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') setTarget(vis - 1);
       else if (e.key === 'Home') setTarget(0);
       else if (e.key === 'End') setTarget(N - 1);
       else handled = false;
@@ -198,31 +181,30 @@
     }
     function stopPlay() { if (playing) { playing = false; window.LanternPlaying = false; setPlayUI(false); } }
     function startPlay() {
-      var cur = LP.get();
-      setTarget(cur >= N - 1 ? 0 : N - 1);   /* at the end → rewind home; else play to the end */
-      expected = cur;
-      lastStep = lastBusy = performance.now();   /* give the first screen its full beat, not an instant cut */
+      var cur = LP.pos();
+      setTarget(cur >= N - 1 ? 0 : N - 1);       /* at the end → rewind home; else play to the end */
+      expected = LP.get();
+      lastStep = lastBusy = performance.now();    /* give the first screen its full beat */
       playing = true; window.LanternPlaying = true; setPlayUI(true); kick();
     }
     playBtn.addEventListener('click', function (e) {
-      if (playing) { stopPlay(); target = LP.get(); expected = LP.get(); render(); }   /* stop = freeze on this screen */
+      if (playing) { stopPlay(); target = LP.pos(); expected = LP.get(); render(); }
       else startPlay();
-      /* a mouse click leaves the button focused → the amber :focus-visible ring
-         lingers AND scales with the :active press (reads as a jittery ring).
-         Drop focus for pointer activations (e.detail > 0); keyboard activations
-         (Enter/Space, e.detail === 0) keep the ring for accessibility. */
-      if (e.detail) playBtn.blur();
+      if (e.detail) playBtn.blur();               /* drop the lingering ring on mouse activation */
     });
 
-    /* stay in sync if the phase moves by some other path while the deck is idle */
+    /* stay in sync if the phase moves by some other path while the rail is idle */
     setInterval(function () {
-      if (dragging || rafId) return;
+      if (rafId) return;
       var cur = LP.get(), vis = LP.pos();
       if (vis !== target || cur !== expected) { target = vis; expected = cur; }
       render();
     }, 300);
 
+    window.addEventListener('resize', positionBead);
+
     render();
+    requestAnimationFrame(positionBead);          /* geometry final → place the bead precisely */
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

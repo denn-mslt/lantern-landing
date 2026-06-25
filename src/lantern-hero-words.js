@@ -102,30 +102,31 @@
     var slotI = 0;
     var rested = [];
     /* the hero is a demonstration, not a real shelf — cap how many cards may rest
-       here so they never run out of slots and pile up. Desktop = the 7 slots above;
-       mobile keeps its prior behaviour (its .hw-cards are display:none under 1000px). */
-    var MAX_CARDS = MOBILE ? Infinity : slots.length;
+       here so they never run out of room and pile up. 7 on both: desktop = its 7
+       slots; mobile = the same cap, after which the "that's plenty for a demo"
+       note shows instead of an 8th card (the strip wraps to 2 rows up to there). */
+    var MAX_CARDS = MOBILE ? 7 : slots.length;
 
-    function slotTop(slot) {
-      if (!MOBILE) return slot.yp * hero.offsetHeight;
+    /* the cards live in the GAP between the browser frame and whatever sits
+       below it (the "send to yourself" CTA note, else the scrubber cluster) —
+       returns that band's top (just under the frame) and bottom (above the CTA),
+       so the strip can be centred in it. */
+    function mobileBand() {
       var hr = hero.getBoundingClientRect(), br = browser.getBoundingClientRect();
-      var top = (br.bottom - hr.top) + slot.yp;
-      /* safety belt for short viewports: never let the row fall onto the bottom
-         dock — clamp the card's BOTTOM to clear whichever band sits higher (the
-         "Send to yourself" CTA note or the scrubber cluster). The yp stagger is
-         dropped once clamped (on a cramped screen there's no room for it). The
-         real cure is repositionMobileCards() re-pinning the row after the frame
-         settles; this only catches the extreme-short case. */
+      var top = br.bottom - hr.top;              /* just under the browser frame */
       var cta = hero.querySelector('.hcta-m');
       var nav = document.querySelector('.m-navcluster');
       var floor = Infinity;
       if (cta) floor = Math.min(floor, cta.getBoundingClientRect().top);
       if (nav) floor = Math.min(floor, nav.getBoundingClientRect().top);
-      if (isFinite(floor)) {
-        var maxTop = (floor - hr.top) - 64;     /* ~56px card + 8px breathing gap */
-        if (top > maxTop) top = maxTop;
-      }
-      return top;
+      var bottom = isFinite(floor) ? (floor - hr.top) - 14 : top + 200;   /* breathing gap above the CTA/nav */
+      return { top: top, bottom: bottom };
+    }
+    function slotTop(slot) {
+      if (!MOBILE) return slot.yp * hero.offsetHeight;
+      var b = mobileBand(), CARD_H = 58;
+      var centre = b.top + Math.max(6, (b.bottom - b.top - CARD_H) / 2);
+      return centre + (slot.yp - 11) * 0.5;      /* whisper of the original stagger */
     }
 
     var CARD_DURS = ['4.2s', '5.1s', '4.7s'];
@@ -180,10 +181,14 @@
             '<span class="cefr-b b-' + c + '">' + m.cefr + '</span></div>' +
             '<div class="tr t-' + c + '">' + m.gloss + '</div></div>';
       }
-      card.style.left = (slot.xp * hero.offsetWidth) + 'px';
-      card.style.top = slotTop(slot) + 'px';
       hero.appendChild(card);
       rested.push({ card: card, word: word });
+      if (MOBILE) {
+        layoutMobileRow();            /* re-flow the centred strip so this card takes a fresh slot, never overlapping */
+      } else {
+        card.style.left = (slot.xp * hero.offsetWidth) + 'px';
+        card.style.top = slotTop(slot) + 'px';
+      }
       return card;
     }
 
@@ -212,9 +217,11 @@
     }
     function doFly(word) {
       var slot = slots[slotI % slots.length]; slotI++;
-      var sx = slot.xp * hero.offsetWidth, sy = slotTop(slot);
       var card = buildCard(word, slot);
       var cw = card.offsetWidth, ch = card.offsetHeight;
+      /* fly in from the word to the card's just-assigned rest spot (mobile: its
+         place in the re-flowed strip; desktop: the slot) */
+      var sx = parseFloat(card.style.left) || 0, sy = parseFloat(card.style.top) || 0;
       var hr = hero.getBoundingClientRect(), wr = word.getBoundingClientRect();
       var dx = (wr.left + wr.width / 2 - hr.left) - (sx + cw / 2);
       var dy = (wr.top + wr.height / 2 - hr.top) - (sy + ch / 2);
@@ -237,9 +244,10 @@
       var slot = slots[slotI % slots.length]; slotI++;
       var card = buildCard(word, slot);
       card.style.opacity = '1';
-      /* mobile: cards sit STILL — they're already small from the start, so the
-         idle card-bob just read as the old "jumping". Desktop keeps the bob. */
-      if (!MOBILE) card.classList.add('rested');
+      /* rest = idle: both desktop and mobile get .rested so the card breathes
+         (mobile uses the gentler card-bob-m; see index.html). Covers this snap
+         path as well as doFly, so the float shows however the card landed. */
+      card.classList.add('rested');
       markSaved(word);
     }
 
@@ -248,13 +256,45 @@
        orientation change all move browser.bottom after the cards were placed, so
        their stale Y can drift onto the bottom CTA/scrubber (worst on short, wide
        phones). Re-derive every rested card's slot position from the live layout. */
+    /* mobile: lay every rested card out as a centred, packed left→right strip
+       (real card widths + a fixed gap, no fixed slots), wrapping to a second row
+       when the first is full. Re-running it on each save re-flows the whole strip
+       so a new word takes a FRESH slot — the existing cards slide over via the CSS
+       left/top transition — instead of the 5th card landing on top of the 1st
+       (the old fixed-4-slot scheme wrapped slot 5's index back onto slot 1). */
+    var M_GAP = 7, M_RGAP = 8, M_CARD_H = 58, M_STAG = [-1.5, 2.5, -2.5, 1.5];
+    function layoutMobileRow() {
+      if (!MOBILE || !rested.length) return;
+      var W = hero.offsetWidth, avail = W - 8;            /* 4px breathing each edge */
+      var widths = rested.map(function (rc) { return rc.card.offsetWidth || 84; });
+      /* greedy wrap into rows */
+      var rows = [], cur = [], curW = 0;
+      rested.forEach(function (rc, i) {
+        var w = widths[i], add = (cur.length ? M_GAP : 0) + w;
+        if (cur.length && curW + add > avail) { rows.push({ items: cur, w: curW }); cur = []; curW = 0; add = w; }
+        cur.push({ rc: rc, i: i, w: w }); curW += add;
+      });
+      if (cur.length) rows.push({ items: cur, w: curW });
+      var band = mobileBand();
+      var blockH = rows.length * M_CARD_H + (rows.length - 1) * M_RGAP;
+      var startTop = band.top + Math.max(6, (band.bottom - band.top - blockH) / 2);
+      rows.forEach(function (row, r) {
+        var x = (W - row.w) / 2; if (x < 6) x = 6;
+        var top = startTop + r * (M_CARD_H + M_RGAP);
+        row.items.forEach(function (it) {
+          it.rc.card.style.left = x + 'px';
+          it.rc.card.style.top = (top + M_STAG[it.i % M_STAG.length]) + 'px';
+          x += it.w + M_GAP;
+        });
+      });
+    }
+    /* mobile cards are absolutely placed below the browser frame, but that frame
+       settles LATE — web-font reflow, the fitMobileBrowser height morph, or an
+       orientation change all move browser.bottom after the cards were placed, so
+       their stale Y can drift onto the bottom CTA/scrubber. Re-flow from live layout. */
     function repositionMobileCards() {
       if (!MOBILE || folded || !rested.length) return;
-      rested.forEach(function (rc, i) {
-        var slot = slots[i % slots.length];
-        rc.card.style.left = (slot.xp * hero.offsetWidth) + 'px';
-        rc.card.style.top  = slotTop(slot) + 'px';
-      });
+      layoutMobileRow();
     }
 
     // ---- as the reader scrolls off the hero, the big floating cards fold neatly
@@ -761,6 +801,10 @@
     // mobile → static cards immediately, no auto-demo
     if (MOBILE) {
       words.forEach(restCard);
+      /* mobile has no demo to end, so light the candidate words right away —
+         same amber invite as desktop's post-demo state (branch out·audience·
+         losing already carry .cand and are wired for tap). */
+      document.body.classList.add('hw-invite');
       buildPill();
       attachScatter();
       /* keep the cards pinned to the frame as it settles after first paint */

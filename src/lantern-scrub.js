@@ -232,10 +232,11 @@
            drag/PLAY are skipped: the scrubber already owns target there. */
         notifyPhase: function (p) {
           if (selfStep || dragging || playing) return;
-          target = expected = p;
+          var vis = LP.pos();
+          target = vis; expected = p;               /* target=visual, expected=internal — avoids swap mismatch on Practice/Discuss */
           if (performance.now() - lastScrollTs < 700) { render(); return; }  /* user is scrolling the crank — it owns the runway */
           render();
-          syncRunway(p);
+          syncRunway(vis);
         }
       };
       /* phase moved some other way (track tap, CTA back, auto-advance) → quietly
@@ -264,10 +265,10 @@
     function stopPlay() {
       if (!playing) return;
       playing = false; window.LanternPlaying = false;
-      target = expected = LP.get();               /* freeze on this screen */
+      target = LP.pos(); expected = LP.get();      /* freeze on this screen (target=visual, expected=internal) */
       setPlayUI(false);
       render();
-      syncRunway(LP.get());                       /* chase is idle now → safe to bring the runway along */
+      syncRunway(LP.pos());                       /* chase is idle now → safe to bring the runway along */
     }
     function startPlay() {
       var cur = LP.get();
@@ -283,12 +284,26 @@
       playBtn.addEventListener('click', function () { if (playing) stopPlay(); else startPlay(); });
       var userInterrupt = function (e) {
         if (!playing) return;
-        if (e && e.target && e.target.closest && e.target.closest('.m-playbtn')) return;
+        if (e && e.target && e.target.closest && e.target.closest('.m-playbtn, .m-advance')) return;
         stopPlay();
       };
       window.addEventListener('touchstart', userInterrupt, { passive: true });
       window.addEventListener('wheel', userInterrupt, { passive: true });
       window.addEventListener('keydown', userInterrupt);
+    }
+
+    /* advance arrow — the single onward control on the scrubber row: step to the next
+       screen (loops home at the end). The phase change notifies LanternCrank, which
+       brings the scroll runway along so the next flick continues from the right spot. */
+    var advBtn = document.getElementById('m-advance');
+    if (advBtn) {
+      advBtn.addEventListener('click', function () {
+        if (playing) stopPlay();
+        if (LP.pos() >= N - 1) { if (LP.jump) LP.jump(0); }
+        else if (LP.step) LP.step(1);
+        target = LP.pos(); expected = LP.get();
+        render();
+      });
     }
 
     render();

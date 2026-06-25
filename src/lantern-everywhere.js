@@ -233,10 +233,9 @@
       revealed = true;
       pages.forEach(function (p) { p.classList.add('in'); p.style.visibility = ''; });
       if (cue) cue.classList.add('in');
-      /* touch can't hover, so the signature "the whole web simplifies to your
-         level" moment runs itself on phones: each card ripples its CEFR badge
-         down (C1/C2 -> A2/B1/B2) + tints, staggered, once the wall has landed. */
-      if (innerWidth <= 920 && !REDUCED) setTimeout(startSimplifyCascade, 480);
+      /* touch can't hover: one card self-simplifies as a hint, the rest follow
+         the finger (swipe across the wall — see startSimplifyHint / swipeAt). */
+      if (innerWidth <= 920 && !REDUCED) setTimeout(startSimplifyHint, 480);
       return;
     }
     morphing = true; revealed = true;
@@ -618,6 +617,33 @@
     });
   }
 
+  /* ── mobile: ONE card self-simplifies as a hint, the rest follow your finger ──
+     Auto-cascading the whole wall turns the screen into a passive ad — you just
+     watch. So on phones only the first card ripples down on its own ("oh, these
+     change to my level"); the other five wait for a swipe. Dragging a finger
+     across the wall rewrites each card it crosses (fruit-ninja), so the "the
+     whole web simplifies for ME" moment is YOUR gesture, not an animation. */
+  var hintDone = false;
+  function startSimplifyHint() {
+    if (hintDone) return; hintDone = true;
+    setTimeout(function () { if (pages[0]) rewriteCard(pages[0]); }, 700);
+  }
+  var lastSwiped = null;
+  function swipeAt(x, y) {
+    var el = document.elementFromPoint(x, y);
+    var pg = el && el.closest ? el.closest('.pg') : null;
+    if (!pg || pg === lastSwiped || pg.dataset.done) return;
+    lastSwiped = pg;
+    rewriteCard(pg);
+  }
+  if (!REDUCED) {
+    ev.addEventListener('touchmove', function (e) {
+      var t = e.touches && e.touches[0];
+      if (t) swipeAt(t.clientX, t.clientY);
+    }, { passive: true });
+    ev.addEventListener('touchend', function () { lastSwiped = null; }, { passive: true });
+  }
+
   /* ── hover: nudge neighbours away from the focused card ── */
   var hovered = null;
   function layout() {
@@ -663,8 +689,8 @@
       startBob(p);
     });
     if (cue) cue.classList.add('in');
-    /* mobile jump straight onto the wall still gets the auto-simplify ripple */
-    if (innerWidth <= 920 && !REDUCED) setTimeout(startSimplifyCascade, 360);
+    /* mobile jump straight onto the wall still gets the one-card hint */
+    if (innerWidth <= 920 && !REDUCED) setTimeout(startSimplifyHint, 360);
   }
   function presentCTA() {
     presentWall();                                  /* the wall sits under the dock */

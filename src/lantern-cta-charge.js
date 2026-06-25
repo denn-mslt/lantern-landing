@@ -396,7 +396,15 @@
       priv.href = '/privacy';
       priv.textContent = 'Privacy';
       foot.appendChild(priv);
-      if (foot.childNodes.length) dock.appendChild(foot); /* below the pill grid */
+      /* foot lives OUTSIDE the dock, as a sibling in close-wrap, so close-wrap's
+         space-between spreads 3 zones: title (top) · dock note+button+cards (middle) ·
+         foot free+privacy (bottom, between the last card and the scrubber). */
+      if (foot.childNodes.length) (dock.parentNode || dock).appendChild(foot);
+      /* owner: the "You're on mobile…" note rides WITH the h1, not the button cluster —
+         pull it out of m-close-cta and dock it right under the title at the top. */
+      var mNote = mcta.querySelector('.m-close-note');
+      var mH1 = section.querySelector('.d1-headline.m-only');
+      if (mNote && mH1 && mH1.parentNode) mH1.parentNode.insertBefore(mNote, mH1.nextSibling);
     }
     mShareBtn = mcta && mcta.querySelector('.m-share-btn');
     /* the warm-touch layer the bead traces live in (clipped to the pill) */

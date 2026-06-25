@@ -101,7 +101,10 @@ body.at-hero .pill{opacity:0;visibility:hidden;pointer-events:none}
 .hero-copy{min-width:0}
 .hero-eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--amber-deep);margin-bottom:36px}
 .hero h1{font-weight:700;letter-spacing:-.04em;font-size:clamp(50px,9vw,118px);line-height:.96}
-.hero-copy h1{font-size:clamp(40px,4.4vw,64px)}
+/* "Your reading tutor for the real web" (COUNCIL Option C) is longer than the old
+   headline — sized a step down so "Your reading tutor" fits line 1 and it breaks to a
+   clean 2 lines (was 64px, which orphaned "tutor" onto its own line). */
+.hero-copy h1{font-size:clamp(38px,3.5vw,52px)}
 .hero .hsub{margin:42px auto 0;max-width:40ch;font-size:clamp(16px,1.6vw,20px);color:var(--ink-70);line-height:1.55}
 .hero-copy .hsub{margin-left:0;margin-right:0}
 .hero .hcta{margin-top:50px;display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap}
@@ -960,7 +963,11 @@ body.tx-off [data-reveal],body.tx-off .reveal-lines .ln>.i,body.tx-off .mini-lis
 .act-sep{width:40px;height:1px;background:var(--line)}
 
 /* ---- word DECK — saved words as plain cards, a calm rail on the right ---- */
-#worddeck{position:fixed;right:20px;top:50%;transform:translateY(-45%);z-index:64;width:162px;display:none;pointer-events:none;transition:opacity .35s ease}
+/* right edge TRACKS the centred .wrap (not the raw viewport): at <=1520 it rests
+   at 20px from the edge (unchanged), but on wider screens it pulls inward to stay
+   beside the browser instead of stranding in the far corner. 140px = maxw/2 + deck
+   overhang past the wrap edge, tuned so 1520 lands exactly on the old 20px. */
+#worddeck{position:fixed;right:max(20px, calc(50vw - var(--maxw)/2 - 140px));top:50%;transform:translateY(-45%);z-index:64;width:162px;display:none;pointer-events:none;transition:opacity .35s ease}
 #worddeck.show{display:block;pointer-events:auto}
 body.ev-active #worddeck,body.at-hero #worddeck,body.at-close #worddeck{opacity:0;pointer-events:none}
 .wd-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(26,23,20,.4);margin-bottom:5px;padding-left:3px}
@@ -1601,8 +1608,10 @@ body.tx-off .close-flame,body.tx-off.close-lit footer .lmark::before{animation:n
 .hero .hl.picking{background:#ffe6a0;color:#b86a00;box-shadow:0 0 0 3px rgba(239,142,28,.3)}
 .hero .hl.saved{background:#e3edfd;color:#2f6fd6}
 .hero .hl.saved:hover{background:#d2e2fb;color:#2560c4}
-#hero .browser .word.is-saved{box-shadow:inset 0 -2px 0 var(--blue);transition:background .18s,box-shadow .18s}
-#hero .browser .word.is-saved:hover{background:#eaf1fd;box-shadow:inset 0 -2px 0 #2560c4}
+/* saved plain words take the SAME blue chip as the .hl saved words (genre/devoted/
+   branch out) — one saved look, not an underline-vs-chip split */
+#hero .browser .word.is-saved{background:#e3edfd;color:#2f6fd6;border-radius:4px;padding:0 3px;box-shadow:none;transition:background .25s,color .25s}
+#hero .browser .word.is-saved:hover{background:#d2e2fb;color:#2560c4}
 /* candidate words (council follow-up): once the auto-demo ends (body.hw-invite)
    and we're still on HOME (not hero-p2+), a few good words show a soft amber
    underline + a gentle pulse so the visitor learns they can save more too. The
@@ -1824,6 +1833,8 @@ body.lantern-light #hero .floatwrap{
 /* enough of the wall simplified → the cue grows + darkens to pull the eye onward */
 .ev-cue.lit{opacity:1;color:var(--ink);font-size:13.5px;letter-spacing:.16em}
 @keyframes evCueBreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+/* swipe-to-simplify hint — touch only; desktop simplifies on hover, so hidden there */
+.ev-swipe{display:none}
 /* flame courier */
 #flame{position:fixed;width:18px;height:18px;border-radius:50%;background:var(--amber);box-shadow:0 0 20px 5px rgba(239,142,28,.55);pointer-events:none;display:none;z-index:9999;transform:translate(-50%,-50%)}
 @media(max-width:920px){.ev-wall{max-width:720px}.pg{width:clamp(280px,46vw,348px)}}

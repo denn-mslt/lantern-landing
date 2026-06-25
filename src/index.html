@@ -25,7 +25,7 @@
 <meta name="twitter:description" content="Your reading tutor for the real web — every page becomes a language lesson." />
 <meta name="twitter:image" content="https://withlantern.ai/og-image.png" />
 <meta name="twitter:image:alt" content="Lantern reading a web article — hard words glossed into your language as you read." />
-<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="icon" type="image/svg+xml" href="lantern-icon-orange.svg" />
 <!-- Structured data: Chrome extension is a SoftwareApplication -->
 <script type="application/ld+json">
 {
@@ -113,6 +113,12 @@ body.hero-p2 #hero .hw-onboard { opacity: 0; pointer-events: none; }
 .topbar .hw-lang { position: relative; margin-left: auto; margin-right: clamp(14px, 2vw, 26px); opacity: 1; pointer-events: auto; transition: opacity 0.3s ease; }
 .topbar { pointer-events: none; }
 .topbar .brand, .topbar .hw-lang, .topbar .pill { pointer-events: auto; }
+/* topbar content rides the centred .wrap grid (max 1200), NOT the raw gutter —
+   so the logo's left edge lands on the hero headline's left edge (208px @1520),
+   and the right cluster mirrors it. Background stays full-bleed (left/right:0);
+   only the inner padding tracks the wrap inset, collapsing to --gut below 1200. */
+.topbar { padding-left:  max(var(--gut), calc((100% - var(--maxw)) / 2 + var(--gut)));
+          padding-right: max(var(--gut), calc((100% - var(--maxw)) / 2 + var(--gut))); }
 
 #hero .hero-copy   { grid-column: 1; grid-row: 1; }
 #hero .hero-stage  { grid-column: 2; grid-row: 1; position: relative; }
@@ -255,31 +261,33 @@ body.hero-p2.at-hero .pill {
 @media (min-width: 921px) {
   .m-dotnav { display: none !important; }            /* side rail retired on desktop */
   .scroll-cue { display: none !important; }          /* deck's PLAY replaces the "scroll" hint */
+  /* ═══ DESKTOP LEFT CHAPTER-INDEX RAIL — council verdict "The Wick" ═══
+     all 8 screens stacked top→bottom, threaded by an amber wick whose lit
+     bead rides to the current chapter; the active name glows as if lit by the
+     lantern. Replaces the old bottom media-player. (named-list 6/7,
+     odometer 5/7, full-height 5/7, chevron hint 7/7, PLAY kept 7/7) */
   #d-deck {
-    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+    position: fixed; left: clamp(18px, 2.6vw, 42px); top: 50%;
+    transform: translateY(-50%);
     z-index: 71; pointer-events: none;                /* children re-enable */
-    display: flex; flex-direction: column; align-items: center; gap: 7px;
-    transition: opacity .3s ease;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 16px;
+    transition: opacity .4s ease;
   }
   body.ph-cta #d-deck { opacity: 0; pointer-events: none; }   /* clear the install screen */
-  .d-deck-cap {
-    font-family: var(--mono, monospace); font-size: 11px; letter-spacing: .14em;
-    text-transform: uppercase; white-space: nowrap; color: var(--ink, #1a1714);
-    opacity: .55; transition: opacity .18s ease;
+
+  /* (head) PLAY + odometer phase counter */
+  .d-head { display: flex; align-items: center; gap: 11px; pointer-events: auto; }
+  .d-count {
+    font-family: var(--mono, monospace); font-size: 11px; letter-spacing: .16em;
+    color: var(--ink, #1a1714); opacity: .5; line-height: 1; display: inline-flex; gap: .35em;
   }
-  .d-deck-row { display: flex; align-items: center; gap: 12px; pointer-events: none; }
-  /* quiet nav hint (council, 7/7): tells first-timers the page is scrollytelling.
-     Lives under the scrubber, low-contrast, shown on HOME and faded once moved. */
-  .d-deck-hint {
-    font-family: var(--mono, monospace); font-size: 10.5px; letter-spacing: .1em;
-    text-transform: uppercase; white-space: nowrap; color: var(--ink, #1a1714);
-    opacity: 0; transform: translateY(-2px); pointer-events: none;
-    transition: opacity .4s ease, transform .4s ease;
-  }
-  .d-deck-hint.show { opacity: .4; transform: none; }
+  .d-count .d-cn { display: inline-block; font-variant-numeric: tabular-nums; }
+  .d-count .d-cn.roll { animation: d-roll .42s cubic-bezier(.3,.1,.25,1); }
+  @keyframes d-roll { 0% { transform: translateY(-72%); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
   .d-playbtn {
     pointer-events: auto; flex-shrink: 0;
-    width: 36px; height: 36px; border-radius: 50%;
+    width: 34px; height: 34px; border-radius: 50%;
     border: 1.5px solid rgba(26,23,20,.22); box-sizing: border-box;
     background: var(--paper, #f7f6f3); box-shadow: 0 2px 10px rgba(26,23,20,.14);
     display: flex; align-items: center; justify-content: center; padding: 0;
@@ -288,48 +296,65 @@ body.hero-p2.at-hero .pill {
   .d-playbtn:hover { border-color: rgba(26,23,20,.42); }
   .d-playbtn:active { transform: scale(.92); }
   .d-playbtn:focus-visible { outline: 2px solid var(--amber, #ef8e1c); outline-offset: 3px; }
-  .d-playbtn svg { width: 19px; height: 19px; fill: var(--amber-deep, #c96b00); }
+  .d-playbtn svg { width: 18px; height: 18px; fill: var(--amber-deep, #c96b00); }
   .d-playbtn .ic-stop { display: none; }
   .d-playbtn.playing { border-color: var(--amber, #ef8e1c); background: rgba(239,142,28,.10); }
   .d-playbtn.playing .ic-play { display: none; }
   .d-playbtn.playing .ic-stop { display: block; }
 
-  .d-scrub {
-    pointer-events: auto; width: min(46vw, 520px); padding: 13px 9px;
-    cursor: pointer; touch-action: none; border-radius: 8px;
+  /* (rail) the chapter index — all 8 screens, threaded by the amber "wick" */
+  .d-rail {
+    position: relative; display: flex; flex-direction: column;
+    gap: clamp(13px, 2.2vh, 26px); padding-left: 22px; pointer-events: auto;
   }
-  .d-scrub:focus-visible { outline: 2px solid var(--amber, #ef8e1c); outline-offset: 2px; }
-  .d-scrub.drag:focus-visible, .d-scrub.drag:focus { outline: none; }
-  .d-track { position: relative; height: 3px; border-radius: 2px; background: rgba(26,23,20,.12); }
-  .d-tick {
-    position: absolute; top: 50%; width: 5px; height: 5px; border-radius: 50%;
-    transform: translate(-50%,-50%); background: var(--paper, #f7f6f3);
-    border: 1px solid rgba(26,23,20,.30); box-sizing: border-box;
-    transition: background .25s, border-color .25s;
-  }
-  .d-tick.passed { background: var(--amber, #ef8e1c); border-color: var(--amber, #ef8e1c); }
-  .d-fill {
-    position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 2px;
-    background: linear-gradient(90deg, rgba(239,142,28,.45), var(--amber, #ef8e1c));
-    transition: width .45s cubic-bezier(.3,.1,.25,1);
-  }
-  .d-scrub.drag .d-fill { transition: none; }
-  .d-ball {
-    position: absolute; left: 0; top: 50%; width: 17px; height: 17px; border-radius: 50%;
-    transform: translate(-50%,-50%); background: var(--amber, #ef8e1c);
-    border: 2.5px solid #fff; box-sizing: border-box;
-    box-shadow: 0 2px 8px rgba(26,23,20,.30), 0 0 0 1px rgba(26,23,20,.08);
-    cursor: grab; transition: left .45s cubic-bezier(.3,.1,.25,1);
-  }
-  .d-scrub.drag .d-ball { transition: none; cursor: grabbing; }
-  .d-goal {
-    position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%;
-    transform: translate(-50%,-50%); border: 2px solid var(--amber-deep, #c96b00);
-    box-sizing: border-box; opacity: 0; transition: opacity .25s ease;
-  }
-  .d-scrub.chasing .d-goal { opacity: .8; }
+  .d-wick { position: absolute; left: 5px; top: 6px; bottom: 6px; width: 1.5px;
+            background: rgba(26,23,20,.14); border-radius: 2px; }
+  .d-wick-fill { position: absolute; left: 5px; top: 6px; width: 1.5px; height: 0;
+                 background: linear-gradient(180deg, rgba(239,142,28,.5), var(--amber, #ef8e1c));
+                 border-radius: 2px; transition: height .42s cubic-bezier(.3,.1,.25,1); }
+  .d-bead { position: absolute; left: 5px; top: 0; width: 11px; height: 11px; border-radius: 50%;
+            transform: translate(-50%, -50%); background: var(--amber, #ef8e1c);
+            border: 2.5px solid var(--paper, #f7f6f3);
+            box-shadow: 0 0 0 1px rgba(26,23,20,.10), 0 2px 8px rgba(201,107,0,.55);
+            transition: top .42s cubic-bezier(.3,.1,.25,1); }
+
+  .d-chap { position: relative; display: flex; align-items: baseline; gap: 9px;
+            background: none; border: none; padding: 1px 0; margin: 0; cursor: pointer;
+            font-family: var(--mono, monospace); text-align: left;
+            -webkit-tap-highlight-color: transparent; }
+  .d-chap-num { font-size: 9px; letter-spacing: .08em; color: var(--ink, #1a1714); opacity: .3;
+                min-width: 15px; font-variant-numeric: tabular-nums; font-style: normal;
+                transition: opacity .3s ease, color .3s ease; }
+  /* names stay hidden — the 8 numbered ticks already carry the depth. Only the
+     active chapter is named; the rest fade in on hover (TOC-style reveal). */
+  .d-chap-name { font-size: 11px; letter-spacing: .13em; text-transform: uppercase;
+                 color: var(--ink, #1a1714); opacity: 0; white-space: nowrap;
+                 transition: opacity .35s ease, color .35s ease,
+                             transform .42s cubic-bezier(.3,.1,.25,1), text-shadow .35s ease; }
+  .d-chap:hover .d-chap-name { opacity: .6; }
+  .d-chap:focus-visible { outline: 2px solid var(--amber, #ef8e1c); outline-offset: 3px; border-radius: 4px; }
+  .d-chap:focus-visible .d-chap-name { opacity: .6; }   /* keyboard reveal mirrors hover */
+  .d-chap.passed .d-chap-num { opacity: .5; color: var(--amber-deep, #c96b00); }
+  .d-chap.on .d-chap-num { opacity: .9; color: var(--amber-deep, #c96b00); }
+  .d-chap.on .d-chap-name { opacity: 1; color: var(--amber-deep, #c96b00); font-weight: 600;
+                            transform: translateX(2px); text-shadow: 0 0 18px rgba(239,142,28,.5); }
+
+  /* first-timer cue (council option B): a lone down-chevron sat ON the wick, just
+     under the lit bead — reads as "the light keeps going down the rail." No label:
+     the arrow says it. Top set by JS to the gap under the active row; shown on HOME,
+     fades + stops bobbing once they move. */
+  .d-hint { position: absolute; left: -3px; pointer-events: none;   /* chevron centre lands on the wick (x=5px) */
+            display: flex; opacity: 0; transition: opacity .5s ease;
+            animation: d-bob 1.7s ease-in-out infinite; animation-play-state: paused; }
+  .d-hint.show { opacity: .55; animation-play-state: running; }
+  .d-hint svg { width: 16px; height: 16px; stroke: var(--amber-deep, #c96b00);
+                fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes d-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+
   @media (prefers-reduced-motion: reduce) {
-    .d-fill, .d-ball, .d-tick { transition: none; }
+    .d-wick-fill, .d-bead, .d-chap-name { transition: none; }
+    .d-hint { animation: none; }
+    .d-count .d-cn.roll { animation: none; }
   }
 }
 
@@ -644,22 +669,23 @@ body.hero-imm #hero .hero-copy-p3  { opacity: 0; transform: translateX(-120px); 
 #hero .hero-copy-imm .p2-sub { font-size: clamp(15px, 1.5vw, 18px); color: var(--ink-70, rgba(26,23,20,.7)); line-height: 1.58; max-width: 36ch; margin: 0; }
 
 @media (max-width: 920px) {
-  #hero .hero-copy-imm { grid-column: 1 !important; grid-row: 1 !important; width: 90vw !important; max-width: none !important; margin-left: auto !important; margin-right: auto !important; padding: 0; min-width: 0; align-self: start; transform: none; }
+  #hero .hero-copy-imm { grid-column: 1 !important; grid-row: 1 !important; width: 90vw !important; max-width: none !important; margin-left: auto !important; margin-right: auto !important; padding: 0; min-width: 0; align-self: end !important; transform: none; }
   body.hero-imm #hero .hero-copy-imm { transform: translateY(-12px); }
-  #hero .hero-copy-imm h2 { display: block !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: clamp(16px, 4.4vw, 24px) !important; margin-bottom: 0; line-height: 1.1; font-weight: 700; }
+  #hero .hero-copy-imm h2 { display: block !important; white-space: normal; font-size: clamp(20px, 5.6vw, 28px) !important; margin-bottom: 0; line-height: 1.14; font-weight: 700; }
   #hero .hero-copy-imm .p2-eyebrow { font-size: 10px; letter-spacing: .18em; margin-bottom: 8px; }
-  #hero .hero-copy-imm .p2-sub { display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin: 9px auto 0 !important; max-width: none; font-size: 13px !important; line-height: 1.45; }
+  #hero .hero-copy-imm .p2-sub { display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin: var(--m-vgap) auto 0 !important; max-width: none; font-size: 17px !important; line-height: 1.45; }
   #hero-imm-next { display: none !important; }
   body.hero-imm #hero .browser .page { min-height: 380px !important; }
-  /* the flip-card article is authored at desktop sizes (26/32 padding, 21px title)
-     and the gloss-language text (de/uk) runs ~20% longer than English. The immerse
-     page is capped at 330px so it stays clear of the vocab strip below, and .page
-     is overflow:hidden — so shrink the article to fit that height for every language
-     (verified against Ukrainian, the longest, at 360px) rather than clipping it. */
-  #hero .imm-page { padding: 13px 16px !important; }
-  #hero .imm-title { font-size: 15px !important; margin: 0 0 8px !important; }
-  #hero .imm-p { font-size: 12.5px !important; line-height: 1.48 !important; }
-  #hero .imm-p.imm-p2 { margin: 9px 0 0 !important; }
+  /* Immerse reads at the SAME size as the other article screens. The old shrink
+     (15px title / 12.5px body) existed only because the window was a FIXED, height-
+     capped box that clipped the longer gloss languages — but fitMobileBrowser() now
+     sizes the window to its content, so there's nothing to fit-to-shrink. (Very long
+     languages may clip a line off the bottom-anchored title — by design, never the
+     payoff.) Matches .page-en: title 20px, body 14px, padding 18/20/26. */
+  #hero .imm-page { padding: 18px 20px 26px !important; }
+  #hero .imm-title { font-size: 20px !important; margin: 0 0 12px !important; }
+  #hero .imm-p { font-size: 14px !important; line-height: 1.6 !important; }
+  #hero .imm-p.imm-p2 { margin: 14px 0 0 !important; }
   body.hero-imm #hero .imm-surface { min-height: auto !important; }
 }
 
@@ -733,7 +759,8 @@ body.hero-p4 #hero .tr-page .sel { pointer-events: none; }
 #hero-dock.show { opacity: 1; transform: none; pointer-events: auto; }
 #hero-dock .cw-body  { flex: 1 1 auto; min-height: 0; height: auto; overflow-y: auto; padding: 14px 16px 10px; }
 #hero-dock .cw-foot  { flex: 0 0 auto; padding: 9px 14px 15px; border-top: 1px solid var(--line-soft); }
-#hero-dock .cw-bot   { font-size: 14px; line-height: 1.55; }
+/* bot messages read like a real chat — hard left, not inheriting #hero's centre */
+#hero-dock .cw-bot   { font-size: 14px; line-height: 1.55; text-align: left; }
 #hero-dock .cw-user  { font-size: 13.5px; }
 
 /* "word used" credit: the typed word flashes green in the bubble and a
@@ -1123,8 +1150,8 @@ body.ph-cta.at-hero.vocab-on #worddeck {
 #ev-close .d1-echo .d1-daycell.day1 { background: rgba(239,142,28,.12); border-color: rgba(239,142,28,.38); color: var(--amber-deep, #c96b00); }
 #ev-close .d1-echo .d1-daycell.day1.lit { background: var(--amber); border-color: var(--amber); color: #fff; }
 /* shorter label ("Add to Chrome", set by lantern-cta-charge.js) buys a bigger button */
-#ev-close .d1-install { font-size: 21px; padding: 19px 30px 19px 23px; gap: 14px; }
-#ev-close .d1-install .d1-chrome { width: 30px; height: 30px; }
+#ev-close .d1-install { font-size: 24px; padding: 22px 36px 22px 28px; gap: 15px; }
+#ev-close .d1-install .d1-chrome { width: 34px; height: 34px; }
 /* hero CTA → full pill, matching the topbar pill and the final install button
    (base .btn-install is a 14px rounded-rect; main.html only, index stays as-is) */
 #hero .btn-install { border-radius: 999px; }
@@ -1201,6 +1228,9 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
    swipe-navigable phases, bottom progress dots
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 920px) {
+  /* single spacing token — all gaps/paddings above and below the browser derive from this */
+  :root { --m-vgap: 12px; }
+
   .m-only { display: block; }
   .d-only { display: none; }
   /* inline-safe mobile hide: stays inline on desktop (no rule there), drops out
@@ -1228,13 +1258,13 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   /* two-row hero: copy (auto) above, stage (remaining) below */
   #hero .hero-inner {
     grid-template-columns: 1fr !important;
-    grid-template-rows: auto auto auto 1fr !important;  /* copy · browser · CTA · spacer */
+    grid-template-rows: 134px auto 1fr !important;  /* copy (fixed) · browser · spacer */
     align-items: start !important;
-    gap: 10px !important;
+    gap: var(--m-vgap) !important;
     height: 100% !important;
   }
 
-  /* all phase copies: row 1 */
+  /* all phase copies: row 1, bottom-aligned so browser Y stays constant */
   #hero .hero-copy,
   #hero .hero-copy-p2,
   #hero .hero-copy-p3,
@@ -1242,6 +1272,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   #hero .hero-copy-p5 {
     grid-column: 1 !important;
     grid-row: 1 !important;
+    align-self: end !important;
     /* same box as the browser window below (width:90vw, centred) so the titles +
        slogans align edge-to-edge with the frame instead of running wider */
     width: 90vw !important; max-width: none !important;
@@ -1260,34 +1291,47 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   }
   /* <br> inside h2 would break the single-line rule — suppress it */
   #hero .hero-copy-p2 h2 br, #hero .hero-copy-p3 h2 br,
-  #hero .hero-copy-p4 h2 br, #hero .hero-copy-p5 h2 br,
-  #hero .hero-copy-imm h2 br { display: none !important; }
+  #hero .hero-copy-p4 h2 br, #hero .hero-copy-p5 h2 br { display: none !important; }
+  /* Immerse title is long — let it wrap to 2 lines at the authored break instead of clipping */
+  #hero .hero-copy-imm h2 br { display: inline !important; }
 
   /* compact copy on mobile */
-  /* Home title rides on ONE line ("Every word you actually use"). reveal-lines splits
-     it into two block .ln spans on the desktop <br>; collapse those to inline here (the
-     trailing space inside line 1 survives) and size it to fit the 90vw box down to 320px. */
-  #hero .hero-copy h1 { display: block !important; font-size: clamp(23px, 7vw, 36px) !important; line-height: 1.08; margin-bottom: 6px; white-space: nowrap; }
+  /* Home title "Your reading tutor for the real web" rides on ONE line on mobile
+     (owner request). reveal-lines' .ln spans collapse to inline; the font scales with
+     the viewport (vw) so the whole phrase fits the 90vw box without wrapping, down to
+     320px. The kicker is hidden on mobile (below), so the headline owns the top alone. */
+  /* Home title "Your reading tutor for the real web" rides on ONE line on mobile
+     (owner request). reveal-lines' .ln spans collapse to inline; the font scales with
+     the viewport (vw) so the whole phrase fits the 90vw box without wrapping, down to
+     320px. The kicker is hidden on mobile (below), so the headline owns the top alone. */
+  #hero .hero-copy h1 { display: block !important; font-size: clamp(15px, 4.6vw, 30px) !important; line-height: 1.1; margin-bottom: 0; white-space: nowrap; }
   #hero .hero-copy h1 .ln,
   #hero .hero-copy h1 .ln > .i { display: inline !important; transform: none !important; overflow: visible; }
-  #hero .hero-copy .hero-eyebrow { font-size: 10px; letter-spacing: .18em; margin-bottom: 8px; }
+  /* Owner request: drop the kicker on mobile entirely — the one-line headline owns the
+     top. "Every word you actually use" stays in the DESKTOP kicker (it's keyword-free,
+     so hiding it on mobile costs no SEO; the keywords live in the h1 + title/meta). */
+  #hero .hero-copy .hero-eyebrow { display: none !important; }
   /* descriptive subhead under each headline — shown on mobile so every screen
      matches the desktop copy (Practice/p5 included). Clamped + compact so the
      browser + cards still fit. */
-  #hero .hero-copy .hsub,
+  #hero .hero-copy .hsub {
+    display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+    margin: var(--m-vgap) auto 0 !important; max-width: none;   /* fill the 90vw copy box, matching the browser width */
+    font-size: 16px !important; line-height: 1.45;
+  }
   #hero .hero-copy-p2 .p2-sub,
   #hero .hero-copy-p3 .p2-sub,
   #hero .hero-copy-p4 .p2-sub,
   #hero .hero-copy-p5 .p2-sub {
     display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
-    margin: 9px auto 0 !important; max-width: none;   /* fill the 90vw copy box, matching the browser width */
-    font-size: 13px !important; line-height: 1.45;
+    margin: var(--m-vgap) auto 0 !important; max-width: none;   /* fill the 90vw copy box, matching the browser width */
+    font-size: 17px !important; line-height: 1.45;
   }
   #hero .hero-copy .hcta { margin-top: 10px; }
   #hero .hero-copy-p2 h2,
   #hero .hero-copy-p3 h2,
   #hero .hero-copy-p4 h2,
-  #hero .hero-copy-p5 h2 { font-size: clamp(16px, 4.4vw, 24px) !important; margin-bottom: 0; line-height: 1.1; }
+  #hero .hero-copy-p5 h2 { font-size: clamp(20px, 5.5vw, 28px) !important; margin-bottom: 0 !important; line-height: 1.1; }
   /* the per-screen name (Simplify / Translate / Discuss / Practice / Everywhere)
      is already named by the bottom phase caption — drop the top eyebrow on mobile
      so it isn't shown twice. (P1's "Your reading tutor for the real web" tagline
@@ -1355,9 +1399,12 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
      paragraph wraps to fewer lines and the window stays compact — cards below ride
      higher and clear the CTA + scrubber (P2 grows it to 330 for the simplify para) */
   #hero .browser .page { font-size: 14px !important; line-height: 1.6 !important; padding: 16px !important; min-height: 330px !important; }
+  /* bottom padding > top: the article is bottom-anchored and the window hugs the
+     layer, so a heavier bottom seats the last line off the frame the same as the
+     heading clears the top (owner: top/bottom must read equal). */
   #hero .browser .page-en,
   #hero .browser .tr-page,
-  #hero .browser .ex-page { padding: 18px 20px !important; }
+  #hero .browser .ex-page { padding: 18px 20px 26px !important; }
   #hero .browser .page > p:first-child,
   #hero .browser .page h3 { font-size: 15px !important; }
   /* The 2nd paragraph used to be RESERVED from the start (max-height:250) so the
@@ -1390,8 +1437,11 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   body.hero-p2 #hero .browser .ex-page,
   body.hero-p2 #hero .browser .imm-page { top: auto !important; bottom: 0 !important; }
 
-  /* words pre-highlighted on mobile (no interactive demo; show saved state by default) */
-  #hero .browser .hl { border-radius: 4px; padding: 0 2px; background: #e3edfd; color: #2f6fd6; }
+  /* base highlight geometry on mobile; only the demo-SAVED words go blue.
+     branch out (nondemo) + the candidate words keep the amber invite from
+     lantern-v3.css (body.hw-invite), mirroring desktop — no blanket blue. */
+  #hero .browser .hl { border-radius: 4px; padding: 0 2px; }
+  #hero .browser .hl.saved { background: #e3edfd; color: #2f6fd6; }
 
   /* the fake article should read like a real page — left-aligned, not centred
      (the marketing headline + CTA stay centred; only the browser content resets) */
@@ -1401,8 +1451,14 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
      Desktop keeps the in-copy button (copy+CTA centre as one stacked unit);
      on phones the copy button is hidden and a sibling clone sits under the browser. */
   #hero .hero-copy .hcta { display: none !important; }
+  /* COUNCIL Q2 (lever B, 4/7): dock the send-CTA directly under the word-cards
+     instead of pinning it to the viewport bottom. The cards are absolute and
+     top-anchored in the #hero box (~605px from top, stable across viewport
+     heights); the CTA shares that coordinate space, so anchoring it from the TOP
+     makes it track the cards and kills the dead gap — proof (cards) and action
+     (Send) read as one continuous unit. (Visible on HOME only — faded P2+.) */
   #hero .hcta-m {
-    position: absolute !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+    position: absolute !important; top: 628px !important; bottom: auto !important;
     left: 0 !important; right: 0 !important;
     grid-column: unset !important; grid-row: unset !important;
     margin: 0 !important; display: block; transition: opacity 0.4s ease;
@@ -1428,6 +1484,17 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   body.hero-simp #hero .hcta-m,
   body.ph-ev     #hero .hcta-m,
   body.ph-cta    #hero .hcta-m { opacity: 0; pointer-events: none; }
+
+  /* swipe-down cue under the Send button — a down-arrow that "swipes" down on a
+     loop, telling first-timers the story keeps going below. Inherits .hcta-m's
+     HOME-only visibility, so it fades the moment they swipe on. */
+  #hero .hcta-m .m-swipe-cue { display: flex; justify-content: center; margin-top: 13px; pointer-events: none; }
+  #hero .hcta-m .m-swipe-cue svg { width: 22px; height: 22px; color: var(--amber-deep, #c96b00); animation: m-swipe 1.7s ease-in-out infinite; }
+  @keyframes m-swipe {
+    0%   { transform: translateY(-3px); opacity: .3; }
+    50%  { transform: translateY(5px);  opacity: 1; }
+    100% { transform: translateY(-3px); opacity: .3; }
+  }
 
   /* Translate card (.tcard) is JS-anchored under the tapped sentence by placeTCard,
      which on mobile reserves the bottom band so the card never overlaps the My-vocab
@@ -1520,7 +1587,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   }
   body.hero-p2 #wd-stack {
     display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important;
-    justify-content: flex-start !important; gap: 7px !important;
+    justify-content: flex-start !important; gap: 5px !important;
     overflow-x: auto !important; overflow-y: visible !important;
     scroll-behavior: smooth; scrollbar-width: none;
     touch-action: pan-x; overscroll-behavior-x: contain;
@@ -1540,6 +1607,9 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     width: auto !important; min-width: 62px !important; max-width: 132px !important;
     margin: 0 !important; padding: 7px 10px 9px !important; gap: 0 !important;
     overflow: hidden !important;
+    /* the desktop pile's deep drop shadow (0 18px 34px) looks heavy on a flat
+       horizontal strip — soften to a gentle, diffuse lift (owner: "мьяка розсіяна"). */
+    box-shadow: 0 3px 12px -6px rgba(26,23,20,.13) !important;
   }
   /* Mobile strip entrance: pop in from scale(0.85) in place — the desktop
      translateX(16px) shifts the card rightward into the next card's space,
@@ -1562,16 +1632,22 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   body.hero-p2 .wd-card::after {
     content: ''; position: absolute; left: 10px; right: 10px; bottom: 4px; height: 2px;
     border-radius: 2px;
-    background: linear-gradient(90deg, var(--amber, #F07010) calc(var(--wd-prog-frac, 0) * 100%),
-                                       rgba(26,23,20,.12) calc(var(--wd-prog-frac, 0) * 100%));
+    /* amber fill SIZED to the progress fraction over a faint track; background-size
+       is animatable, so the bar grows smoothly as the word earns progress across
+       screens (the mobile analogue of the desktop ring closing). Fed by
+       --wd-prog-frac, which setProg() now keeps in lockstep with the ring. */
+    background: linear-gradient(90deg, var(--amber, #F07010) 0, var(--amber, #F07010) 100%)
+                  left center / calc(var(--wd-prog-frac, 0) * 100%) 100% no-repeat,
+                rgba(26,23,20,.12);
+    transition: background-size .6s cubic-bezier(.4,0,.2,1);
   }
   /* the in-flight mastery clone draws its own animated bar inside the pill — drop
      the static underline on it so the two don't stack */
   body.hero-p2 .wd-card.mr-fly::after { display: none !important; }
-  /* keep the desktop rail's faint scatter so the strip reads as a collectible deck
-     (the deck rests still by design -- the bob lives on the hero word-cards). */
+  /* gathered, upright row — drop the desktop rail's rotation/nudge scatter so the
+     cards sit neatly one after another (owner: "зібрані картки"), not tilted. */
   body.hero-p2 #worddeck .wd-card.in {
-    transform: translateX(var(--cdx, 0px)) rotate(var(--crot, 0deg)) !important; animation: none !important;
+    transform: none !important; animation: none !important;
   }
 
   /* left nav dots: hidden */
@@ -1607,29 +1683,47 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
      way there at a capped speed. Generous vertical padding = fat hit target. */
   /* play + scrub on one media-player row; track stays the truth, play is opt-in */
   .m-scrub-row {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 16px;
+    width: min(86vw, 360px);       /* narrower row = ticks sit closer together; play (LEFT) + advance (RIGHT) flank a tighter scrubber */
     pointer-events: none;          /* children re-enable; cluster stays click-through */
   }
+  /* play = a BARE triangle, twin to the bare advance chevron on the right (no
+     border/box). The play↔stop icon swap is the only "playing" cue it needs. */
   .m-playbtn {
     pointer-events: auto; flex-shrink: 0;
-    width: 34px; height: 34px; border-radius: 50%;
-    border: 1.5px solid rgba(26,23,20,.22); box-sizing: border-box;
-    background: var(--paper, #f7f6f3);
-    box-shadow: 0 2px 8px rgba(26,23,20,.14);
+    width: 34px; height: 34px;
+    background: none; border: none; box-shadow: none;
     display: flex; align-items: center; justify-content: center;
     padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent;
-    transition: border-color .18s ease, background .18s ease, transform .12s ease;
+    transition: transform .12s ease;
   }
   .m-playbtn:active { transform: scale(.92); }
-  .m-playbtn svg { width: 18px; height: 18px; fill: var(--amber-deep, #c96b00); }
+  .m-playbtn svg { width: 24px; height: 24px; fill: var(--amber-deep, #c96b00); }
   .m-playbtn .ic-stop { display: none; }
-  .m-playbtn.playing { border-color: var(--amber, #ef8e1c); background: rgba(239,142,28,.10); }
   .m-playbtn.playing .ic-play { display: none; }
   .m-playbtn.playing .ic-stop { display: block; }
 
+  /* advance = a BARE down-chevron that gently bobs (no border/box) — the "keep going
+     down" cue, now seated at the right of the scrubber. Tap = next screen. */
+  .m-advance {
+    pointer-events: auto; flex-shrink: 0;
+    width: 34px; height: 34px;
+    background: none; border: none; box-shadow: none;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .m-advance svg {
+    width: 22px; height: 22px; fill: none;
+    stroke: var(--amber-deep, #c96b00); stroke-width: 2.4;
+    stroke-linecap: round; stroke-linejoin: round;
+    animation: m-swipe 1.7s ease-in-out infinite;
+  }
+  .m-advance:active svg { animation: none; transform: translateY(4px); }
+  @media (prefers-reduced-motion: reduce) { .m-advance svg { animation: none; } }
+
   .m-scrub {
     pointer-events: auto;
-    width: min(72vw, 300px);
+    flex: 1; min-width: 0;         /* fill the middle between play (left) and advance (right) */
     padding: 14px 0 10px;
     touch-action: none;            /* the track owns its gestures */
   }
@@ -1661,7 +1755,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     transform: translate(-50%,-50%);
     background: var(--amber, #ef8e1c);
     border: 2.5px solid #fff; box-sizing: border-box;
-    box-shadow: 0 2px 8px rgba(26,23,20,.30), 0 0 0 1px rgba(26,23,20,.08);
+    box-shadow: 0 1px 4px rgba(26,23,20,.22), 0 0 0 1px rgba(26,23,20,.06);
     transition: left .45s cubic-bezier(.3,.1,.25,1);
   }
   /* finger down: no easing (1:1 tracking) + the pulse ring */
@@ -1693,16 +1787,23 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
      screen during and after the phase transition */
   #ev-close { background: var(--paper, #f7f6f3); }
 
-  /* the content block is short for a tall phone — centred, it floats with a big
-     dead gap up top. Anchor it to the UPPER area instead so the screen reads as
-     deliberate, not half-empty (overrides the inline justify-content:center) */
+  /* content is tall now (headline + CTA + 6 cards + foot) — centre it between
+     the absolute logo at top and the fixed navcluster at bottom */
   #ev-close .close-wrap {
-    flex: none !important;
+    flex: 1 !important;
+    /* owner: 3 zones via auto margins — [title + note] together at the top, [button + cards]
+       centred in the middle, [Free to start · Privacy] at the bottom. The two auto margins
+       (.cta-dock + .m-cta-foot) split the free space evenly above the middle and the foot. */
     justify-content: flex-start !important;
-    /* tight top: INSTALL now carries headline + streak + 6 example cards + foot,
-       so it can't afford the big centring pad the old icon-only layout used */
-    padding-top: clamp(20px, 4vh, 40px) !important;
+    padding-top: clamp(80px, 11.5vh, 104px) !important;  /* drops the title clear of the logo */
+    padding-bottom: clamp(70px, 10vh, 100px) !important; /* clears bottom navcluster */
   }
+  /* the note now rides directly under the h1 (JS moves it out of the button cluster) */
+  #ev-close .close-wrap > .m-close-note {
+    margin: 12px auto 0 !important; max-width: 92vw;
+    font-size: 12.5px; line-height: 1.45; color: var(--ink-45, rgba(26,23,20,.5));
+  }
+  #ev-close .cta-dock { margin-top: auto !important; }   /* push the middle cluster down off the title+note */
 
   /* topbar install pill is useless on mobile (Chrome Web Store rejects it) */
   .topbar .pill { display: none !important; }
@@ -1813,9 +1914,19 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
      lantern-v3.css hides .hw-card/.hw-cursor under 1000px; the mobile
      demo (lantern-hero-words.js MOBILE mode) needs both back */
   .hw-card { display: block !important; }
-  /* mobile word-cards are small from the start → no idle bob; they sit still.
-     (lantern-hero-words.js already skips .rested on mobile; this is the net.) */
-  #hero .hw-card.rested { animation: none !important; }
+  /* rested mobile cards glide when the row re-centres (centreMobileRow in
+     lantern-hero-words.js); transform/opacity keep their fly-in timing */
+  #hero .hw-card { transition: transform .45s cubic-bezier(.4,0,.2,1), opacity .35s ease, left .42s cubic-bezier(.4,0,.2,1), top .42s cubic-bezier(.4,0,.2,1); }
+  /* let the rested mobile cards drift a touch (живі, не мертві) — a gentle ~3px
+     float, half the desktop amplitude + slower, so it reads as breathing rather
+     than the old "jumping". Cards desync via their per-card --cbdur. */
+  #hero .hw-card.rested { animation: card-bob-m var(--cbdur, 4.6s) ease-in-out infinite !important; }
+  @keyframes card-bob-m {
+    0%   { transform: translate3d(0, 0, 0); }
+    33%  { transform: translate3d(.5px, -3px, 0); }
+    66%  { transform: translate3d(-.5px, -1.5px, 0); }
+    100% { transform: translate3d(0, 0, 0); }
+  }
   .hw-cursor { display: block !important; }
   /* the pointer is a fingertip, not a mouse arrow */
   .hw-cursor .hwc-ico svg { display: none; }
@@ -1875,23 +1986,39 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     font-size: 13px; color: var(--ink-45, rgba(26,23,20,.55)); margin-top: 3px;
   }
 
-  /* ── Everywhere screen: logo + title + domain on mobile ────────── */
-
-  /* hide only the article body text; keep bar (logo+domain) and pg-head title */
-  .pg-stack { display: none; }
-  .pg-body { padding: 10px 13px 12px; }
-  .pg-head { font-size: 13px; line-height: 1.28; margin-bottom: 0; }
+  /* ── Everywhere screen: logo + domain + 2 lines of live article text ──
+     We drop the made-up headlines and instead show the real excerpt (2 lines).
+     That makes the auto-simplify cascade + tap-to-simplify VISIBLE on mobile —
+     the hard sentence rewriting to your level is the whole point of this screen,
+     and it was previously hidden behind the title. */
+  .pg-head { display: none; }
+  .pg-stack { display: grid; }
+  .pg-stack > p { font-size: 12.5px; line-height: 1.42; -webkit-line-clamp: 2; }
+  .pg-body { padding: 9px 13px 11px; }
   /* drop the "News / Thread / Paper" kind label — logo+domain is enough */
   .pg-kind { display: none; }
-  /* compact card sized for 2-column layout */
+  /* compact card sized for 2-column layout (~20% wider than before) */
   .pg {
-    width: clamp(130px, 42vw, 158px);
+    width: clamp(150px, 45vw, 190px);
     box-shadow: 0 8px 18px -10px rgba(26,23,20,.35);
   }
   /* show all 6 (overrides the ≤600px display:none in lantern-v3.css) */
   .pg-float:nth-child(n+5) { display: block; }
-  /* 2-column wall */
-  .ev-wall { gap: 12px !important; max-width: 380px !important; }
+  /* title forced onto ONE line — shrink to fit, never wrap */
+  .ev-title { white-space: nowrap !important; font-size: clamp(18px, 6.6vw, 34px) !important; line-height: 1.05; margin-bottom: 10px; }
+  /* lift the whole Everywhere stack up under the logo (was vertically centred,
+     which left a big dead band above the title) */
+  #finale.ev { justify-content: flex-start !important; }
+  /* 2-column wall — widened to seat the two fatter cards side by side */
+  .ev-wall { gap: 12px !important; max-width: 420px !important; }
+  /* swipe-to-simplify hint (touch only) — mono micro-copy under the subtitle */
+  .ev-swipe {
+    display: block; margin: 26px 0 clamp(14px, 2vh, 22px);   /* +30px vs before — drops swipe + cards + cue as a group */
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--amber-deep); z-index: 5;
+  }
+  .ev-swipe-arr { display: inline-block; animation: evSwipeArr 1.4s ease-in-out infinite; }
+  @keyframes evSwipeArr { 0%,100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
 
   /* ── CTA screen (council 7/7, layout "b"): button+note isolated at TOP,
         six pills in a clean 3×2 grid below, wires run UP into the button ─ */
@@ -1918,7 +2045,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   #ev-close .cta-dock {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px 8px;
+    gap: var(--m-vgap) 8px;
     position: relative !important;     /* anchors the .ev-wires overlay */
     inset: auto !important;
     width: 100%;
@@ -1933,25 +2060,29 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
     position: relative; z-index: 4;
     pointer-events: auto;
     display: flex !important;
-    flex-direction: column; align-items: center; gap: 9px;
+    flex-direction: column; align-items: center; gap: var(--m-vgap);
     text-align: center;
-    margin: 0 0 8px;
+    margin: 0 0 var(--m-vgap);
   }
   /* INSTALL must hold the headline + streak + 6 example cards + foot in one screen:
      trim the giant close headline and the gaps on phones */
-  #ev-close .d1-headline { font-size: clamp(30px, 8.6vw, 42px) !important; line-height: 1.06; margin: 0 0 3px !important; }
+  /* owner: title in 2 lines (was wrapping to 3) with a touch more air between them.
+     Lift the desktop max-width:16ch cap (that's what forced the 2nd line to wrap) so the
+     <br> alone controls the break; sized so "makes the next page easier" holds one line. */
+  #ev-close .d1-headline { font-size: clamp(19px, 5.4vw, 24px) !important; line-height: 1.2; max-width: none !important; margin: 0 0 var(--m-vgap) !important; }
   #ev-close .d1-kick { margin-bottom: 6px; }
   #ev-close .m-close-cta .m-close-note {
     margin: 0; font-size: 12.5px; line-height: 1.45;
     color: var(--ink-45, rgba(26,23,20,.5));
   }
-  /* email link + reassurance dropped below the pill grid, clear of the wires */
-  #ev-close .cta-dock > .m-cta-foot {
-    grid-column: 1 / -1;
-    order: 9;
+  /* foot is now a direct child of close-wrap (moved out of the dock in JS) so space-between
+     drops it to the bottom band — between the last card and the scrubber. */
+  #ev-close .m-cta-foot {
+    width: 100%;
+    margin-top: auto !important;   /* second auto margin — drops the foot to the bottom band */
     pointer-events: auto;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    text-align: center; margin-top: 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 11px;
+    text-align: center;
   }
   #ev-close .m-cta-foot .m-email-link { margin: 0; }
   #ev-close .m-cta-foot .m-hero-hint {
@@ -2002,7 +2133,42 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   #ev-close .dk-prev > * { max-width: 100%; min-width: 0; }
   #ev-close .dkw  { flex-wrap: wrap; font-size: 9px; padding: 2px 5px; gap: 3px 5px; }
   #ev-close .dkw i { font-size: 8px; }
+  #ev-close .dkw .cefr-b { font-size: 8px !important; padding: 1px 4px !important; border-radius: 4px !important; }
   #ev-close .dktr { flex-wrap: wrap; font-size: 9px; gap: 3px 5px; }
+  #ev-close .dktr .s { flex-basis: 100%; }   /* source word on line 1, →translation on line 2 */
+  #ev-close .dk-ic { width: 26px !important; height: 26px !important; border-radius: 9px !important; } /* more breathing, same svg */
+
+  /* Owner: the highlighted payoff words ranged 9px (devotado, genre) to 11.5px (phenomenon)
+     because the bigger cards (exercises/simplify/immerse) never got a mobile size override and
+     inherited their desktop sizes. Normalise: every card's CONTEXT text to the 9px base, every
+     EMPHASISED word to ONE size (10.5px) so the highlight reads the same on all 6 cards. */
+  #ev-close .dkcz,
+  #ev-close .dksm,
+  #ev-close .dkim { font-size: 9px !important; line-height: 1.4 !important; }
+  #ev-close .dkw b,
+  #ev-close .dkok,
+  #ev-close .dktr .t,
+  #ev-close .dkcz .gap,
+  #ev-close .dksm b,
+  #ev-close .dkim b { font-size: 10.5px !important; line-height: 1.25 !important; }
+  /* "phenomenon" is the longest highlighted word — trim its pill padding so it clears
+     the narrow card edge at the uniform 10.5px size (others fit as-is). */
+  #ev-close .dkcz .gap { padding: 0 4px !important; }
+
+  /* Simplify: hold it to 2 rows. The struck "before" text + arrow share row 1 (shrink the
+     de-emphasised strikethrough so both fit the 91px card), the payoff drops to row 2 — the
+     arrow no longer wraps onto a lonely middle line. */
+  #ev-close .dksm { row-gap: 2px !important; column-gap: 4px !important; align-items: baseline !important; }
+  #ev-close .dksm s { font-size: 7.5px !important; }
+  #ev-close .dksm b { flex-basis: 100% !important; }
+
+  /* Save: lift the A2 level badge into the card's top-right corner (smaller) so the genre
+     pill reads as one clean line "genre /ʒɒn.rə/" instead of wrapping the badge below it. */
+  #ev-close .dk-card[data-feat="save"] .dk-prev { position: relative; }
+  #ev-close .dkw .cefr-b {
+    position: absolute !important; top: 4px !important; right: 5px !important;
+    font-size: 7px !important; padding: 1px 3px !important; border-radius: 3px !important;
+  }
 
   /* the REAL wires: the desktop SVG bead engine, vertical geometry —
      absolute overlay across the whole 3+button+3 grid */
@@ -2049,7 +2215,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
 <!-- NAV -->
 <div class="topbar" id="topbar">
-  <div class="brand"><span class="lmark"></span><span class="wm">Lant<span class="en">e</span>rn</span></div>
+  <div class="brand"><img src="lantern-icon-orange.svg" class="lmark" width="24" height="24" alt="" aria-hidden="true"><span class="wm">Lant<span class="en">e</span>rn</span></div>
   <button class="pill"><svg class="c-ico" viewBox="0 0 48 48" width="15" height="15" aria-hidden="true"><defs><linearGradient id="chp-a" x1="3.2173" y1="15" x2="44.7812" y2="15" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#d93025"/><stop offset="1" stop-color="#ea4335"/></linearGradient><linearGradient id="chp-b" x1="20.7219" y1="47.6791" x2="41.5039" y2="11.6837" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fcc934"/><stop offset="1" stop-color="#fbbc04"/></linearGradient><linearGradient id="chp-c" x1="26.5981" y1="46.5015" x2="5.8161" y2="10.506" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1e8e3e"/><stop offset="1" stop-color="#34a853"/></linearGradient></defs><circle cx="24" cy="23.9947" r="12" fill="#fff"/><path d="M24,12H44.7812a23.9939,23.9939,0,0,0-41.5639.0029L13.6079,30l.0093-.0024A11.9852,11.9852,0,0,1,24,12Z" fill="url(#chp-a)"/><circle cx="24" cy="24" r="9.5" fill="#1a73e8"/><path d="M34.3913,30.0029,24.0007,48A23.994,23.994,0,0,0,44.78,12.0031H23.9989l-.0025.0093A11.985,11.985,0,0,1,34.3913,30.0029Z" fill="url(#chp-b)"/><path d="M13.6086,30.0031,3.218,12.006A23.994,23.994,0,0,0,24.0025,48L34.3931,30.0029l-.0067-.0068a11.9852,11.9852,0,0,1-20.7778.007Z" fill="url(#chp-c)"/></svg>Add to Chrome</button>
 </div>
 
@@ -2095,8 +2261,12 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
     <!-- COLUMN 1 — phase 1 copy -->
     <div class="hero-copy">
-      <div class="hero-eyebrow">Your reading tutor for the real web</div>
-      <h1 class="disp reveal-lines">Every word <br class="hero-h1-brk" />you actually use</h1>
+      <!-- COUNCIL verdict (Option C, 4/3): swap the brand line and the tagline.
+           The keyword phrase carries the <h1> weight (closes the on-page SEO gap —
+           title/meta already banked it); the distinctive "Every word you actually
+           use" survives as the kicker, not binned (the council overruled dropping it). -->
+      <div class="hero-eyebrow">Every word you actually use</div>
+      <h1 class="disp reveal-lines">Your reading tutor <br class="hero-h1-brk" />for the real web</h1>
       <p class="hsub" data-m="Save words as you read. Lantern brings them back in the next thing you read — until they stick.">Save words as you read. Lantern weaves them back into the next thing you read — until they stick.</p>
       <div class="hcta">
         <button class="btn-install">
@@ -2108,7 +2278,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
     <!-- COLUMN 2 — browser (stays through both phases) -->
     <div class="hero-stage">
-      <div class="float" data-speed="-0.08" style="top:calc(8% + 10px);left:-2%;z-index:1">
+      <div class="float" data-speed="-0.08" style="top:calc(8% + 10px);left:calc(-2% + 25px);z-index:1">
         <div class="floatwrap" style="--dur:8s;--del:0s">
           <div class="browser" style="box-shadow:0 72px 124px -46px rgba(58,36,2,.22),0 18px 38px -20px rgba(26,23,20,.16)">
             <div class="bbar"><div class="bdots"><i></i><i></i><i></i></div><div class="url">rollingstone.com</div></div>
@@ -2242,11 +2412,13 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
     <!-- MOBILE-ONLY CTA — relocated below the browser on phones (desktop keeps the in-copy one) -->
     <div class="hcta-m">
-      <p class="m-hcta-note">Desktop extension — send it to yourself</p>
+      <p class="m-hcta-note">Lantern's a desktop extension — add it later.</p>
       <button class="m-share-btn m-share-sm" data-m-share aria-label="Send this page to yourself">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-        <span>Send to yourself →</span>
+        <span>Send to yourself</span>
       </button>
+      <!-- loose swipe-down ↓ removed — the scrubber's advance arrow (›) is now the single onward signal -->
+
     </div>
 
     <!-- PHASE 2 COPY — slides into col 1 -->
@@ -2304,8 +2476,9 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 <!-- ============ ACT III — EVERYWHERE ============ -->
 <section class="ev" id="finale" data-screen-label="Everywhere">
 
-  <h2 class="ev-title">You can read<br />anything now.</h2>
-  <p class="ev-sub">A news article, a forum thread, a long read, a research paper, a lasagna recipe.</p>
+  <h2 class="ev-title">You can read anything now.</h2>
+  <p class="ev-sub">A news article, a forum thread, a research paper, a lasagna recipe.</p>
+  <p class="ev-swipe">Swipe across them <span class="ev-swipe-arr">→</span></p>
 
   <div class="ev-wall" id="ev-wall">
 
@@ -2337,7 +2510,7 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
 
     <div class="pg-float" style="--dur:6.6s;--del:1.1s">
       <article class="pg">
-        <div class="pg-bar"><span class="pg-fav" style="background:#1b1b1b">W</span><span class="pg-url">en.wikipedia.org</span><span class="pg-cefr" data-easy="B2">C2</span></div>
+        <div class="pg-bar"><span class="pg-fav" style="background:#1b1b1b">W</span><span class="pg-url">wikipedia.org</span><span class="pg-cefr" data-easy="B2">C2</span></div>
         <div class="pg-body">
           <div class="pg-head">Neuroplasticity</div>
           <div class="pg-stack">
@@ -2399,18 +2572,20 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
   <div class="close-wrap d1-wrap" data-cascade style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;padding:0 var(--gut)">
     <div class="d1-kick d-only">every word you save makes the next page easier</div>
     <h2 class="disp d1-headline reveal-lines d-only">One click&nbsp;away.</h2>
-    <h2 class="disp d1-headline reveal-lines m-only">Every word you save makes the next page&nbsp;easier.</h2>
+    <h2 class="disp d1-headline reveal-lines m-only">Every word you save<br>makes the next page&nbsp;easier.</h2>
     <div class="d1-track">
       <button class="d1-install" id="close-cta" data-cta type="button" aria-label="Add Lantern to Chrome — free to start, no account needed."></button>
     </div>
     <div class="d1-fine d-only">Free to start · no account needed · works on any site</div>
     <div class="m-only m-close-cta">
-      <p class="m-close-note">Lantern is a Chrome extension —<br>open on your Mac or PC to install.</p>
+      <p class="m-close-note">You're on mobile — Lantern runs in Chrome on Mac or PC. Send yourself the link to install.</p>
       <button class="m-share-btn" data-m-share aria-label="Send to desktop">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
         <span>Send to desktop</span>
       </button>
-      <a class="m-email-link" href="" aria-label="Email myself the link">✉ Email myself the link</a>
+      <!-- COUNCIL verdict (A, 6/1): "Email myself the link" removed — it's a strict subset
+           of "Send to desktop" (share sheet already exposes Mail; on no-share browsers the
+           button falls back to the identical mailto). One confident primary, no false choice. -->
       <p class="m-hero-hint">Free to start &middot; no account needed</p>
     </div>
   </div>
@@ -2433,6 +2608,9 @@ body.hero-p5 #hero .hx-hud { position: absolute; bottom: 0; left: 0; right: 0; z
         <div class="m-scrub-ball"></div>
       </div>
     </div>
+    <button class="m-advance" id="m-advance" type="button" aria-label="Next screen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
   </div>
   <div class="m-phase-caption" id="m-phase-caption">01 · HOME</div>
 </div>
@@ -2483,6 +2661,9 @@ window.LanternPlaying = false;
   function setProg(card, p, instant) {
     var ring = ringOf(card); if (!ring) return;
     card.dataset.prog = p;
+    /* mobile strip hides the ring and draws progress as an underline fed by this
+       var — keep it in lockstep with the ring so the bar climbs on phones too */
+    card.style.setProperty('--wd-prog-frac', (+p).toFixed(3));
     ring.style.transition = instant ? 'none' : 'stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)';
     ring.style.strokeDashoffset = (CIRC * (1 - p)).toFixed(2);
     if (!instant) {
@@ -4705,7 +4886,7 @@ window.LanternPlaying = false;
       wheelLockTimer = setTimeout(function () { wheelLock = false; }, 600);
       if (window.LanternCrank) window.LanternCrank.suppress(1000);
       if (LPc && LPc.step) LPc.step(dy > 0 ? 1 : -1);
-      if (window.LanternCrank && LPc) setTimeout(function () { window.LanternCrank.syncTo(LPc.get()); }, 40);
+      if (window.LanternCrank && LPc) setTimeout(function () { window.LanternCrank.syncTo(LPc.pos()); }, 40);
       return;
     }
 
@@ -5553,9 +5734,16 @@ window.LanternPlaying = false;
        it and keep Home tall — offsetHeight ignores the spill and Home stays short.
        Add the page's own padding so the text clears the window top/bottom by that
        margin. Inline min-height (important) beats the stylesheet's !important rules. */
-    var cs   = getComputedStyle(p);
-    var pad  = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
-    var extra = cs.boxSizing === 'border-box' ? pad : 0;
+    var cs    = getComputedStyle(p);
+    var padTop = parseFloat(cs.paddingTop) || 0;
+    var padBot = parseFloat(cs.paddingBottom) || 0;
+    /* the article layer (.page-en/.tr-page/…) already carries its OWN symmetric
+       top+bottom padding, so on the bottom-anchored screens (2–5) the window must
+       hug it EXACTLY: adding any .page padding lands as slack at the TOP (content
+       hugs the bottom) and unbalances heading-vs-foot. Home is top-anchored, so its
+       slack falls harmlessly at the bottom — keep its padding as a min breathing. */
+    var bottomAnchored = b.contains('hero-p2');
+    var extra = cs.boxSizing === 'border-box' ? (bottomAnchored ? 0 : padTop + padBot) : 0;
     var h = Math.ceil(L.offsetHeight + extra);
 
     /* HARD CAP — the hero is ONE screen: the browser window, the My-Vocab strip

@@ -195,7 +195,10 @@ const Shelf = (function () {
   function cardEl(w) { return $('.wd-card[data-w="' + (w || '') + '"]', stackEl); }
   function layout() {}
 
-  const DEMO_PROGS = [0.38, 0.70, 0.55, 0.85, 0.22, 0.62];
+  /* a JUST-saved word is early in its learning — show a low, barely-started bar,
+     not a near-full one (an 85% "mastered" ring the instant you collect it reads
+     wrong). Small spread so the cards aren't identical. */
+  const DEMO_PROGS = [0.0, 0.12, 0.06, 0.20, 0.10, 0.04];
   const MAXV = 6;   // most recent cards kept on the rail; older ones collapse away
   function add(lemma, opts) {
     opts = opts || {};
